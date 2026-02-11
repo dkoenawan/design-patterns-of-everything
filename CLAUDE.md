@@ -4,7 +4,7 @@
 
 This is a **Solution Architect portfolio site** built with Astro + MDX, showcasing design patterns, architecture experience, case studies, and certifications. Deployed on GitHub Pages.
 
-**Repository Name**: `career-portfolio` (to be created as public repo)
+**Repository Name**: `design-patterns-of-everything` (to be created as public repo)
 **Deployment**: GitHub Pages
 **Current Phase**: Session 1 - Landing Page Development
 
@@ -62,7 +62,7 @@ This is a **Solution Architect portfolio site** built with Astro + MDX, showcasi
 ## Development Roadmap
 
 ### Session 1: Landing Page ⭐ CURRENT
-- Initialize Astro project in new `career-portfolio` repo
+- Initialize Astro project in new `design-patterns-of-everything` repo
 - Apply parchment-inspired aesthetic
 - Build landing page sections (Hero, About, Expertise, Approach, Contact)
 - Deploy to GitHub Pages
