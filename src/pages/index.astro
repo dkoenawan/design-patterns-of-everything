@@ -2,39 +2,46 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
 import DomainCard from '../components/DomainCard.astro';
+import Starfield from '../components/Starfield';
 ---
 
 <BaseLayout
   title="Solution Architect Portfolio | Design Patterns & Architecture Experience"
   description="Design patterns, architecture experience, and real-world case studies across frontend, backend, data pipeline, and infrastructure domains."
 >
+  <Starfield client:load />
+
   <!-- Hero Section -->
   <Hero />
+
+  <hr class="constellation-divider" />
 
   <!-- About Section -->
   <section class="about">
     <div class="container">
-      <h2>About This Portfolio</h2>
+      <h2>Mapping the Architecture Landscape</h2>
       <div class="about-content">
         <p class="body-lg">
-          This portfolio documents a career journey through software architecture, organized by domain expertise and proven design patterns. Each pattern, case study, and anti-pattern example reflects real-world production experience—not theoretical concepts.
+          Software architecture is a vast, interconnected system of knowledge. This portfolio maps that territory the way a cartographer charts constellations—documenting proven patterns, charting connections between domains, and marking the routes that lead to successful systems.
         </p>
         <p class="body-lg">
-          The site structure mirrors how architecture expertise naturally develops: starting with foundational patterns, progressing through domain-specific techniques, and culminating in cross-cutting architectural decisions. Skills are visualized through career progression trees, backed by both certifications and hands-on implementation experience.
+          Each pattern represents a point of light: tested in production, understood through experience, connected to related concepts. Skill trees visualize how expertise develops across domains, from foundational patterns to advanced architectural decisions. The map expands as new territories are explored.
         </p>
         <p class="body-lg">
-          Whether you're evaluating technical leadership capabilities, assessing problem-solving approaches, or seeking architectural mentorship, this portfolio provides a transparent view into real-world architectural decision-making.
+          Whether you're evaluating architectural depth, assessing problem-solving approaches, or navigating your own journey through system design, these charts provide reference points drawn from real implementations—not theoretical abstractions.
         </p>
       </div>
     </div>
   </section>
 
+  <hr class="constellation-divider" />
+
   <!-- Expertise Areas / Domains Section -->
   <section class="domains" id="domains">
     <div class="container">
-      <h2>Architecture Domains</h2>
+      <h2>Four Regions of the Map</h2>
       <p class="domains-intro body-lg">
-        Expertise organized across four core architecture domains, each with its own patterns, case studies, and skill progression.
+        Architecture expertise divided into four domains, each a distinct territory with its own patterns, challenges, and skill progressions. Navigate between them to see how patterns connect across boundaries.
       </p>
       <div class="domains-grid">
         <DomainCard
@@ -61,32 +68,36 @@ import DomainCard from '../components/DomainCard.astro';
     </div>
   </section>
 
+  <hr class="constellation-divider" />
+
   <!-- Approach Section -->
   <section class="approach">
     <div class="container">
-      <h2>How I Approach Architecture</h2>
+      <h2>How This Map Was Drawn</h2>
       <div class="approach-grid">
         <div class="approach-card">
-          <h3>Pattern-Driven</h3>
+          <h3>Charted Through Experience</h3>
           <p>
-            Proven design patterns applied to real-world constraints. Each pattern is documented with complexity ratings, use cases, and production examples showing where it succeeded and where it didn't.
+            Every pattern documented here solved a real problem in a production system. Complexity ratings reflect actual implementation challenges. Case studies show the terrain as it was encountered—constraints, trade-offs, outcomes.
           </p>
         </div>
         <div class="approach-card">
-          <h3>Domain-Focused</h3>
+          <h3>Organized by Territory</h3>
           <p>
-            Expertise organized by architecture domain—frontend, backend, data pipelines, and infrastructure. Domain-specific patterns address unique challenges rather than forcing one-size-fits-all solutions.
+            Architecture knowledge naturally clusters into domains. Frontend, backend, data pipelines, and infrastructure each have distinct patterns and principles. The map respects these boundaries while showing where they connect.
           </p>
         </div>
         <div class="approach-card">
-          <h3>Experience-Based</h3>
+          <h3>Built to Be Navigated</h3>
           <p>
-            Skills backed by certifications and production systems. Case studies demonstrate architectural decisions in context, including constraints, trade-offs, and outcomes.
+            Skill trees visualize progression paths. Patterns link to related concepts. Anti-patterns mark known hazards. The structure reveals not just what to know, but how understanding develops across a career.
           </p>
         </div>
       </div>
     </div>
   </section>
+
+  <hr class="constellation-divider" />
 
   <!-- Contact Section -->
   <section class="contact">
@@ -160,6 +171,18 @@ import DomainCard from '../components/DomainCard.astro';
 
   .approach-card {
     padding: var(--space-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-secondary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-normal);
+  }
+
+  .approach-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-left-color: var(--color-accent);
   }
 
   .approach-card h3 {
@@ -187,6 +210,30 @@ import DomainCard from '../components/DomainCard.astro';
   section h2 {
     text-align: center;
     margin-bottom: var(--space-xl);
-    color: var(--color-primary);
+    color: var(--color-secondary);
+    text-shadow: 0 2px 8px hsla(40, 60%, 65%, 0.2);
+  }
+
+  /* Constellation Divider */
+  .constellation-divider {
+    border: none;
+    height: 1px;
+    background: var(--color-border);
+    position: relative;
+    margin: var(--space-3xl) auto;
+    max-width: 600px;
+  }
+
+  .constellation-divider::after {
+    content: '✦';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--color-secondary);
+    background: var(--color-bg);
+    padding: 0 var(--space-md);
+    font-size: var(--text-body-lg);
+    text-shadow: 0 0 8px hsla(40, 60%, 65%, 0.4);
   }
 </style>

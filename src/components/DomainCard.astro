@@ -11,6 +11,18 @@ const { domain, title, description, comingSoon = true } = Astro.props;
 ---
 
 <div class={`domain-card domain-${domain}`}>
+  <div class="card-constellation" aria-hidden="true">
+    <svg width="60" height="60" viewBox="0 0 60 60">
+      <!-- Mini constellation pattern unique to each domain -->
+      <circle cx="15" cy="15" r="2.5" class="node" />
+      <circle cx="45" cy="15" r="2" class="node" />
+      <circle cx="30" cy="40" r="2.5" class="node primary" />
+      <line x1="15" y1="15" x2="30" y2="40" class="link" />
+      <line x1="45" y1="15" x2="30" y2="40" class="link" />
+      <circle cx="20" cy="50" r="1.5" class="node small" />
+      <line x1="30" y1="40" x2="20" y2="50" class="link faint" />
+    </svg>
+  </div>
   <h3>{title}</h3>
   <p>{description}</p>
   {comingSoon ? (
@@ -29,6 +41,8 @@ const { domain, title, description, comingSoon = true } = Astro.props;
     padding: var(--space-lg);
     border-left: 4px solid var(--accent-color);
     transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
   }
 
   .domain-card:hover {
@@ -36,15 +50,53 @@ const { domain, title, description, comingSoon = true } = Astro.props;
     box-shadow: var(--shadow-lg);
   }
 
+  .domain-card:hover .card-constellation {
+    opacity: 0.25;
+  }
+
+  .card-constellation {
+    position: absolute;
+    top: var(--space-md);
+    right: var(--space-md);
+    opacity: 0.15;
+    transition: opacity var(--transition-normal);
+  }
+
+  .card-constellation .node {
+    fill: var(--accent-color);
+  }
+
+  .card-constellation .node.primary {
+    fill: var(--accent-color);
+    filter: drop-shadow(0 0 2px var(--accent-color));
+  }
+
+  .card-constellation .node.small {
+    fill: var(--accent-color);
+    opacity: 0.7;
+  }
+
+  .card-constellation .link {
+    stroke: var(--accent-color);
+    stroke-width: 1;
+    opacity: 0.4;
+  }
+
+  .card-constellation .link.faint {
+    opacity: 0.2;
+  }
+
   .domain-card h3 {
     color: var(--accent-color);
     margin-bottom: var(--space-sm);
+    position: relative;
   }
 
   .domain-card p {
     color: var(--color-text-secondary);
     line-height: var(--leading-relaxed);
     margin-bottom: var(--space-md);
+    position: relative;
   }
 
   /* Domain-specific accent colors */
@@ -72,12 +124,14 @@ const { domain, title, description, comingSoon = true } = Astro.props;
     border-radius: var(--radius-full);
     font-size: var(--text-body-sm);
     font-weight: var(--weight-medium);
+    position: relative;
   }
 
   .card-link {
     color: var(--accent-color);
     font-weight: var(--weight-semibold);
     text-decoration: none;
+    position: relative;
   }
 
   .card-link:hover {

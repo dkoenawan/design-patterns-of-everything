@@ -9,10 +9,10 @@
 :root {
   /* --- Color System --- */
 
-  /* Primary — Celestial Ink */
+  /* Primary — Celestial Ink (lightened for dark mode) */
   --color-primary-h: 224;
-  --color-primary-s: 43%;
-  --color-primary-l: 20%;
+  --color-primary-s: 40%;
+  --color-primary-l: 68%;
   --color-primary: hsl(var(--color-primary-h) var(--color-primary-s) var(--color-primary-l));
   --color-primary-50: hsl(224 38% 97%);
   --color-primary-100: hsl(224 36% 90%);
@@ -25,10 +25,10 @@
   --color-primary-800: hsl(224 52% 12%);
   --color-primary-900: hsl(224 56% 8%);
 
-  /* Secondary — Star Gold */
+  /* Secondary — Star Gold (brightened for dark backgrounds) */
   --color-secondary-h: 40;
-  --color-secondary-s: 54%;
-  --color-secondary-l: 50%;
+  --color-secondary-s: 60%;
+  --color-secondary-l: 65%;
   --color-secondary: hsl(var(--color-secondary-h) var(--color-secondary-s) var(--color-secondary-l));
   --color-secondary-50: hsl(40 54% 96%);
   --color-secondary-100: hsl(40 50% 88%);
@@ -41,10 +41,10 @@
   --color-secondary-800: hsl(40 65% 25%);
   --color-secondary-900: hsl(40 68% 17%);
 
-  /* Accent — Copper Flare */
+  /* Accent — Copper Flare (warmed for dark backgrounds) */
   --color-accent-h: 27;
-  --color-accent-s: 56%;
-  --color-accent-l: 46%;
+  --color-accent-s: 54%;
+  --color-accent-l: 60%;
   --color-accent: hsl(var(--color-accent-h) var(--color-accent-s) var(--color-accent-l));
   --color-accent-50: hsl(27 50% 96%);
   --color-accent-100: hsl(27 48% 88%);
@@ -57,25 +57,25 @@
   --color-accent-800: hsl(27 66% 22%);
   --color-accent-900: hsl(27 68% 15%);
 
-  /* Domain Accent Colors */
-  --color-domain-frontend: hsl(180 54% 36%);
-  --color-domain-backend: hsl(43 89% 38%);
-  --color-domain-data: hsl(123 20% 46%);
-  --color-domain-infra: hsl(207 44% 49%);
+  /* Domain Accent Colors — Brightened for dark backgrounds */
+  --color-domain-frontend: hsl(180 50% 52%);
+  --color-domain-backend: hsl(43 80% 55%);
+  --color-domain-data: hsl(123 22% 58%);
+  --color-domain-infra: hsl(207 45% 62%);
 
-  /* Neutrals — Warm parchment-tinted */
-  --color-bg: hsl(40 38% 93%);
-  --color-surface: hsl(38 32% 89%);
-  --color-border: hsl(36 24% 78%);
-  --color-text: hsl(36 10% 10%);
-  --color-text-secondary: hsl(36 10% 27%);
-  --color-text-muted: hsl(36 7% 51%);
+  /* Neutrals — Deep celestial night */
+  --color-bg: hsl(225 30% 6%);
+  --color-surface: hsl(224 24% 11%);
+  --color-border: hsl(224 18% 24%);
+  --color-text: hsl(38 14% 90%);
+  --color-text-secondary: hsl(36 10% 68%);
+  --color-text-muted: hsl(36 8% 44%);
 
-  /* Semantic */
-  --color-success: hsl(116 43% 38%);
-  --color-warning: hsl(33 54% 50%);
-  --color-error: hsl(7 55% 46%);
-  --color-info: hsl(213 42% 50%);
+  /* Semantic — adjusted for dark backgrounds */
+  --color-success: hsl(116 38% 52%);
+  --color-warning: hsl(33 52% 58%);
+  --color-error: hsl(7 50% 60%);
+  --color-info: hsl(213 40% 60%);
 
   /* --- Typography --- */
   --font-heading: 'Crimson Pro', 'Georgia', 'Times New Roman', serif;
@@ -126,9 +126,9 @@
   --radius-lg: 6px;
   --radius-full: 9999px;
 
-  --shadow-sm: 0 1px 3px hsla(36, 20%, 10%, 0.06);
-  --shadow-md: 0 4px 12px hsla(36, 20%, 10%, 0.1);
-  --shadow-lg: 0 12px 32px hsla(36, 20%, 10%, 0.14);
+  --shadow-sm: 0 1px 3px hsla(224, 40%, 2%, 0.4);
+  --shadow-md: 0 4px 12px hsla(224, 40%, 2%, 0.5);
+  --shadow-lg: 0 12px 32px hsla(224, 40%, 2%, 0.6);
 
   --transition-fast: 150ms ease;
   --transition-normal: 280ms ease;
@@ -136,75 +136,73 @@
   --transition-easing: cubic-bezier(0.25, 0.05, 0.25, 1);
 }
 
-/* --- Dark Mode --- */
-/* Intentionally designed, not inverted. Dark mode should feel like
-   the same star chart viewed at night — deep indigo sky, brighter stars,
-   warm parchment tones shifting to aged leather and burnished metals. */
-@media (prefers-color-scheme: dark) {
+/* --- Light Mode (Optional) --- */
+/* Dark celestial theme is the default. Light mode available for those who prefer it. */
+@media (prefers-color-scheme: light) {
   :root {
-    /* Primary shifts lighter for legibility on dark backgrounds */
-    --color-primary-l: 65%;
-    --color-primary-s: 38%;
+    /* Primary darkens for legibility on light backgrounds */
+    --color-primary-l: 20%;
+    --color-primary-s: 43%;
 
-    /* Secondary gold brightens — stars shine brighter at night */
-    --color-secondary-l: 60%;
-    --color-secondary-s: 50%;
+    /* Secondary gold darkens for contrast */
+    --color-secondary-l: 50%;
+    --color-secondary-s: 54%;
 
-    /* Accent copper warms up */
-    --color-accent-l: 58%;
-    --color-accent-s: 50%;
+    /* Accent copper darkens */
+    --color-accent-l: 46%;
+    --color-accent-s: 56%;
 
-    /* Domain accents — slightly brighter, slightly desaturated for comfort */
-    --color-domain-frontend: hsl(180 44% 48%);
-    --color-domain-backend: hsl(43 72% 50%);
-    --color-domain-data: hsl(123 18% 55%);
-    --color-domain-infra: hsl(207 40% 58%);
+    /* Domain accents — darker, more saturated for light backgrounds */
+    --color-domain-frontend: hsl(180 54% 36%);
+    --color-domain-backend: hsl(43 89% 38%);
+    --color-domain-data: hsl(123 20% 46%);
+    --color-domain-infra: hsl(207 44% 49%);
 
-    /* Neutrals — deep indigo-charcoal, not pure black */
-    --color-bg: hsl(225 25% 9%);
-    --color-surface: hsl(224 22% 13%);
-    --color-border: hsl(224 16% 22%);
-    --color-text: hsl(38 14% 88%);
-    --color-text-secondary: hsl(36 8% 65%);
-    --color-text-muted: hsl(36 6% 42%);
+    /* Neutrals — warm parchment-tinted */
+    --color-bg: hsl(40 38% 93%);
+    --color-surface: hsl(38 32% 89%);
+    --color-border: hsl(36 24% 78%);
+    --color-text: hsl(36 10% 10%);
+    --color-text-secondary: hsl(36 10% 27%);
+    --color-text-muted: hsl(36 7% 51%);
 
-    /* Semantic — slightly desaturated, lighter for dark backgrounds */
-    --color-success: hsl(116 36% 48%);
-    --color-warning: hsl(33 48% 55%);
-    --color-error: hsl(7 48% 56%);
-    --color-info: hsl(213 38% 58%);
+    /* Semantic — darker for light backgrounds */
+    --color-success: hsl(116 43% 38%);
+    --color-warning: hsl(33 54% 50%);
+    --color-error: hsl(7 55% 46%);
+    --color-info: hsl(213 42% 50%);
 
-    /* Shadows — deeper, more diffuse, cooler tone */
-    --shadow-sm: 0 1px 3px hsla(224, 40%, 4%, 0.35);
-    --shadow-md: 0 4px 12px hsla(224, 40%, 4%, 0.4);
-    --shadow-lg: 0 12px 32px hsla(224, 40%, 4%, 0.5);
+    /* Shadows — lighter, warm tone */
+    --shadow-sm: 0 1px 3px hsla(36, 20%, 10%, 0.06);
+    --shadow-md: 0 4px 12px hsla(36, 20%, 10%, 0.1);
+    --shadow-lg: 0 12px 32px hsla(36, 20%, 10%, 0.14);
   }
 }
 
-/* --- Utility: Dark Mode Class Toggle --- */
-/* Use [data-theme="dark"] if you prefer JS-controlled dark mode */
-[data-theme="dark"] {
-  --color-primary-l: 65%;
-  --color-primary-s: 38%;
-  --color-secondary-l: 60%;
-  --color-secondary-s: 50%;
-  --color-accent-l: 58%;
-  --color-accent-s: 50%;
-  --color-domain-frontend: hsl(180 44% 48%);
-  --color-domain-backend: hsl(43 72% 50%);
-  --color-domain-data: hsl(123 18% 55%);
-  --color-domain-infra: hsl(207 40% 58%);
-  --color-bg: hsl(225 25% 9%);
-  --color-surface: hsl(224 22% 13%);
-  --color-border: hsl(224 16% 22%);
-  --color-text: hsl(38 14% 88%);
-  --color-text-secondary: hsl(36 8% 65%);
-  --color-text-muted: hsl(36 6% 42%);
-  --color-success: hsl(116 36% 48%);
-  --color-warning: hsl(33 48% 55%);
-  --color-error: hsl(7 48% 56%);
-  --color-info: hsl(213 38% 58%);
-  --shadow-sm: 0 1px 3px hsla(224, 40%, 4%, 0.35);
-  --shadow-md: 0 4px 12px hsla(224, 40%, 4%, 0.4);
-  --shadow-lg: 0 12px 32px hsla(224, 40%, 4%, 0.5);
+/* --- Utility: Light Mode Class Toggle --- */
+/* Use [data-theme="light"] if you prefer JS-controlled light mode */
+[data-theme="light"] {
+  --color-primary-l: 20%;
+  --color-primary-s: 43%;
+  --color-secondary-l: 50%;
+  --color-secondary-s: 54%;
+  --color-accent-l: 46%;
+  --color-accent-s: 56%;
+  --color-domain-frontend: hsl(180 54% 36%);
+  --color-domain-backend: hsl(43 89% 38%);
+  --color-domain-data: hsl(123 20% 46%);
+  --color-domain-infra: hsl(207 44% 49%);
+  --color-bg: hsl(40 38% 93%);
+  --color-surface: hsl(38 32% 89%);
+  --color-border: hsl(36 24% 78%);
+  --color-text: hsl(36 10% 10%);
+  --color-text-secondary: hsl(36 10% 27%);
+  --color-text-muted: hsl(36 7% 51%);
+  --color-success: hsl(116 43% 38%);
+  --color-warning: hsl(33 54% 50%);
+  --color-error: hsl(7 55% 46%);
+  --color-info: hsl(213 42% 50%);
+  --shadow-sm: 0 1px 3px hsla(36, 20%, 10%, 0.06);
+  --shadow-md: 0 4px 12px hsla(36, 20%, 10%, 0.1);
+  --shadow-lg: 0 12px 32px hsla(36, 20%, 10%, 0.14);
 }
