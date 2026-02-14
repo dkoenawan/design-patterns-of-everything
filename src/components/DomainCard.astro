@@ -1,0 +1,86 @@
+---
+// Domain preview card component
+interface Props {
+  domain: 'frontend' | 'backend' | 'data' | 'infra';
+  title: string;
+  description: string;
+  comingSoon?: boolean;
+}
+
+const { domain, title, description, comingSoon = true } = Astro.props;
+---
+
+<div class={`domain-card domain-${domain}`}>
+  <h3>{title}</h3>
+  <p>{description}</p>
+  {comingSoon ? (
+    <span class="badge">Coming Soon</span>
+  ) : (
+    <a href={`/${domain}`} class="card-link">Explore →</a>
+  )}
+</div>
+
+<style>
+  .domain-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-lg);
+    border-left: 4px solid var(--accent-color);
+    transition: all var(--transition-normal);
+  }
+
+  .domain-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .domain-card h3 {
+    color: var(--accent-color);
+    margin-bottom: var(--space-sm);
+  }
+
+  .domain-card p {
+    color: var(--color-text-secondary);
+    line-height: var(--leading-relaxed);
+    margin-bottom: var(--space-md);
+  }
+
+  /* Domain-specific accent colors */
+  .domain-frontend {
+    --accent-color: var(--color-domain-frontend);
+  }
+
+  .domain-backend {
+    --accent-color: var(--color-domain-backend);
+  }
+
+  .domain-data {
+    --accent-color: var(--color-domain-data);
+  }
+
+  .domain-infra {
+    --accent-color: var(--color-domain-infra);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-border);
+    color: var(--color-text-muted);
+    border-radius: var(--radius-full);
+    font-size: var(--text-body-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .card-link {
+    color: var(--accent-color);
+    font-weight: var(--weight-semibold);
+    text-decoration: none;
+  }
+
+  .card-link:hover {
+    text-decoration: underline;
+  }
+</style>

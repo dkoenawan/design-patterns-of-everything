@@ -1,0 +1,151 @@
+/* Global Styles for Solution Architect Portfolio */
+
+/* Import brand theme */
+@import '../../brand/brand-theme.css';
+
+/* Import fonts */
+@import '@fontsource/crimson-pro/400.css';
+@import '@fontsource/crimson-pro/600.css';
+@import '@fontsource/crimson-pro/700.css';
+@import '@fontsource/source-sans-3/400.css';
+@import '@fontsource/source-sans-3/500.css';
+@import '@fontsource/source-sans-3/600.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: var(--leading-normal);
+}
+
+body {
+  font-size: var(--text-body);
+  font-weight: var(--weight-normal);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  color: var(--color-text);
+  margin-bottom: var(--space-md);
+}
+
+.display {
+  font-size: var(--text-display);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+h1 {
+  font-size: var(--text-h1);
+}
+
+h2 {
+  font-size: var(--text-h2);
+  font-weight: var(--weight-semibold);
+}
+
+h3 {
+  font-size: var(--text-h3);
+}
+
+h4 {
+  font-size: var(--text-h4);
+}
+
+.body-lg {
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-relaxed);
+}
+
+p {
+  margin-bottom: var(--space-md);
+}
+
+/* Code blocks */
+code, pre {
+  font-family: var(--font-mono);
+  font-size: var(--text-body-sm);
+}
+
+pre {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  overflow-x: auto;
+}
+
+/* Links */
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-secondary);
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font-weight: var(--weight-semibold);
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+
+.btn:hover {
+  background: var(--color-accent-600);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+/* Section spacing */
+section {
+  padding: var(--space-2xl) 0;
+}
+
+/* Responsive typography */
+@media (max-width: 640px) {
+  .display {
+    font-size: 2rem;
+  }
+
+  h1 {
+    font-size: 1.777rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  section {
+    padding: var(--space-xl) 0;
+  }
+}

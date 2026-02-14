@@ -1,0 +1,192 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import DomainCard from '../components/DomainCard.astro';
+---
+
+<BaseLayout
+  title="Solution Architect Portfolio | Design Patterns & Architecture Experience"
+  description="Design patterns, architecture experience, and real-world case studies across frontend, backend, data pipeline, and infrastructure domains."
+>
+  <!-- Hero Section -->
+  <Hero />
+
+  <!-- About Section -->
+  <section class="about">
+    <div class="container">
+      <h2>About This Portfolio</h2>
+      <div class="about-content">
+        <p class="body-lg">
+          This portfolio documents a career journey through software architecture, organized by domain expertise and proven design patterns. Each pattern, case study, and anti-pattern example reflects real-world production experience—not theoretical concepts.
+        </p>
+        <p class="body-lg">
+          The site structure mirrors how architecture expertise naturally develops: starting with foundational patterns, progressing through domain-specific techniques, and culminating in cross-cutting architectural decisions. Skills are visualized through career progression trees, backed by both certifications and hands-on implementation experience.
+        </p>
+        <p class="body-lg">
+          Whether you're evaluating technical leadership capabilities, assessing problem-solving approaches, or seeking architectural mentorship, this portfolio provides a transparent view into real-world architectural decision-making.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Expertise Areas / Domains Section -->
+  <section class="domains" id="domains">
+    <div class="container">
+      <h2>Architecture Domains</h2>
+      <p class="domains-intro body-lg">
+        Expertise organized across four core architecture domains, each with its own patterns, case studies, and skill progression.
+      </p>
+      <div class="domains-grid">
+        <DomainCard
+          domain="frontend"
+          title="Frontend Architecture"
+          description="Component patterns, state management strategies, micro-frontends, and scalable UI systems for complex applications."
+        />
+        <DomainCard
+          domain="backend"
+          title="Backend Architecture"
+          description="Clean architecture, CQRS, hexagonal patterns, and API design principles for maintainable server-side systems."
+        />
+        <DomainCard
+          domain="data"
+          title="Data Pipeline Architecture"
+          description="Medallion architecture, schema-driven validation, pure functional pipelines, and reliable data transformation patterns."
+        />
+        <DomainCard
+          domain="infra"
+          title="Infrastructure & Platform"
+          description="Microservices orchestration, container platforms, infrastructure as code, and CI/CD pipeline design."
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- Approach Section -->
+  <section class="approach">
+    <div class="container">
+      <h2>How I Approach Architecture</h2>
+      <div class="approach-grid">
+        <div class="approach-card">
+          <h3>Pattern-Driven</h3>
+          <p>
+            Proven design patterns applied to real-world constraints. Each pattern is documented with complexity ratings, use cases, and production examples showing where it succeeded and where it didn't.
+          </p>
+        </div>
+        <div class="approach-card">
+          <h3>Domain-Focused</h3>
+          <p>
+            Expertise organized by architecture domain—frontend, backend, data pipelines, and infrastructure. Domain-specific patterns address unique challenges rather than forcing one-size-fits-all solutions.
+          </p>
+        </div>
+        <div class="approach-card">
+          <h3>Experience-Based</h3>
+          <p>
+            Skills backed by certifications and production systems. Case studies demonstrate architectural decisions in context, including constraints, trade-offs, and outcomes.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section class="contact">
+    <div class="container">
+      <h2>Connect</h2>
+      <p class="body-lg">
+        This portfolio is actively evolving. More patterns, case studies, and interactive visualizations coming soon.
+      </p>
+      <p class="contact-note">
+        Professional inquiries and collaboration opportunities welcome.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /* About Section */
+  .about {
+    background: var(--color-surface);
+  }
+
+  .about-content {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  /* Domains Section */
+  .domains {
+    padding: var(--space-3xl) 0;
+  }
+
+  .domains-intro {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto var(--space-2xl);
+    color: var(--color-text-secondary);
+  }
+
+  .domains-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-xl);
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 768px) {
+    .domains-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* Approach Section */
+  .approach {
+    background: var(--color-surface);
+  }
+
+  .approach-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 768px) {
+    .approach-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .approach-card {
+    padding: var(--space-lg);
+  }
+
+  .approach-card h3 {
+    color: var(--color-secondary);
+    margin-bottom: var(--space-sm);
+  }
+
+  .approach-card p {
+    color: var(--color-text-secondary);
+    line-height: var(--leading-relaxed);
+  }
+
+  /* Contact Section */
+  .contact {
+    text-align: center;
+  }
+
+  .contact-note {
+    margin-top: var(--space-lg);
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  /* Common Section Styles */
+  section h2 {
+    text-align: center;
+    margin-bottom: var(--space-xl);
+    color: var(--color-primary);
+  }
+</style>

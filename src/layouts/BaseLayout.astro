@@ -1,0 +1,32 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'Solution Architect Portfolio',
+  description = 'Design patterns, architecture experience, and real-world case studies from a career in software architecture.'
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Preload critical fonts -->
+    <link rel="preload" href="/fonts/crimson-pro-v13-latin-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/source-sans-3-v9-latin-400.woff2" as="font" type="font/woff2" crossorigin />
+
+    <title>{title}</title>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

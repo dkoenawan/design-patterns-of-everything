@@ -1,0 +1,45 @@
+---
+// Hero section component
+---
+
+<section class="hero">
+  <div class="container">
+    <h1 class="display">Design patterns for real-world architecture</h1>
+    <p class="body-lg hero-subtitle">
+      A career portfolio showcasing proven patterns, domain expertise, and production-tested solutions across frontend, backend, data pipeline, and infrastructure architecture.
+    </p>
+    <a href="#domains" class="btn btn-primary">Explore Architecture Domains</a>
+  </div>
+</section>
+
+<style>
+  .hero {
+    padding: var(--space-3xl) 0;
+    text-align: center;
+  }
+
+  .hero .display {
+    max-width: 900px;
+    margin: 0 auto var(--space-lg);
+    color: var(--color-primary);
+  }
+
+  .hero-subtitle {
+    max-width: 700px;
+    margin: 0 auto var(--space-xl);
+    color: var(--color-text-secondary);
+  }
+
+  .btn-primary {
+    background: var(--color-accent);
+    color: white;
+    padding: var(--space-md) var(--space-xl);
+    font-size: var(--text-body-lg);
+  }
+
+  @media (max-width: 640px) {
+    .hero {
+      padding: var(--space-2xl) 0;
+    }
+  }
+</style>
