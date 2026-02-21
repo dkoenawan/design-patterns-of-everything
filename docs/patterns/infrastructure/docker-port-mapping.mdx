@@ -1,0 +1,96 @@
+---
+title: "Docker Port Mapping"
+domain: infrastructure
+complexity: fundamentals
+tags: [docker, port-mapping, containerization, networking, isolation]
+summary: "Map container-internal ports to unique host ports to run multiple instances of the same service without conflicts"
+draft: true
+---
+
+## Summary
+
+Containers run services on their default internal ports. Docker's port-mapping flag (`-p host:container`) exposes each container to a unique port on the host, preventing conflicts when running multiple instances of the same service on one machine.
+
+## Problem
+
+Running two PostgreSQL instances on the same host fails immediately — both try to bind to port 5432. The same applies to any duplicated service (Redis on 6379, MySQL on 3306, etc.).
+
+- How do you run multiple instances of the same service on one host without reconfiguring the service itself?
+- How do you keep each container using its default internal port so tooling and documentation remain standard?
+- How do you ensure port assignments are predictable and documented?
+
+## Solution
+
+Map each container's internal port to a unique host port. The service inside the container stays on its default port; only the host-facing port changes.
+
+```yaml
+# docker-compose.yml
+services:
+  project_a_db:
+    image: postgres:16
+    ports:
+      - "5432:5432"   # host:container
+    volumes:
+      - project_a_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: project_a
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ${PROJECT_A_DB_PASSWORD}
+
+  project_b_db:
+    image: postgres:15
+    ports:
+      - "5433:5432"   # different host port, same internal port
+    volumes:
+      - project_b_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: project_b
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ${PROJECT_B_DB_PASSWORD}
+
+volumes:
+  project_a_data:
+  project_b_data:
+```
+
+Each container listens on 5432 internally — the standard PostgreSQL port. Docker maps that to a distinct host port. Clients connect to the host port:
+
+```bash
+# Connect to project A
+psql -h localhost -p 5432 -U admin -d project_a
+
+# Connect to project B
+psql -h localhost -p 5433 -U admin -d project_b
+```
+
+Document your port assignments to avoid collisions as the fleet grows:
+
+| Project   | Host Port | Internal Port | Image         |
+|-----------|-----------|---------------|---------------|
+| Project A | 5432      | 5432          | postgres:16   |
+| Project B | 5433      | 5432          | postgres:15   |
+| Project C | 5434      | 5432          | postgres:16   |
+
+## When to Use
+
+- Running multiple instances of the same service on a single host
+- Development or testing environments where each project needs its own database
+- Quick isolation without full orchestration overhead
+
+**Avoid when:**
+
+- You only need one instance of the service — just use the default port
+- Running in an orchestrated environment (Kubernetes, ECS) where the scheduler manages port allocation
+- The service supports virtual hosting or multiplexing (e.g., a single PostgreSQL instance with multiple logical databases may suffice)
+
+## Trade-offs
+
+| Benefit | Cost |
+|---|---|
+| Containers stay on service defaults — no internal reconfiguration | Host port assignments must be tracked manually |
+| Simple, well-understood Docker primitive | Port sprawl as the number of services grows |
+| Each container is independently startable and stoppable | Named volumes require cleanup discipline on teardown |
+
+## Related Patterns
+
+- [Multi-Database Orchestration](./multi-database-orchestration.mdx) — builds on port mapping to manage a full fleet of database containers with health checks, resource limits, and production readiness
