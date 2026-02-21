@@ -1,0 +1,175 @@
+---
+title: "Multi-Database Orchestration"
+domain: infrastructure
+complexity: core
+tags: [docker-compose, postgres, multi-tenant, database-isolation, orchestration, production-readiness]
+summary: "Manage multiple independent database instances on a single server with isolation, observability, and a path to production"
+draft: true
+---
+
+## Summary
+
+When multiple projects each need their own database, orchestrate them as independent containers with dedicated ports, volumes, networks, and health checks. This pattern covers the full lifecycle — from local development through production-grade hosting on a single server — and defines when to graduate to managed services.
+
+## Problem
+
+Running multiple databases on one server creates compounding operational challenges beyond simple port conflicts.
+
+- How do you isolate data, configuration, and PostgreSQL versions across projects?
+- How do you spin one project's database up or down without affecting others?
+- How do you prevent one runaway query from consuming all server resources?
+- How do you back up, monitor, and recover individual databases independently?
+- How do you transition from "it works on my server" to reliable production hosting?
+
+## Solution
+
+Use Docker Compose to define each database as an independent service with its own port, volume, health check, and resource constraints.
+
+```yaml
+# docker-compose.yml
+services:
+  project_a_db:
+    image: postgres:16
+    container_name: project_a_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - project_a_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: project_a
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ${PROJECT_A_DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d project_a"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    restart: unless-stopped
+
+  project_b_db:
+    image: postgres:15
+    container_name: project_b_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - project_b_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: project_b
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ${PROJECT_B_DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d project_b"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    restart: unless-stopped
+
+  project_c_db:
+    image: postgres:16
+    container_name: project_c_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - project_c_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: project_c
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ${PROJECT_C_DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d project_c"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+    restart: unless-stopped
+
+volumes:
+  project_a_data:
+  project_b_data:
+  project_c_data:
+```
+
+### Key mechanics
+
+**Independent lifecycle** — Start or stop any single database without touching the others:
+
+```bash
+docker compose up -d project_a_db       # start one
+docker compose stop project_b_db        # stop one without removing data
+docker compose down -v --remove-orphans  # tear down everything (careful: -v deletes volumes)
+```
+
+**Health checks** — `pg_isready` confirms the database is accepting connections, not just that the container is running. Dependent services can use `depends_on` with `condition: service_healthy`.
+
+**Resource limits** — Prevent any single database from monopolizing server memory or CPU. Size limits based on the project's needs — a lightweight staging database might need 256M while a heavier workload gets 512M.
+
+**Connection strings** — Each project's application connects via its assigned host port:
+
+```
+# .env per project
+DATABASE_URL=postgresql://admin:password@host:5432/project_a
+DATABASE_URL=postgresql://admin:password@host:5433/project_b
+DATABASE_URL=postgresql://admin:password@host:5434/project_c
+```
+
+### Production readiness checklist
+
+**Backups** — Schedule per-database backups using `pg_dump` executed inside each container:
+
+```bash
+docker exec project_a_db pg_dump -U admin project_a > backup_a_$(date +%F).sql
+```
+
+**Connection pooling** — For production workloads, add PgBouncer as a sidecar container per database or as a shared pooler to manage connection limits and reduce PostgreSQL backend pressure.
+
+**Monitoring** — Use Docker's built-in health status (`docker inspect --format='{{.State.Health.Status}}'`) and export metrics to your monitoring stack. Container-level CPU and memory usage is visible via `docker stats`.
+
+**When to graduate** — Move to managed databases (RDS, Cloud SQL) or Kubernetes StatefulSets when you need:
+
+- Automated failover and high availability
+- Point-in-time recovery beyond manual pg_dump
+- More databases than your single server can resource
+- Multi-region replication
+
+## When to Use
+
+- Multiple independent projects sharing a single development, staging, or small-scale production server
+- Projects requiring different PostgreSQL versions or configurations
+- Need to start and stop individual databases without affecting others
+- Environments where managed database services are not justified by scale or budget
+
+**Avoid when:**
+
+- A single PostgreSQL instance with multiple logical databases provides sufficient isolation
+- Running at scale where managed database services (RDS, Cloud SQL) are more appropriate
+- Full orchestration (Kubernetes) is already in place — use StatefulSets and operators instead
+
+## Trade-offs
+
+| Benefit | Cost |
+|---|---|
+| Full isolation per project (data, config, version) | Higher memory overhead (~100MB+ per PostgreSQL container) |
+| Independent lifecycle — spin up/down without side effects | Port and resource allocation must be tracked and managed |
+| Version flexibility across projects | More Docker images to pull and maintain |
+| Reproducible via a single compose file | No built-in high availability or automatic failover |
+| Simple per-database backups | Backup scheduling and rotation is your responsibility |
+
+## Related Patterns
+
+- [Docker Port Mapping](./docker-port-mapping.mdx) — the foundational technique this pattern builds on for host port allocation
+- [Dependency Injection](../backend/dependency-injection.mdx) — connection strings are injected per environment, decoupling application code from infrastructure specifics
+- [Hexagonal Architecture](../backend/hexagonal-architecture.mdx) — the database is an adapter behind a port, making it straightforward to swap between local containers and managed services
