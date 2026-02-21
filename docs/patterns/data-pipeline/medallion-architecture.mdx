@@ -1,0 +1,67 @@
+---
+title: "Medallion Architecture"
+domain: data-pipeline
+complexity: expert
+tags: [lakehouse, bronze-silver-gold, data-quality, incremental, delta-lake]
+summary: "Progressively refine raw data through Bronze, Silver, and Gold layers to ensure quality and reusability"
+draft: true
+---
+
+## Summary
+
+Medallion Architecture organizes a data lakehouse into three progressive refinement layers — Bronze (raw ingestion), Silver (cleansed and conformed), and Gold (business-ready aggregates). Each layer has a defined contract for data quality, enabling downstream consumers to trust the data they use without re-engineering upstream pipelines.
+
+## Problem
+
+Raw data from source systems is messy: schema drift, nulls, duplicates, inconsistent types, and mixed grain. Processing it repeatedly for different consumers leads to duplicated logic, inconsistent results, and fragile pipelines.
+
+- How do you preserve raw data for reprocessing while serving clean data to consumers?
+- How do you enforce quality gates without blocking ingestion?
+- How do you build domain-level aggregates that multiple teams can trust?
+
+## Solution
+
+Divide the data lake into three named zones with clear contracts:
+
+```
+Source Systems
+     │
+     ▼
+[ Bronze Layer ]   — Raw, unmodified ingestion. Schema-on-read. Append-only.
+     │
+     ▼
+[ Silver Layer ]   — Cleansed, deduped, typed, joined. Row-level quality enforced.
+     │
+     ▼
+[ Gold Layer ]     — Business aggregates, KPIs, domain models. Query-optimized.
+```
+
+- **Bronze**: Ingest exactly as received. Preserve original records for auditability and reprocessing.
+- **Silver**: Apply schema validation, deduplication, type casting, and referential joins. One record = one business entity.
+- **Gold**: Aggregate, denormalize, and shape data for specific analytical or operational consumers.
+
+## When to Use
+
+- Data lakehouses built on Delta Lake, Apache Iceberg, or similar open table formats
+- Organizations with multiple downstream consumers needing consistent, trusted data
+- Pipelines requiring reprocessability (ability to rerun Silver/Gold from raw Bronze)
+- Regulatory environments requiring full audit trails of raw data
+
+**Avoid when:**
+
+- Small-scale ETL with a single well-understood source and consumer — layers add overhead
+- Real-time streaming with sub-second SLAs — the batch layering model may not fit
+
+## Trade-offs
+
+| Benefit | Cost |
+|---|---|
+| Raw data preserved for full reprocessing | Storage costs increase (data stored at multiple stages) |
+| Quality enforced at well-defined checkpoints | Latency added by multi-stage processing |
+| Gold layer trusted by all consumers without re-derivation | Schema evolution must be managed across all layers |
+| Failures isolated to a layer — Bronze intact even if Silver fails | Requires disciplined ownership of layer boundaries |
+
+## Related Patterns
+
+- [Schema-Driven Validation](./schema-driven-validation.mdx) — Applied at the Bronze-to-Silver transition to enforce quality
+- [Pure Functions](./pure-functions.mdx) — Silver and Gold transformations benefit from pure, deterministic logic

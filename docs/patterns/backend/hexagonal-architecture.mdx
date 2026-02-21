@@ -1,0 +1,65 @@
+---
+title: "Hexagonal Architecture"
+domain: backend
+complexity: advanced
+tags: [ports-and-adapters, clean-architecture, testability, decoupling]
+summary: "Isolate application core logic from external dependencies using ports and adapters"
+draft: true
+---
+
+## Summary
+
+Hexagonal Architecture (also called Ports and Adapters) structures an application so that the core domain logic is entirely independent of external systems — databases, APIs, UIs, and messaging infrastructure. External interactions flow through defined ports (interfaces) and are wired up via adapters at runtime.
+
+## Problem
+
+Application logic becomes tightly coupled to infrastructure concerns: database queries embedded in business logic, HTTP transport leaking into domain models, testing requiring live external services.
+
+- How do you test business logic without a real database?
+- How do you swap a REST API for a message queue without rewriting the core?
+- How do you prevent delivery mechanism concerns from polluting domain code?
+
+## Solution
+
+Define the application core as a set of **ports** — interfaces that describe what the application needs (driven/secondary ports) or what it exposes to callers (driving/primary ports). **Adapters** implement those interfaces and translate between the external world and the application.
+
+```
+         [ UI Adapter ]   [ CLI Adapter ]
+                  \           /
+              [ Primary Port (inbound) ]
+                       |
+              [ Application Core ]
+                       |
+              [ Secondary Port (outbound) ]
+                  /           \
+         [ DB Adapter ]   [ HTTP Adapter ]
+```
+
+The core contains use cases and domain logic. It never imports adapters. Adapters import the core and implement or call its ports.
+
+## When to Use
+
+- Applications with complex business logic that must be unit-tested in isolation
+- Systems that need to support multiple delivery mechanisms (REST, GraphQL, CLI, event-driven)
+- Projects expecting to swap infrastructure components (e.g., migrating databases)
+- Teams enforcing strict separation between domain and technical concerns
+
+**Avoid when:**
+
+- CRUD-heavy applications with minimal domain logic — the abstraction overhead outweighs the benefit
+- Small services where the complexity of ports/adapters isn't justified
+
+## Trade-offs
+
+| Benefit | Cost |
+|---|---|
+| Core logic is fully unit-testable without infrastructure | More boilerplate: interfaces, adapters, wiring |
+| Infrastructure is swappable without touching domain code | Indirection can make control flow harder to trace |
+| Clear dependency direction enforced by structure | Requires discipline to avoid leaking adapters into core |
+| Supports parallel development (core vs. adapters) | Initial setup cost is higher than layered architecture |
+
+## Related Patterns
+
+- [Dependency Injection](./dependency-injection.mdx) — The mechanism used to wire adapters into ports at runtime
+- [Strategy Pattern](./strategy-pattern.mdx) — Ports are essentially named strategy interfaces
+- [Clean Architecture](../_template.mdx) — Hexagonal is one concrete expression of clean architecture principles

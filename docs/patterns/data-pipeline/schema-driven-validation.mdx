@@ -1,0 +1,67 @@
+---
+title: "Schema-Driven Validation"
+domain: data-pipeline
+complexity: core
+tags: [data-quality, contracts, pandera, great-expectations, pydantic, validation]
+summary: "Declare data expectations as schemas and validate data against them rather than writing imperative checks"
+draft: true
+---
+
+## Summary
+
+Schema-Driven Validation encodes data expectations — types, nullability, value ranges, referential constraints — as explicit schema definitions. Data is validated against the schema automatically, separating the declaration of what is valid from the logic that checks it. Violations surface as structured errors rather than silent corruption.
+
+## Problem
+
+Imperative validation (`if column is null`, `if value not in set`) is scattered, hard to audit, and silently fails to cover edge cases. As data volumes and sources grow, ad-hoc checks become unmaintainable and incomplete.
+
+- How do you ensure every column is validated consistently across all pipeline runs?
+- How do you communicate data contracts to upstream producers?
+- How do you catch schema drift (source system adds/removes columns) automatically?
+
+## Solution
+
+Define a schema object that describes the expected structure and constraints. Pass data through the schema validator; handle pass/fail at the pipeline boundary.
+
+```python
+import pandera as pa
+
+order_schema = pa.DataFrameSchema({
+    "order_id":   pa.Column(str,   nullable=False, unique=True),
+    "total":      pa.Column(float, pa.Check.greater_than(0)),
+    "status":     pa.Column(str,   pa.Check.isin(["pending", "complete", "cancelled"])),
+    "created_at": pa.Column(pa.DateTime, nullable=False),
+})
+
+# Validation is declarative and automatic
+validated_df = order_schema.validate(raw_df)  # raises SchemaError on failure
+```
+
+Schemas serve as living documentation of data contracts. They can be versioned, shared with upstream teams, and used to generate synthetic test data.
+
+## When to Use
+
+- Bronze-to-Silver transitions in a Medallion Architecture — validate before promoting data
+- Any pipeline that accepts data from external sources (APIs, upstream teams, user uploads)
+- Teams that need to communicate data contracts formally
+- Anywhere silent data corruption is more dangerous than a failed pipeline run
+
+**Avoid when:**
+
+- Schema-free document stores where structure is intentionally variable — validate at the application layer instead
+- Extremely high-throughput streaming where per-record validation overhead is prohibitive (validate samples instead)
+
+## Trade-offs
+
+| Benefit | Cost |
+|---|---|
+| Expectations are explicit, auditable, and version-controlled | Schema must be maintained as data evolves |
+| Violations surface immediately with structured error detail | Strict schemas can break on legitimate upstream changes |
+| Schemas serve as documentation and contracts | Teams must align on schema governance process |
+| Enables automated quality reporting | Adds a validation step to pipeline runtime |
+
+## Related Patterns
+
+- [Pure Functions](./pure-functions.mdx) — Validation logic should be a pure function: data in, result out
+- [Medallion Architecture](./medallion-architecture.mdx) — Schema validation is the quality gate at the Bronze-to-Silver boundary
+- [Dependency Injection](../backend/dependency-injection.mdx) — Schema objects can be injected to allow environment-specific validation rules

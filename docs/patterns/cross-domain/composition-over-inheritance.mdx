@@ -1,0 +1,78 @@
+---
+title: "Composition Over Inheritance"
+domain: cross-domain
+complexity: core
+tags: [solid, flexibility, reuse, delegation, mixins]
+summary: "Build complex behavior by combining small, focused components rather than extending class hierarchies"
+draft: true
+---
+
+## Summary
+
+Composition Over Inheritance is a design principle that favors assembling behavior from small, independent components over building deep inheritance hierarchies. Inherited behavior is implicit and hard to change; composed behavior is explicit, targeted, and independently testable.
+
+## Problem
+
+Deep inheritance chains couple subclasses to the internal structure of parent classes. Changes to base classes ripple through the entire hierarchy. Behavior cannot be mixed and matched across subtypes without violating the hierarchy.
+
+- How do you reuse `Serializable` behavior in a class that already extends `BaseEntity`?
+- Why does fixing a bug in `Animal.move()` break `FlyingAnimal`, `SwimmingAnimal`, and `RunningAnimal`?
+- How do you share behavior between two classes that have no meaningful "is-a" relationship?
+
+## Solution
+
+Delegate behavior to injected or composed collaborators rather than inheriting it.
+
+```typescript
+// Inheritance — rigid, coupled
+class FlyingFishAnimal extends SwimmingAnimal {
+  // forced to pick one base; flying behavior must be duplicated or hacked in
+}
+
+// Composition — flexible, explicit
+interface Swimmer { swim(): void; }
+interface Flier   { fly(): void; }
+
+class Fish implements Swimmer {
+  swim() { console.log("swimming"); }
+}
+
+class FlyingFish {
+  constructor(
+    private swimmer: Swimmer,
+    private flier: Flier
+  ) {}
+
+  swim() { this.swimmer.swim(); }
+  fly()  { this.flier.fly(); }
+}
+```
+
+Each capability is a focused, independently testable unit. `FlyingFish` can combine them without inheriting from either.
+
+## When to Use
+
+- When behavior needs to be reused across classes that don't share a meaningful "is-a" relationship
+- When a class hierarchy is growing beyond 2–3 levels
+- When you need runtime flexibility to swap behaviors (often combined with Strategy Pattern)
+- When inherited behavior is being overridden to do nothing — a sign the hierarchy is wrong
+
+**Avoid when:**
+
+- A genuine "is-a" relationship exists and the parent class is stable (e.g., value types extending a base value object)
+- Composition creates excessive boilerplate for simple, stable hierarchies
+
+## Trade-offs
+
+| Benefit | Cost |
+|---|---|
+| Behavior is explicit — you can see exactly what a class does | More wiring and delegation boilerplate |
+| Capabilities are independently testable and reusable | Can require more files and interfaces |
+| No fragile base class problem — changes are localized | Requires discipline to avoid deep composition chains |
+| Runtime behavior can be varied without subclassing | Discoverability can be harder than method inheritance |
+
+## Related Patterns
+
+- [Strategy Pattern](../backend/strategy-pattern.mdx) — The behavioral pattern most directly enabled by composition
+- [Dependency Injection](../backend/dependency-injection.mdx) — The mechanism for injecting composed behaviors
+- [Single Responsibility](./single-responsibility.mdx) — Composed units should each have a single responsibility
