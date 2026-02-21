@@ -1,0 +1,69 @@
+---
+title: "Single Responsibility Principle"
+domain: cross-domain
+complexity: fundamentals
+tags: [solid, cohesion, separation-of-concerns, maintainability]
+summary: "A module, class, or function should have one reason to change"
+draft: true
+---
+
+## Summary
+
+The Single Responsibility Principle (SRP) states that a unit of code — function, class, module — should encapsulate one concern and have only one reason to change. When a component owns multiple concerns, changes to one can inadvertently break the other, making the system harder to evolve safely.
+
+## Problem
+
+Classes and functions that do too much become magnets for unrelated changes. A `UserService` that handles authentication, profile updates, email notifications, and audit logging will be modified by four different teams for four different reasons — each change carrying risk to the others.
+
+- Why does changing the email template require modifying the authentication class?
+- Why do unrelated test failures appear when fixing a profile update bug?
+- Why is this class impossible to unit-test without mocking six dependencies?
+
+## Solution
+
+Identify distinct reasons a unit might change — different business concerns, different rates of change, different stakeholders — and split them into separate units.
+
+```typescript
+// Too many responsibilities
+class UserService {
+  authenticate(credentials) { ... }
+  updateProfile(user, data) { ... }
+  sendWelcomeEmail(user) { ... }       // email concern
+  logAuditEvent(user, action) { ... }  // audit concern
+}
+
+// Separated responsibilities
+class AuthService      { authenticate(credentials) { ... } }
+class UserProfileService { updateProfile(user, data) { ... } }
+class EmailService     { sendWelcomeEmail(user) { ... } }
+class AuditService     { logEvent(user, action) { ... } }
+```
+
+Each service can now evolve, be tested, and be deployed independently.
+
+## When to Use
+
+- Any class that is difficult to name without using "and" (e.g., `UserAuthAndNotificationService`)
+- Code that is changed frequently by multiple teams or for multiple unrelated reasons
+- Components with many dependencies — often a sign of too many responsibilities
+- As a default heuristic when designing new components
+
+**Avoid when:**
+
+- Over-splitting creates fragmented micro-classes with no real cohesion — use judgment to find the right granularity
+- Splitting is premature before patterns of change are visible in the codebase
+
+## Trade-offs
+
+| Benefit | Cost |
+|---|---|
+| Changes are localized — lower risk of unintended side effects | More files and classes to navigate |
+| Each unit is independently testable | Increased coordination between components at call sites |
+| Clear ownership — one team/domain per component | Can lead to over-engineering if applied too early |
+| Code is easier to reason about in isolation | Requires good naming and organization to avoid confusion |
+
+## Related Patterns
+
+- [Hexagonal Architecture](../backend/hexagonal-architecture.mdx) — Architectural application of SRP: domain, ports, adapters each have one concern
+- [Pure Functions](../data-pipeline/pure-functions.mdx) — Function-level SRP: transform only, no I/O
+- [Composition Over Inheritance](./composition-over-inheritance.mdx) — Composing single-responsibility units is preferable to inheriting mixed concerns

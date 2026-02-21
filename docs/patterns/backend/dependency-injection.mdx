@@ -1,0 +1,70 @@
+---
+title: "Dependency Injection"
+domain: backend
+complexity: core
+tags: [ioc, inversion-of-control, testability, decoupling, composition]
+summary: "Provide dependencies to a component from the outside rather than constructing them internally"
+draft: true
+---
+
+## Summary
+
+Dependency Injection (DI) is a technique where a component receives its dependencies as constructor arguments, method parameters, or via a container — rather than instantiating them itself. It is the practical implementation of the Dependency Inversion Principle and a core enabler of testable, loosely coupled code.
+
+## Problem
+
+When a class creates its own dependencies (`new DatabaseConnection()`), it becomes tightly coupled to that specific implementation. Changing the implementation, testing in isolation, or composing behavior becomes difficult.
+
+- How do you test a service that creates a live database connection internally?
+- How do you swap a real email service for a mock in tests without modifying production code?
+- How do you manage shared infrastructure (connection pools, config) across many services?
+
+## Solution
+
+Declare dependencies as constructor parameters typed to interfaces, not concrete classes. The caller — or a DI container — is responsible for constructing and passing the dependencies.
+
+```typescript
+// Without DI — tightly coupled
+class OrderService {
+  private db = new PostgresDatabase(); // concrete, not swappable
+}
+
+// With DI — depends on abstraction
+class OrderService {
+  constructor(private db: Database) {} // interface, injectable
+}
+
+// Wired externally
+const service = new OrderService(new PostgresDatabase());
+// or in tests:
+const service = new OrderService(new InMemoryDatabase());
+```
+
+DI containers (e.g., tsyringe, Spring, .NET's built-in DI) automate the wiring based on type metadata or configuration.
+
+## When to Use
+
+- Any class that interacts with infrastructure (databases, HTTP clients, message brokers)
+- Services that need to be unit-tested with mock or stub collaborators
+- Applications with multiple environments requiring different implementations (dev vs. prod)
+- Systems where the same abstraction needs multiple implementations (e.g., multiple storage backends)
+
+**Avoid when:**
+
+- Pure functions and value objects — they have no dependencies to inject
+- Simple scripts where the overhead of abstraction adds no value
+
+## Trade-offs
+
+| Benefit | Cost |
+|---|---|
+| Classes are unit-testable with mock dependencies | Wiring configuration adds indirection |
+| Dependencies are explicit and visible at the call site | DI containers have learning curves and can hide complexity |
+| Implementations are swappable without changing consumers | Over-abstraction risk: not every collaborator needs an interface |
+| Enforces Dependency Inversion Principle by default | Magic DI containers can make debugging harder |
+
+## Related Patterns
+
+- [Hexagonal Architecture](./hexagonal-architecture.mdx) — DI is how adapters are wired into ports
+- [Strategy Pattern](./strategy-pattern.mdx) — Injecting different strategies is a common DI use case
+- [Single Responsibility](../cross-domain/single-responsibility.mdx) — DI makes it easier to keep classes focused by externalizing infrastructure concerns

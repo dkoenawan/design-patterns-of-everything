@@ -1,0 +1,75 @@
+---
+title: "Strategy Pattern"
+domain: backend
+complexity: core
+tags: [behavioral, open-closed, composition, polymorphism]
+summary: "Define a family of algorithms behind a common interface and make them interchangeable at runtime"
+draft: true
+---
+
+## Summary
+
+The Strategy Pattern defines a set of interchangeable behaviors (strategies) behind a shared interface. The consuming class delegates to whichever strategy is injected, enabling behavior to vary without modifying the class itself. It is the behavioral realization of the Open/Closed Principle.
+
+## Problem
+
+Conditional logic that selects between multiple algorithms or behaviors tends to grow. Each new case requires modifying existing code, increasing risk and complexity.
+
+- How do you add a new payment processor without touching the checkout flow?
+- How do you support multiple sorting algorithms without a chain of `if/else`?
+- How do you allow runtime selection of behavior without open-ended switch statements?
+
+## Solution
+
+Extract each algorithm or behavior variant into its own class that implements a shared interface. The context class holds a reference to the interface and delegates to it.
+
+```typescript
+interface ShippingStrategy {
+  calculateCost(order: Order): number;
+}
+
+class StandardShipping implements ShippingStrategy {
+  calculateCost(order: Order) { return order.weight * 2.5; }
+}
+
+class ExpressShipping implements ShippingStrategy {
+  calculateCost(order: Order) { return order.weight * 5.0 + 10; }
+}
+
+class OrderService {
+  constructor(private shipping: ShippingStrategy) {}
+
+  getTotal(order: Order) {
+    return order.subtotal + this.shipping.calculateCost(order);
+  }
+}
+```
+
+Strategies are swapped via constructor injection or a setter. The context code never changes when new strategies are added.
+
+## When to Use
+
+- Multiple variants of an algorithm that need to be selected at runtime or configuration time
+- Replacing conditional branching (`if/else`, `switch`) that selects between implementations
+- When the Open/Closed Principle is important — adding behavior without modifying existing code
+- Payment processors, sorting algorithms, export formats, notification channels
+
+**Avoid when:**
+
+- There is only one algorithm and no foreseeable variation — abstraction is premature
+- The strategies share significant state or setup that makes extraction awkward
+
+## Trade-offs
+
+| Benefit | Cost |
+|---|---|
+| New behaviors added without modifying existing code | More classes/files to manage |
+| Each strategy is independently testable | Callers must be aware of available strategies |
+| Eliminates conditional logic from context class | Can feel like over-engineering for simple cases |
+| Strategies are composable (wrap one in another) | Interface must be stable — changing it touches all implementations |
+
+## Related Patterns
+
+- [Dependency Injection](./dependency-injection.mdx) — The mechanism for delivering strategies to context classes
+- [Composition Over Inheritance](../cross-domain/composition-over-inheritance.mdx) — Strategy is a key pattern that favors composition
+- [Hexagonal Architecture](./hexagonal-architecture.mdx) — Ports are strategy interfaces applied at the architectural scale

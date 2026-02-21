@@ -1,0 +1,69 @@
+---
+title: "Pure Functions"
+domain: data-pipeline
+complexity: core
+tags: [functional, determinism, testability, idempotency, immutability]
+summary: "Write transformations as functions with no side effects and deterministic outputs"
+draft: true
+---
+
+## Summary
+
+A pure function always produces the same output for the same input and has no observable side effects — no database writes, no external API calls, no mutation of shared state. In data pipelines, applying this principle to transformation logic dramatically improves testability, composability, and reproducibility.
+
+## Problem
+
+Pipeline transformations that mix computation with I/O are difficult to test, reason about, and reuse. A function that reads from a database, transforms data, and writes results is doing three jobs and cannot be safely re-executed or unit-tested without infrastructure.
+
+- How do you unit-test a transformation without a running Spark cluster or database?
+- How do you guarantee that rerunning a pipeline step produces the same result?
+- How do you compose small transformations into complex pipelines without coupling them?
+
+## Solution
+
+Separate transformation logic from I/O. Transformations take data in, return data out, and touch nothing else.
+
+```python
+# Impure — reads and writes mixed with logic
+def process_orders(conn):
+    orders = conn.execute("SELECT * FROM orders").fetchall()
+    result = [o for o in orders if o['total'] > 100]
+    conn.execute("INSERT INTO high_value_orders VALUES ...", result)
+
+# Pure — just the transformation
+def filter_high_value(orders: list[dict], threshold: float) -> list[dict]:
+    return [o for o in orders if o['total'] > threshold]
+
+# I/O happens at the boundary, separately
+orders = read_orders(conn)
+high_value = filter_high_value(orders, threshold=100.0)
+write_orders(conn, high_value)
+```
+
+The transformation `filter_high_value` is trivially unit-testable, composable, and deterministic.
+
+## When to Use
+
+- Any data transformation logic: filtering, mapping, aggregating, joining, reshaping
+- Pipeline steps that need to be unit-tested without infrastructure
+- Transformations intended to be reused across multiple pipeline stages
+- Anywhere reproducibility and idempotency are requirements
+
+**Avoid when:**
+
+- The operation is inherently stateful or I/O-bound (e.g., deduplication using a lookup table) — isolate the I/O, keep the comparison logic pure
+
+## Trade-offs
+
+| Benefit | Cost |
+|---|---|
+| Unit-testable with simple data fixtures — no mocks needed | Requires architectural discipline to push I/O to boundaries |
+| Deterministic: same input always gives same output | Can feel unnatural when the natural framing is stateful |
+| Composable: pipe outputs of one function into another | Large intermediate datasets may have memory implications |
+| Parallelizable: pure functions are inherently safe to run concurrently | — |
+
+## Related Patterns
+
+- [Schema-Driven Validation](./schema-driven-validation.mdx) — Validation is a pure transformation: data in, valid/invalid out
+- [Medallion Architecture](./medallion-architecture.mdx) — Silver and Gold transformations should be pure functions over Bronze data
+- [Single Responsibility](../cross-domain/single-responsibility.mdx) — Pure functions are the function-level expression of single responsibility
