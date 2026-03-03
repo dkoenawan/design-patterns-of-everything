@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solution Architect Portfolio — Brand Showcase</title>
+
+  <!-- Google Fonts: Cormorant Garamond + Inter + JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* =====================================================
+       BRAND TOKENS
+       ===================================================== */
+    :root {
+      /* Primary — Cosmic Indigo */
+      --color-primary-h: 238;
+      --color-primary-s: 37%;
+      --color-primary-l: 16%;
+      --color-primary: hsl(238 37% 16%);
+
+      /* Secondary — Stellar Amber */
+      --color-secondary-h: 38;
+      --color-secondary-s: 63%;
+      --color-secondary-l: 47%;
+      --color-secondary: hsl(38 63% 47%);
+
+      /* Accent — Nebula White */
+      --color-accent: hsl(234 47% 93%);
+
+      /* Domain accents */
+      --color-domain-frontend: hsl(174 60% 51%);
+      --color-domain-backend:  hsl(38 92% 50%);
+      --color-domain-data:     hsl(258 89% 76%);
+      --color-domain-infra:    hsl(213 93% 68%);
+
+      /* Neutrals */
+      --color-bg:             hsl(237 44% 7%);
+      --color-surface:        hsl(238 41% 12%);
+      --color-surface-raised: hsl(237 35% 18%);
+      --color-border:         hsl(236 32% 24%);
+      --color-border-bright:  hsl(236 32% 35%);
+      --color-text:           hsl(234 47% 93%);
+      --color-text-secondary: hsl(231 36% 73%);
+      --color-text-muted:     hsl(232 22% 46%);
+
+      /* Typography */
+      --font-heading: 'Cormorant Garamond', 'Georgia', serif;
+      --font-body:    'Inter', system-ui, sans-serif;
+      --font-mono:    'JetBrains Mono', ui-monospace, monospace;
+
+      /* Type Scale — Perfect Fourth (1.333×) */
+      --text-display: 5.16rem;
+      --text-h1:      3.88rem;
+      --text-h2:      2.91rem;
+      --text-h3:      2.18rem;
+      --text-h4:      1.64rem;
+      --text-body-lg: 1.23rem;
+      --text-body:    1rem;
+      --text-body-sm: 0.875rem;
+      --text-caption: 0.75rem;
+
+      /* Spacing */
+      --space-xs:  0.25rem;
+      --space-sm:  0.5rem;
+      --space-md:  1rem;
+      --space-lg:  2rem;
+      --space-xl:  4rem;
+      --space-2xl: 8rem;
+
+      /* Component */
+      --radius-sm:   2px;
+      --radius-md:   4px;
+      --radius-lg:   6px;
+      --radius-full: 9999px;
+
+      --transition-fast:   120ms cubic-bezier(0.16, 1, 0.3, 1);
+      --transition-normal: 300ms cubic-bezier(0.16, 1, 0.3, 1);
+      --transition-slow:   500ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* =====================================================
+       RESET & BASE
+       ===================================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-body);
+      font-size: var(--text-body);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* =====================================================
+       STAR FIELD CANVAS — THE SIGNATURE VISUAL
+       ===================================================== */
+    #star-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* =====================================================
+       LAYOUT
+       ===================================================== */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 var(--space-lg);
+      position: relative;
+      z-index: 1;
+    }
+
+    section {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* =====================================================
+       HERO
+       ===================================================== */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding: var(--space-2xl) var(--space-lg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-content {
+      max-width: 800px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-overline {
+      font-family: var(--font-body);
+      font-size: var(--text-caption);
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--color-secondary);
+      margin-bottom: var(--space-md);
+      opacity: 0;
+      animation: rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+    }
+
+    .hero-name {
+      font-family: var(--font-heading);
+      font-size: clamp(3rem, 10vw, var(--text-display));
+      font-weight: 300;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      color: var(--color-text);
+      margin-bottom: var(--space-md);
+      text-shadow: 0 0 60px hsla(234 47% 93% / 0.15);
+      opacity: 0;
+      animation: rise 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+    }
+
+    .hero-name em {
+      font-style: italic;
+      color: hsl(38 63% 60%);
+      text-shadow: 0 0 40px hsla(38 63% 47% / 0.3);
+    }
+
+    .hero-tagline {
+      font-family: var(--font-body);
+      font-size: var(--text-body-lg);
+      color: var(--color-text-secondary);
+      max-width: 520px;
+      line-height: 1.6;
+      margin-bottom: var(--space-xl);
+      opacity: 0;
+      animation: rise 1s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: var(--space-md);
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: rise 1s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both;
+    }
+
+    /* Constellation lines emanating from hero */
+    .hero-constellation {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 50%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0;
+      animation: fade 2s ease 1.5s both;
+    }
+
+    /* =====================================================
+       BUTTONS
+       ===================================================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: 0.75rem 1.5rem;
+      font-family: var(--font-body);
+      font-size: var(--text-body-sm);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      text-decoration: none;
+      border-radius: var(--radius-md);
+      transition: all var(--transition-normal);
+      cursor: pointer;
+      border: none;
+      outline: none;
+    }
+
+    .btn:focus-visible {
+      outline: 1px solid var(--color-accent);
+      outline-offset: 3px;
+    }
+
+    .btn-primary {
+      background: var(--color-secondary);
+      color: hsl(237 44% 7%);
+    }
+
+    .btn-primary:hover {
+      background: hsl(38 63% 57%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px hsla(38 63% 47% / 0.4);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--color-text-secondary);
+      border: 1px solid var(--color-border);
+    }
+
+    .btn-ghost:hover {
+      color: var(--color-text);
+      border-color: var(--color-border-bright);
+      transform: translateY(-2px);
+    }
+
+    /* =====================================================
+       SECTION TYPOGRAPHY
+       ===================================================== */
+    .section-label {
+      font-size: var(--text-caption);
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-secondary);
+      margin-bottom: var(--space-md);
+    }
+
+    .section-heading {
+      font-family: var(--font-heading);
+      font-size: clamp(2rem, 5vw, var(--text-h2));
+      font-weight: 400;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      color: var(--color-text);
+      margin-bottom: var(--space-lg);
+    }
+
+    .section-body {
+      font-size: var(--text-body-lg);
+      color: var(--color-text-secondary);
+      line-height: 1.7;
+      max-width: 640px;
+    }
+
+    /* =====================================================
+       DIVIDER
+       ===================================================== */
+    .divider {
+      position: relative;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--color-border) 20%,
+        var(--color-border-bright) 50%,
+        var(--color-border) 80%,
+        transparent 100%
+      );
+      margin: var(--space-2xl) 0;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--color-text-muted);
+    }
+    .divider::before { left: 20%; }
+    .divider::after  { right: 20%; }
+
+    /* =====================================================
+       TYPOGRAPHY SPECIMEN
+       ===================================================== */
+    .type-section {
+      padding: var(--space-2xl) var(--space-lg);
+    }
+
+    .type-specimen {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+    }
+
+    .type-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      align-items: baseline;
+      gap: var(--space-lg);
+      padding-bottom: var(--space-lg);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .type-row:last-child {
+      border-bottom: none;
+    }
+
+    .type-meta {
+      font-size: var(--text-caption);
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      padding-top: 0.4em;
+    }
+
+    .type-display-sample {
+      font-family: var(--font-heading);
+      font-size: clamp(2.5rem, 8vw, var(--text-display));
+      font-weight: 300;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      color: var(--color-text);
+    }
+
+    .type-h1-sample {
+      font-family: var(--font-heading);
+      font-size: clamp(2rem, 6vw, var(--text-h1));
+      font-weight: 400;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--color-text);
+    }
+
+    .type-h2-sample {
+      font-family: var(--font-heading);
+      font-size: clamp(1.5rem, 4vw, var(--text-h2));
+      font-weight: 400;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      color: var(--color-text);
+    }
+
+    .type-h3-sample {
+      font-family: var(--font-heading);
+      font-size: var(--text-h3);
+      font-weight: 500;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      color: var(--color-text);
+    }
+
+    .type-body-sample {
+      font-size: var(--text-body-lg);
+      line-height: 1.7;
+      color: var(--color-text-secondary);
+      max-width: 600px;
+    }
+
+    .type-mono-sample {
+      font-family: var(--font-mono);
+      font-size: var(--text-body-sm);
+      color: hsl(258 89% 80%);
+      background: var(--color-surface);
+      padding: var(--space-md) var(--space-lg);
+      border-radius: var(--radius-md);
+      border-left: 2px solid hsl(258 89% 76%);
+      line-height: 1.6;
+    }
+
+    /* =====================================================
+       COLOR PALETTE
+       ===================================================== */
+    .palette-section {
+      padding: var(--space-2xl) var(--space-lg);
+    }
+
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: var(--space-md);
+      margin-top: var(--space-xl);
+    }
+
+    .palette-swatch {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--color-border);
+      transition: transform var(--transition-normal),
+                  box-shadow var(--transition-normal);
+    }
+
+    .palette-swatch:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px hsla(238 37% 5% / 0.8);
+    }
+
+    .swatch-color {
+      height: 80px;
+    }
+
+    .swatch-info {
+      background: var(--color-surface);
+      padding: var(--space-sm) var(--space-md);
+    }
+
+    .swatch-name {
+      font-size: var(--text-body-sm);
+      font-weight: 500;
+      color: var(--color-text);
+      margin-bottom: 2px;
+    }
+
+    .swatch-hex {
+      font-family: var(--font-mono);
+      font-size: var(--text-caption);
+      color: var(--color-text-muted);
+    }
+
+    .palette-domain {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-md);
+      margin-top: var(--space-lg);
+    }
+
+    .domain-swatch {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-md);
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+    }
+
+    .domain-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .domain-label {
+      font-size: var(--text-body-sm);
+      font-weight: 500;
+      color: var(--color-text-secondary);
+    }
+
+    /* =====================================================
+       COMPONENT GALLERY
+       ===================================================== */
+    .component-section {
+      padding: var(--space-2xl) var(--space-lg);
+    }
+
+    .component-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--space-lg);
+      margin-top: var(--space-xl);
+    }
+
+    /* Pattern Card */
+    .pattern-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+      transition: transform var(--transition-normal),
+                  border-color var(--transition-normal),
+                  box-shadow var(--transition-normal);
+    }
+
+    .pattern-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--color-border-bright);
+      box-shadow: 0 8px 32px hsla(238 37% 5% / 0.8),
+                  0 0 0 1px hsla(236 32% 35% / 0.3);
+    }
+
+    .card-domain {
+      font-size: var(--text-caption);
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-sm);
+    }
+
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: var(--text-h4);
+      font-weight: 500;
+      line-height: 1.3;
+      color: var(--color-text);
+      margin-bottom: var(--space-sm);
+    }
+
+    .card-description {
+      font-size: var(--text-body-sm);
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+      margin-bottom: var(--space-lg);
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .complexity-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px;
+      border-radius: var(--radius-full);
+      font-size: var(--text-caption);
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .complexity-core {
+      background: hsla(142 70% 58% / 0.12);
+      color: hsl(142 70% 65%);
+      border: 1px solid hsla(142 70% 58% / 0.25);
+    }
+
+    .complexity-advanced {
+      background: hsla(38 63% 47% / 0.12);
+      color: hsl(38 63% 60%);
+      border: 1px solid hsla(38 63% 47% / 0.25);
+    }
+
+    .complexity-expert {
+      background: hsla(258 89% 76% / 0.12);
+      color: hsl(258 89% 76%);
+      border: 1px solid hsla(258 89% 76% / 0.25);
+    }
+
+    .card-link {
+      font-size: var(--text-body-sm);
+      font-weight: 500;
+      color: var(--color-text-muted);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+    }
+
+    .card-link:hover {
+      color: var(--color-secondary);
+    }
+
+    /* Input */
+    .input-demo {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .field-label {
+      font-size: var(--text-body-sm);
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      letter-spacing: 0.02em;
+    }
+
+    .field-input {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 0.625rem var(--space-md);
+      font-family: var(--font-body);
+      font-size: var(--text-body);
+      color: var(--color-text);
+      outline: none;
+      transition: border-color var(--transition-fast),
+                  box-shadow var(--transition-fast);
+    }
+
+    .field-input::placeholder {
+      color: var(--color-text-muted);
+    }
+
+    .field-input:focus {
+      border-color: var(--color-secondary);
+      box-shadow: 0 0 0 3px hsla(38 63% 47% / 0.15);
+    }
+
+    .field-input:hover:not(:focus) {
+      border-color: var(--color-border-bright);
+    }
+
+    /* Button group demo */
+    .button-demo {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+      align-items: center;
+    }
+
+    /* =====================================================
+       BRAND ESSENCE
+       ===================================================== */
+    .essence-section {
+      padding: var(--space-2xl) var(--space-lg);
+    }
+
+    .essence-pull {
+      font-family: var(--font-heading);
+      font-size: clamp(1.6rem, 4vw, var(--text-h3));
+      font-weight: 300;
+      font-style: italic;
+      line-height: 1.4;
+      color: var(--color-text);
+      border-left: 2px solid var(--color-secondary);
+      padding-left: var(--space-lg);
+      margin: var(--space-xl) 0;
+      max-width: 680px;
+    }
+
+    .essence-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: var(--space-lg);
+      margin-top: var(--space-xl);
+    }
+
+    .principle-item {
+      padding: var(--space-lg);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+
+    .principle-number {
+      font-family: var(--font-heading);
+      font-size: var(--text-h2);
+      font-weight: 300;
+      color: hsla(38 63% 47% / 0.3);
+      line-height: 1;
+      margin-bottom: var(--space-sm);
+    }
+
+    .principle-title {
+      font-size: var(--text-body);
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: var(--space-sm);
+    }
+
+    .principle-text {
+      font-size: var(--text-body-sm);
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+
+    /* =====================================================
+       NAV
+       ===================================================== */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: var(--space-md) var(--space-lg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: hsla(237 44% 7% / 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid hsla(236 32% 24% / 0.6);
+    }
+
+    .nav-brand {
+      font-family: var(--font-heading);
+      font-size: var(--text-h4);
+      font-weight: 400;
+      color: var(--color-text);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: var(--space-lg);
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: var(--text-body-sm);
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+    }
+
+    .nav-links a:hover {
+      color: var(--color-text);
+    }
+
+    /* =====================================================
+       SCROLL INDICATOR
+       ===================================================== */
+    .scroll-indicator {
+      position: absolute;
+      bottom: var(--space-xl);
+      left: var(--space-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--color-text-muted);
+      font-size: var(--text-caption);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0;
+      animation: fade 1s ease 2s both;
+    }
+
+    .scroll-line {
+      width: 32px;
+      height: 1px;
+      background: var(--color-text-muted);
+    }
+
+    /* =====================================================
+       SHOWCASE HEADER
+       ===================================================== */
+    .showcase-label {
+      position: fixed;
+      bottom: var(--space-md);
+      right: var(--space-md);
+      font-size: var(--text-caption);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      opacity: 0.5;
+      z-index: 100;
+    }
+
+    /* =====================================================
+       ANIMATIONS
+       ===================================================== */
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fade {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* =====================================================
+       RESPONSIVE
+       ===================================================== */
+    @media (max-width: 768px) {
+      .type-row {
+        grid-template-columns: 1fr;
+        gap: var(--space-sm);
+      }
+
+      .palette-domain {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .nav-links {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Star field canvas — the living backdrop -->
+  <canvas id="star-canvas"></canvas>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <a href="#" class="nav-brand">Architect&rsquo;s Compendium</a>
+    <ul class="nav-links">
+      <li><a href="#typography">Typography</a></li>
+      <li><a href="#palette">Palette</a></li>
+      <li><a href="#components">Components</a></li>
+      <li><a href="#essence">Essence</a></li>
+    </ul>
+  </nav>
+
+  <!-- =====================================================
+       HERO
+       ===================================================== -->
+  <section class="hero" id="home">
+    <div class="hero-content container">
+      <p class="hero-overline">Solution Architect Portfolio</p>
+
+      <h1 class="hero-name">
+        Systems that<br>
+        <em>endure.</em>
+      </h1>
+
+      <p class="hero-tagline">
+        Architecture is the craft of making right decisions early
+        so that thousands of smaller decisions make themselves.
+        This is the map.
+      </p>
+
+      <div class="hero-actions">
+        <a href="#" class="btn btn-primary">Explore Patterns</a>
+        <a href="#" class="btn btn-ghost">View Case Studies</a>
+      </div>
+    </div>
+
+    <!-- Constellation SVG overlay — drawn by JS -->
+    <svg class="hero-constellation" id="constellation-svg"
+         viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice"
+         xmlns="http://www.w3.org/2000/svg">
+    </svg>
+
+    <div class="scroll-indicator">
+      <span class="scroll-line"></span>
+      <span>Brand showcase</span>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="divider"></div>
+  </div>
+
+  <!-- =====================================================
+       TYPOGRAPHY
+       ===================================================== -->
+  <section class="type-section" id="typography">
+    <div class="container">
+      <p class="section-label">Typography</p>
+      <h2 class="section-heading">The hierarchy of depth</h2>
+      <p class="section-body">
+        Cormorant Garamond carries the weight of authority.
+        Inter carries the precision of thought.
+        Together they hold the brand's tension: grandeur meeting clarity.
+      </p>
+
+      <div class="type-specimen" style="margin-top: var(--space-xl);">
+        <div class="type-row">
+          <span class="type-meta">Display<br>5.16rem · 300</span>
+          <span class="type-display-sample">Architecture</span>
+        </div>
+        <div class="type-row">
+          <span class="type-meta">Heading 1<br>3.88rem · 400</span>
+          <span class="type-h1-sample">Design Patterns</span>
+        </div>
+        <div class="type-row">
+          <span class="type-meta">Heading 2<br>2.91rem · 400</span>
+          <span class="type-h2-sample">Hexagonal Architecture</span>
+        </div>
+        <div class="type-row">
+          <span class="type-meta">Heading 3<br>2.18rem · 500</span>
+          <span class="type-h3-sample">The Dependency Rule</span>
+        </div>
+        <div class="type-row">
+          <span class="type-meta">Body Large<br>1.23rem · 400</span>
+          <span class="type-body-sample">
+            Isolate your domain logic from infrastructure concerns.
+            The system should be testable without the database,
+            without the UI, without any external element.
+          </span>
+        </div>
+        <div class="type-row">
+          <span class="type-meta">Mono<br>0.875rem · 400</span>
+          <div class="type-mono-sample"><span style="color:hsl(213 93% 75%)">interface</span> <span style="color:hsl(234 47% 90%)">Repository&lt;T&gt;</span> {<br>&nbsp;&nbsp;<span style="color:hsl(174 60% 65%)">findById</span>(id: string): <span style="color:hsl(258 89% 80%)">Promise&lt;T | null&gt;</span>;<br>&nbsp;&nbsp;<span style="color:hsl(174 60% 65%)">save</span>(entity: T): <span style="color:hsl(258 89% 80%)">Promise&lt;void&gt;</span>;<br>}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="divider"></div>
+  </div>
+
+  <!-- =====================================================
+       PALETTE
+       ===================================================== -->
+  <section class="palette-section" id="palette">
+    <div class="container">
+      <p class="section-label">Color System</p>
+      <h2 class="section-heading">Pulled from the night sky</h2>
+      <p class="section-body">
+        Long-exposure Milky Way photography, not NASA false-color.
+        Real stellar hues: the indigo void between clusters,
+        warm amber of dense stellar cores, cold silver-white of starlight.
+      </p>
+
+      <div class="palette-grid">
+        <div class="palette-swatch">
+          <div class="swatch-color" style="background:hsl(237 44% 7%)"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Void Black</div>
+            <div class="swatch-hex">#0a0b1a</div>
+          </div>
+        </div>
+        <div class="palette-swatch">
+          <div class="swatch-color" style="background:hsl(238 41% 12%)"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Deep Space</div>
+            <div class="swatch-hex">#12132b</div>
+          </div>
+        </div>
+        <div class="palette-swatch">
+          <div class="swatch-color" style="background:hsl(237 35% 18%)"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Star Cluster</div>
+            <div class="swatch-hex">#1e2040</div>
+          </div>
+        </div>
+        <div class="palette-swatch">
+          <div class="swatch-color" style="background:hsl(236 32% 24%)"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Horizon Line</div>
+            <div class="swatch-hex">#2a2d52</div>
+          </div>
+        </div>
+        <div class="palette-swatch">
+          <div class="swatch-color" style="background:hsl(234 47% 93%)"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Starlight</div>
+            <div class="swatch-hex">#e8eaf6</div>
+          </div>
+        </div>
+        <div class="palette-swatch">
+          <div class="swatch-color" style="background:hsl(38 63% 47%)"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Stellar Amber</div>
+            <div class="swatch-hex">#c4922a</div>
+          </div>
+        </div>
+        <div class="palette-swatch">
+          <div class="swatch-color" style="background:hsl(231 36% 73%)"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Pale Nebula</div>
+            <div class="swatch-hex">#a0a8d4</div>
+          </div>
+        </div>
+        <div class="palette-swatch">
+          <div class="swatch-color" style="background:hsl(232 22% 46%)"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Distant Star</div>
+            <div class="swatch-hex">#5a6090</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="section-label" style="margin-top:var(--space-xl)">Domain Accents</p>
+      <div class="palette-domain">
+        <div class="domain-swatch">
+          <div class="domain-dot" style="background:hsl(174 60% 51%)"></div>
+          <div>
+            <div class="domain-label">Frontend</div>
+            <div style="font-family:var(--font-mono);font-size:var(--text-caption);color:var(--color-text-muted)">Aurora Teal</div>
+          </div>
+        </div>
+        <div class="domain-swatch">
+          <div class="domain-dot" style="background:hsl(38 92% 50%)"></div>
+          <div>
+            <div class="domain-label">Backend</div>
+            <div style="font-family:var(--font-mono);font-size:var(--text-caption);color:var(--color-text-muted)">Pulsar Amber</div>
+          </div>
+        </div>
+        <div class="domain-swatch">
+          <div class="domain-dot" style="background:hsl(258 89% 76%)"></div>
+          <div>
+            <div class="domain-label">Data Pipeline</div>
+            <div style="font-family:var(--font-mono);font-size:var(--text-caption);color:var(--color-text-muted)">Nebula Violet</div>
+          </div>
+        </div>
+        <div class="domain-swatch">
+          <div class="domain-dot" style="background:hsl(213 93% 68%)"></div>
+          <div>
+            <div class="domain-label">Infrastructure</div>
+            <div style="font-family:var(--font-mono);font-size:var(--text-caption);color:var(--color-text-muted)">Supergiant Blue</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="divider"></div>
+  </div>
+
+  <!-- =====================================================
+       COMPONENTS
+       ===================================================== -->
+  <section class="component-section" id="components">
+    <div class="container">
+      <p class="section-label">Components</p>
+      <h2 class="section-heading">Precision at every scale</h2>
+
+      <div class="component-grid">
+        <!-- Pattern Cards -->
+        <div class="pattern-card">
+          <div class="card-domain" style="color:hsl(174 60% 51%)">Frontend Architecture</div>
+          <h3 class="card-title">Micro-Frontend Composition</h3>
+          <p class="card-description">
+            Decompose a frontend monolith into independently deployable
+            vertical slices. Each team owns their domain end-to-end.
+          </p>
+          <div class="card-meta">
+            <span class="complexity-badge complexity-expert">Expert</span>
+            <a href="#" class="card-link">View pattern →</a>
+          </div>
+        </div>
+
+        <div class="pattern-card">
+          <div class="card-domain" style="color:hsl(38 92% 50%)">Backend Architecture</div>
+          <h3 class="card-title">Hexagonal Architecture</h3>
+          <p class="card-description">
+            Isolate domain logic from infrastructure concerns through
+            ports and adapters. Testable without a database.
+          </p>
+          <div class="card-meta">
+            <span class="complexity-badge complexity-advanced">Advanced</span>
+            <a href="#" class="card-link">View pattern →</a>
+          </div>
+        </div>
+
+        <div class="pattern-card">
+          <div class="card-domain" style="color:hsl(258 89% 76%)">Data Pipeline</div>
+          <h3 class="card-title">Medallion Architecture</h3>
+          <p class="card-description">
+            Bronze, Silver, Gold. Progressive refinement of data quality
+            through clearly defined transformation layers.
+          </p>
+          <div class="card-meta">
+            <span class="complexity-badge complexity-core">Core</span>
+            <a href="#" class="card-link">View pattern →</a>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="pattern-card">
+          <div class="card-domain" style="color:var(--color-text-muted)">Interactive Elements</div>
+          <h3 class="card-title">Buttons</h3>
+          <p class="card-description">Direct. The reader always knows what they'll get.</p>
+          <div class="button-demo" style="margin-top:var(--space-md)">
+            <button class="btn btn-primary">Explore Patterns</button>
+            <button class="btn btn-ghost">View Source</button>
+          </div>
+        </div>
+
+        <!-- Input Demo -->
+        <div class="pattern-card">
+          <div class="card-domain" style="color:var(--color-text-muted)">Form Elements</div>
+          <h3 class="card-title">Inputs</h3>
+          <div class="input-demo" style="margin-top:var(--space-md)">
+            <div class="field-group">
+              <label class="field-label">Architecture Domain</label>
+              <input class="field-input" type="text" placeholder="e.g. Backend, Infrastructure">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Pattern Search</label>
+              <input class="field-input" type="text" value="Dependency Injection">
+            </div>
+          </div>
+        </div>
+
+        <!-- Code Block Demo -->
+        <div class="pattern-card">
+          <div class="card-domain" style="color:hsl(213 93% 68%)">Infrastructure</div>
+          <h3 class="card-title">Port Mapping</h3>
+          <p class="card-description">Container networking that isolates service boundaries.</p>
+          <div class="type-mono-sample" style="margin-top:var(--space-md);font-size:0.8rem">
+            <span style="color:var(--color-text-muted)"># docker-compose.yml</span><br>
+            <span style="color:hsl(174 60% 65%)">services</span>:<br>
+            &nbsp;&nbsp;<span style="color:hsl(213 93% 75%)">api</span>:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:hsl(174 60% 65%)">ports</span>: <span style="color:hsl(38 63% 65%)">"8080:3000"</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="divider"></div>
+  </div>
+
+  <!-- =====================================================
+       BRAND ESSENCE
+       ===================================================== -->
+  <section class="essence-section" id="essence">
+    <div class="container">
+      <p class="section-label">Brand Essence</p>
+      <h2 class="section-heading">What the brand believes</h2>
+
+      <blockquote class="essence-pull">
+        "Some people see patterns others simply cannot see. Not loudly,
+        not aggressively — but with the quiet certainty of someone who
+        has looked at thousands of systems."
+      </blockquote>
+
+      <div class="essence-grid">
+        <div class="principle-item">
+          <div class="principle-number">01</div>
+          <div class="principle-title">Architecture over authorship</div>
+          <p class="principle-text">
+            The best system decision is the one that the next ten engineers
+            can make correctly without knowing the original reasoning.
+          </p>
+        </div>
+        <div class="principle-item">
+          <div class="principle-number">02</div>
+          <div class="principle-title">Precision as respect</div>
+          <p class="principle-text">
+            Imprecise language produces imprecise systems.
+            Naming things correctly is not pedantry — it is
+            the first act of design.
+          </p>
+        </div>
+        <div class="principle-item">
+          <div class="principle-number">03</div>
+          <div class="principle-title">Complexity earned, not imposed</div>
+          <p class="principle-text">
+            Every abstraction layer has a cost. Pay only when the benefit
+            is concrete, measurable, and currently needed.
+          </p>
+        </div>
+        <div class="principle-item">
+          <div class="principle-number">04</div>
+          <div class="principle-title">The map is not the territory</div>
+          <p class="principle-text">
+            Diagrams lie through omission. The code is the truth.
+            Treat all documentation as approximation until tested.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="padding:var(--space-2xl) var(--space-lg);border-top:1px solid var(--color-border);position:relative;z-index:1;">
+    <div class="container" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--space-md)">
+      <span style="font-family:var(--font-heading);font-size:var(--text-h4);font-weight:400;color:var(--color-text)">Architect&rsquo;s Compendium</span>
+      <span style="font-size:var(--text-caption);color:var(--color-text-muted);letter-spacing:0.06em;text-transform:uppercase">Solution Architect Portfolio · Brand Showcase</span>
+    </div>
+  </footer>
+
+  <div class="showcase-label">Brand Showcase — systematic-dev-kit:brand-designer</div>
+
+  <!-- Theme toggle: dark-only brand — this button acknowledges the choice -->
+  <button
+    id="theme-toggle"
+    onclick="document.body.setAttribute('data-theme', 'dark')"
+    aria-label="Dark mode only — this brand has no light mode"
+    title="This brand is dark-only"
+    style="position:fixed;top:var(--space-md);right:var(--space-md);z-index:200;background:transparent;border:1px solid var(--color-border);color:var(--color-text-muted);font-family:var(--font-body);font-size:var(--text-caption);letter-spacing:0.08em;text-transform:uppercase;padding:4px 10px;border-radius:var(--radius-full);cursor:default;opacity:0.6;"
+  >Dark only</button>
+
+  <!-- =====================================================
+       STAR FIELD + CONSTELLATION ENGINE
+       ===================================================== -->
+  <script>
+    // ---- Star Field ----
+    const canvas = document.getElementById('star-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let stars = [];
+    let width, height;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+
+    function initStars() {
+      stars = [];
+      // Generate ~800 stars with varied properties
+      const count = Math.floor((width * height) / 2000);
+      for (let i = 0; i < count; i++) {
+        const rand = Math.random();
+        // Most stars are small and dim; few are large and bright
+        const tier = rand < 0.7 ? 0 : rand < 0.92 ? 1 : rand < 0.99 ? 2 : 3;
+        stars.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: [0.4, 0.7, 1.1, 1.8][tier],
+          alpha: [0.25 + Math.random() * 0.3, 0.4 + Math.random() * 0.35, 0.55 + Math.random() * 0.35, 0.75 + Math.random() * 0.25][tier],
+          // Slight warm/cool tint variation
+          hue: Math.random() < 0.15 ? 38 : Math.random() < 0.1 ? 213 : 234,
+          sat: Math.random() < 0.25 ? 40 + Math.random() * 30 : 20 + Math.random() * 20,
+          twinkle: Math.random() * Math.PI * 2,
+          twinkleSpeed: 0.002 + Math.random() * 0.006,
+          twinkleAmp: 0.03 + Math.random() * 0.12,
+        });
+      }
+
+      // Milky Way band — denser cluster at ~60deg diagonal
+      const bandCount = Math.floor(count * 0.6);
+      for (let i = 0; i < bandCount; i++) {
+        const t = Math.random();
+        const bandX = t * width * 1.4 - width * 0.2;
+        const bandY = (t * height * 0.7) + (height * 0.15) + (Math.random() - 0.5) * height * 0.35;
+        stars.push({
+          x: bandX,
+          y: bandY,
+          r: 0.3 + Math.random() * 0.5,
+          alpha: 0.1 + Math.random() * 0.25,
+          hue: 234 + (Math.random() - 0.5) * 20,
+          sat: 25 + Math.random() * 25,
+          twinkle: Math.random() * Math.PI * 2,
+          twinkleSpeed: 0.001 + Math.random() * 0.004,
+          twinkleAmp: 0.02 + Math.random() * 0.08,
+        });
+      }
+    }
+
+    let frame = 0;
+
+    function drawStars() {
+      ctx.clearRect(0, 0, width, height);
+      frame++;
+
+      for (const star of stars) {
+        star.twinkle += star.twinkleSpeed;
+        const a = star.alpha + Math.sin(star.twinkle) * star.twinkleAmp;
+        const glow = star.r > 1;
+
+        if (glow) {
+          // Larger stars get a subtle glow
+          const grad = ctx.createRadialGradient(star.x, star.y, 0, star.x, star.y, star.r * 4);
+          const glowColor = 'hsla(' + star.hue + ' ' + star.sat + '% 90% / ' + a + ')';
+          const glowFade  = 'hsla(' + star.hue + ' ' + star.sat + '% 90% / 0)';
+          grad.addColorStop(0, glowColor);
+          grad.addColorStop(1, glowFade);
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.r * 4, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+        }
+
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        const clampedA = Math.max(0, Math.min(1, a));
+        ctx.fillStyle = 'hsla(' + star.hue + ' ' + star.sat + '% 93% / ' + clampedA + ')';
+        ctx.fill();
+      }
+
+      requestAnimationFrame(drawStars);
+    }
+
+    window.addEventListener('resize', () => {
+      resize();
+      initStars();
+    });
+
+    resize();
+    initStars();
+    drawStars();
+
+    // ---- Constellation Lines ----
+    // Draw SVG constellation lines on the hero panel
+    const svg = document.getElementById('constellation-svg');
+
+    const constellationNodes = [
+      { x: 520, y: 120 }, { x: 420, y: 200 }, { x: 560, y: 260 },
+      { x: 380, y: 320 }, { x: 490, y: 390 }, { x: 560, y: 460 },
+      { x: 420, y: 520 }, { x: 540, y: 600 }, { x: 380, y: 650 },
+      { x: 460, y: 720 }, { x: 560, y: 140 }, { x: 440, y: 80 },
+    ];
+
+    const constellationEdges = [
+      [0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],
+      [0,10],[10,11],[1,3],[4,6],[2,5],
+    ];
+
+    function drawConstellation() {
+      svg.innerHTML = '';
+
+      // Edges
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      for (const [a, b] of constellationEdges) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', constellationNodes[a].x);
+        line.setAttribute('y1', constellationNodes[a].y);
+        line.setAttribute('x2', constellationNodes[b].x);
+        line.setAttribute('y2', constellationNodes[b].y);
+        line.setAttribute('stroke', 'hsla(234 47% 93% / 0.12)');
+        line.setAttribute('stroke-width', '0.5');
+        g.appendChild(line);
+      }
+
+      // Nodes
+      for (const node of constellationNodes) {
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', node.x);
+        circle.setAttribute('cy', node.y);
+        circle.setAttribute('r', '2');
+        circle.setAttribute('fill', 'hsla(234 47% 93% / 0.5)');
+        g.appendChild(circle);
+
+        // Glow dot for a few nodes
+        if (Math.random() > 0.6) {
+          const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          glow.setAttribute('cx', node.x);
+          glow.setAttribute('cy', node.y);
+          glow.setAttribute('r', '6');
+          glow.setAttribute('fill', 'hsla(38 63% 47% / 0.08)');
+          g.insertBefore(glow, circle);
+        }
+      }
+
+      svg.appendChild(g);
+    }
+
+    drawConstellation();
+  </script>
+
+</body>
+</html>
