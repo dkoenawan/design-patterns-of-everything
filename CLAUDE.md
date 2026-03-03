@@ -2,11 +2,11 @@
 
 ## Project Overview
 
-This is a **Solution Architect portfolio site** built with Astro + MDX, showcasing design patterns, architecture experience, case studies, and certifications. Deployed on GitHub Pages.
+This is a **Solution Architect portfolio site** built with Astro + MDX, showcasing design patterns, architecture experience, case studies, and certifications. Deployed to GitHub Pages with a stellar cartography-inspired dark aesthetic.
 
-**Repository Name**: `design-patterns-of-everything` (to be created as public repo)
-**Deployment**: GitHub Pages
-**Current Phase**: Session 1 - Landing Page Development
+**Repository Name**: `design-patterns-of-everything` (public repo)
+**Deployment**: GitHub Pages (active)
+**Current Phase**: Session 4+ - Content Expansion & Interactive Components
 
 ## Target Audience
 
@@ -16,12 +16,15 @@ This is a **Solution Architect portfolio site** built with Astro + MDX, showcasi
 
 ## Design Philosophy
 
-- **Visual-only D&D-inspired aesthetic** — RPG sourcebook visual style (parchment palette, styled cards, progression visuals) but ALL text uses plain professional language
-- **No gaming terminology visible on site** — just professional terms like "Design Patterns," "Case Studies," and "Anti-Patterns"
+**Stellar Cartography Aesthetic** — The night sky as metaphor for knowledge, discovery, and connection
+- **Emotional arc**: Awe-struck → Quiet reverence → Inspired confidence
+- **Visual identity**: Dark-only mode (no light variant), cosmic indigo primary, stellar amber accents, nebula white text
+- **Typography**: Cormorant Garamond (serif headings, light/400 weights), Inter (body), JetBrains Mono (code)
 - **Career-domain structure** — organized into 4 architecture domains: Frontend, Backend, Data Pipeline, Infrastructure
+- **All text professional** — no gaming terminology visible; pure architecture and design pattern language
 - **Skill progression visualization** — driven by certifications AND career experience
 - **Self-contained** — no links to external repos, client projects anonymized
-- **Iterative development** — start with landing page, expand session-by-session
+- **Iterative development** — expand session-by-session
 
 ## Tech Stack
 
@@ -48,97 +51,133 @@ This is a **Solution Architect portfolio site** built with Astro + MDX, showcasi
 
 ## Visual Theme
 
-**RPG sourcebook-inspired aesthetic with professional readability:**
+**Stellar Cartography Implementation:**
 
-- **Palette**: Warm golds, deep browns, parchment tones (aged paper aesthetic)
-- **Typography**: Serif headings (Crimson Pro), JetBrains Mono for code
-- **Domain accent colors**: Each domain has distinct professional color
-- **Card-based layouts**: Well-organized information presentation
-- **Dark mode**: Deep, rich tones — readable and professional
-- **Subtle embellishments**: Tasteful borders, section dividers
+- **Primary palette**:
+  - Cosmic Indigo `hsl(238 37% 16%)` — primary backgrounds, trust
+  - Stellar Amber `hsl(38 63% 47%)` — sparingly used accents, precious highlights
+  - Nebula White `hsl(234 47% 93%)` — primary text, readability
+  - Void Black `hsl(237 44% 7%)` — deepest backgrounds
+- **Card-based layouts**: Information presented as constellation-like groupings
+- **Glassmorphism & starfield effects**: Subtle animations, premium feel
+- **Domain accent colors**: Each domain has distinct professional color within cosmic palette
+- **Dark-only**: No light mode; focused on premium, focused experience
 
-**Critical**: Must pass professional scrutiny — think "executive presentation with personality" not "D&D campaign notes"
+**Critical**: Premium professional aesthetic — celestial theme provides visual metaphor without compromising technical credibility. Think "luxury observatory dashboard" not "gaming interface."
 
 ## Development Roadmap
 
-### Session 1: Landing Page ⭐ CURRENT
-- Initialize Astro project in new `design-patterns-of-everything` repo
-- Apply parchment-inspired aesthetic
-- Build landing page sections (Hero, About, Expertise, Approach, Contact)
-- Deploy to GitHub Pages
-- **Success Criteria**: Professional appearance, mobile responsive, fast loading, clear value prop
+### ✅ Session 1: Landing Page
+- ✅ Astro project initialized with React & MDX
+- ✅ Stellar cartography aesthetic applied
+- ✅ Landing page with Hero and DomainCard components
+- ✅ Deployed to GitHub Pages
 
-### Session 2: Foundation & Structure
-- Configure content collection schemas
-- Refine CSS theme
-- Build `<PatternCard>` component
-- Create navigation structure
+### ✅ Session 2: Foundation & Structure
+- ✅ CSS theme system established (dark-only, cosmic palette)
+- ✅ Brand identity documented in `brand/` directory
+- ✅ Component structure in place (Hero, DomainCard, Starfield)
+- ✅ Navigation ready
 
-### Session 3: Seed Content
-- Migrate 8 existing patterns into domains
-- Create 4 domain overview pages
-- Create About Me page
-- Write 1 case study
+### ✅ Session 3: Seed Content
+- ✅ 8 design patterns created (Backend, Data Pipeline, Cross-Domain, Infrastructure)
+- ✅ Pattern library in `docs/patterns/` (MDX)
+- ✅ Docker port mapping & database orchestration patterns added
+- ✅ Playwright tests for landing page verification
 
+### Sessions 4+: Content Expansion & Interactive Features
+- [ ] Domain overview pages (Frontend, Backend, Data Pipeline, Infrastructure)
+- [ ] Interactive pattern cards with examples
+- [ ] About Me / Interactive resume page
+- [ ] Case studies with architecture diagrams
+- [ ] Anti-pattern catalog
+- [ ] Skill tree visualizations
+- [ ] Live code playgrounds (Sandpack integration)
 
-### Sessions 4+: Interactive components, anti-patterns, diagrams, live code, expansion
-
-## Directory Structure (Target)
+## Directory Structure (Current)
 
 ```
-career-portfolio/
+design-patterns-of-everything/
   astro.config.mjs
   package.json
+  brand/                                # Brand identity system
+    brand-guideline.md                  # Full brand documentation
+    brand-theme.css                     # Cosmic palette CSS variables
+    brand-effects.css                   # Stellar animations & effects
+    brand-showcase.html                 # Component showcase
+    tailwind.brand.js                   # Tailwind theme mapping
   src/
-    content/
-      config.ts                         # Typed content schemas
-      docs/
-        index.mdx                       # Home / landing
-        about.mdx                       # Interactive resume
-        frontend/                       # Frontend domain
-        backend/                        # Backend domain
-        data-pipeline/                  # Data pipeline domain
-        infrastructure/                 # Infrastructure domain
-        cross-domain/patterns/          # SRP, Composition, etc.
-        anti-patterns/                  # Anti-pattern catalog
-        toolkit/                        # Decision frameworks
+    pages/
+      index.astro                       # Landing page (hero + domain cards)
     components/
-      PatternCard.astro
-      SkillTree.tsx
-      ProfileSheet.tsx
-      [other custom components]
+      Hero.astro                        # Landing hero section
+      DomainCard.astro                  # Domain showcase card
+      Starfield.tsx                     # React starfield canvas
+      StarfieldCanvas.css               # Starfield styles
+    layouts/
+      [layout components]
     styles/
-      custom.css                        # RPG sourcebook theme
-      domains.css                       # Domain accent colors
-  public/
-    fonts/
-    images/
-  .github/workflows/deploy.yml         # GitHub Pages deployment
+      [shared styles]
+    lib/
+      [utilities]
+  docs/
+    patterns/
+      _template.mdx                     # Pattern template
+      backend/
+        dependency-injection.mdx
+        strategy-pattern.mdx
+        hexagonal-architecture.mdx
+      data-pipeline/
+        medallion-architecture.mdx
+        schema-driven-validation.mdx
+        pure-functions.mdx
+      cross-domain/
+        single-responsibility.mdx
+        composition-over-inheritance.mdx
+      infrastructure/
+        docker-port-mapping.mdx
+        multi-database-orchestration.mdx
+      frontend/                         # [Patterns to be added]
+  tests/
+    landing-page.spec.ts                # Playwright E2E tests
+  .github/workflows/
+    deploy.yml                          # GitHub Pages deployment
 ```
 
-## Content Migration Map
+## Content Status
 
-Existing patterns to be migrated:
+**Patterns Currently Seeded:**
 
-| Pattern | Domain | Complexity |
-|---|---|---|
-| Medallion Architecture | Data Pipeline | Expert |
-| Hexagonal Architecture | Backend | Advanced |
-| Pure Functions | Data Pipeline | Core |
-| Schema-Driven Validation | Data Pipeline | Core |
-| Dependency Injection | Backend | Core |
-| Single Responsibility | Cross-Domain | Fundamentals |
-| Composition Over Inheritance | Cross-Domain | Core |
-| Strategy Pattern | Backend | Core |
+| Pattern | Domain | Complexity | Status |
+|---|---|---|---|
+| Medallion Architecture | Data Pipeline | Expert | ✅ Complete |
+| Hexagonal Architecture | Backend | Advanced | ✅ Complete |
+| Pure Functions | Data Pipeline | Core | ✅ Complete |
+| Schema-Driven Validation | Data Pipeline | Core | ✅ Complete |
+| Dependency Injection | Backend | Core | ✅ Complete |
+| Single Responsibility | Cross-Domain | Fundamentals | ✅ Complete |
+| Composition Over Inheritance | Cross-Domain | Core | ✅ Complete |
+| Strategy Pattern | Backend | Core | ✅ Complete |
+| Docker Port Mapping | Infrastructure | Core | ✅ Complete |
+| Multi-Database Orchestration | Infrastructure | Advanced | ✅ Complete |
+
+**Planned Content:**
+- Domain overview pages (4 pages)
+- Interactive resume / About Me
+- Case studies (2-3)
+- Anti-pattern catalog
+- Skill tree visualizations
+- Frontend domain patterns (2-3)
 
 ## Important Notes
 
-- **Internal name**: "Architect's Grimoire" is for development only
-- **Public-facing name**: "Solution Architect Portfolio" or similar professional branding
-- All visible text must use professional terminology
-- Repository must be **public** for GitHub Pages to work
-- Start minimal and iterate — landing page first, then expand
-- Each session should have clear deliverables and verification steps
+- **Brand identity**: Stellar cartography aesthetic (dark-only, cosmic indigo + stellar amber)
+- **Repository status**: Public, GitHub Pages deployment active
+- **All text professional**: No gaming terminology, pure architecture language
+- **Pattern organization**: Domain-driven (Frontend, Backend, Data Pipeline, Infrastructure) + Cross-Domain patterns
+- **Content format**: MDX in `docs/patterns/`, components in `src/components/` and `src/pages/`
+- **Testing**: Playwright E2E tests for landing page; expand as new pages added
+- **Brand files**: Complete system in `brand/` directory — use as reference for new components
 
 ## Commands
 
@@ -148,10 +187,15 @@ Once project is initialized:
 - `npm run preview` — Preview production build
 - Deploy via GitHub Actions on push to main
 
-## Next Steps
+## Next Steps (Session 4+)
 
-1. Create public GitHub repository named `career-portfolio`
-2. Clone to `/home/su-sentinel/private/career-portfolio`
-3. Initialize Astro project with React and MDX integrations
-4. Build Session 1 landing page
-5. Configure GitHub Pages deployment
+1. **Domain overview pages** — Create `/frontend`, `/backend`, `/data-pipeline`, `/infrastructure` pages with pattern catalogs
+2. **Interactive resume** — Build `/about` with skills matrix, certifications, and career progression
+3. **Case studies** — Add 2-3 self-contained narratives with architecture diagrams
+4. **Anti-pattern catalog** — Create catalog with severity ratings and mitigation strategies
+5. **Skill tree visualization** — Implement React component for interactive progression per domain
+6. **Frontend patterns** — Add 2-3 patterns for Frontend Architecture domain
+7. **Live code playgrounds** — Integrate Sandpack for pattern examples
+8. **Content linking** — Connect patterns to case studies and domain pages
+
+**Development approach**: Use brand system from `brand/` for all new components; refer to `Hero.astro` and `DomainCard.astro` for component patterns.
