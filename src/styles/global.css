@@ -1,15 +1,15 @@
 /* Global Styles for Solution Architect Portfolio */
 
-/* Import brand theme */
+/* Import brand theme and effects */
 @import '../../brand/brand-theme.css';
+@import '../../brand/brand-effects.css';
 
 /* Import fonts */
-@import '@fontsource/crimson-pro/400.css';
-@import '@fontsource/crimson-pro/600.css';
-@import '@fontsource/crimson-pro/700.css';
-@import '@fontsource/source-sans-3/400.css';
-@import '@fontsource/source-sans-3/500.css';
-@import '@fontsource/source-sans-3/600.css';
+@import '@fontsource/cormorant-garamond/400.css';
+@import '@fontsource/cormorant-garamond/600.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/500.css';
 
@@ -38,7 +38,7 @@ body {
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
-  font-weight: var(--weight-bold);
+  font-weight: var(--weight-normal);
   line-height: var(--leading-tight);
   color: var(--color-text);
   margin-bottom: var(--space-md);
@@ -46,7 +46,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .display {
   font-size: var(--text-display);
-  font-weight: var(--weight-bold);
+  font-weight: var(--weight-light);
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tight);
 }
@@ -57,7 +57,7 @@ h1 {
 
 h2 {
   font-size: var(--text-h2);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-normal);
 }
 
 h3 {
@@ -106,8 +106,8 @@ a:hover {
 .btn {
   display: inline-block;
   padding: var(--space-md) var(--space-lg);
-  background: var(--color-accent);
-  color: var(--color-bg);
+  background: var(--color-secondary);
+  color: hsl(237 44% 7%);
   font-weight: var(--weight-semibold);
   border-radius: var(--radius-md);
   border: none;
@@ -117,7 +117,7 @@ a:hover {
 }
 
 .btn:hover {
-  background: var(--color-accent-600);
+  background: var(--color-secondary-400);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }

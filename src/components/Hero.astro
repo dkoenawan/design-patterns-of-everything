@@ -2,7 +2,7 @@
 // Hero section component
 ---
 
-<section class="hero">
+<section class="hero gradient-nebula">
   <div class="constellation-bg">
     <svg class="constellation-map" aria-hidden="true">
       <!-- Central constellation connecting 4 domains -->
@@ -42,12 +42,12 @@
   </div>
 
   <div class="container hero-content">
-    <h1 class="display">Navigate the architecture landscape</h1>
-    <p class="body-lg hero-subtitle">
+    <h1 class="display text-gradient-stellar animate-rise">Navigate the architecture landscape</h1>
+    <p class="body-lg hero-subtitle animate-rise hero-subtitle-delay">
       A constellation of design patterns mapped across four domains. Each node represents proven solutions,
       hard-won experience, and the connections between architectural decisions. Like a star chart for software systems.
     </p>
-    <a href="#domains" class="btn btn-primary">Begin exploration →</a>
+    <a href="#domains" class="btn btn-primary animate-rise hero-cta-delay">Begin exploration →</a>
   </div>
 </section>
 
@@ -67,7 +67,7 @@
     right: 0;
     bottom: 0;
     pointer-events: none;
-    opacity: 0.15;
+    opacity: 0.2;
     max-width: 800px;
     max-height: 400px;
     margin: auto;
@@ -160,8 +160,6 @@
   .hero .display {
     max-width: 900px;
     margin: 0 auto var(--space-lg);
-    color: var(--color-secondary);
-    text-shadow: 0 2px 8px hsla(40, 60%, 65%, 0.3);
   }
 
   .hero-subtitle {
@@ -172,8 +170,8 @@
   }
 
   .btn-primary {
-    background: var(--color-accent);
-    color: white;
+    background: var(--color-secondary);
+    color: hsl(237 44% 7%);
     padding: var(--space-md) var(--space-xl);
     font-size: var(--text-body-lg);
     font-weight: var(--weight-semibold);
@@ -184,9 +182,19 @@
   }
 
   .btn-primary:hover {
-    background: var(--color-accent-600);
+    background: var(--color-secondary-400);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 0 20px hsla(38 63% 47% / 0.35),
+                0 0 40px hsla(38 63% 47% / 0.15),
+                0 4px 16px hsla(238 37% 5% / 0.7);
+  }
+
+  .hero-subtitle-delay {
+    animation-delay: 150ms;
+  }
+
+  .hero-cta-delay {
+    animation-delay: 300ms;
   }
 
   @media (max-width: 640px) {
