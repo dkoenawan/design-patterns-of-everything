@@ -10,7 +10,7 @@ interface Props {
 const { domain, title, description, comingSoon = true } = Astro.props;
 ---
 
-<div class={`domain-card domain-${domain}`}>
+<div class={`domain-card domain-${domain} glass-surface hover-lift hover-border-glow stars-sm`}>
   <div class="card-constellation" aria-hidden="true">
     <svg width="60" height="60" viewBox="0 0 60 60">
       <!-- Mini constellation pattern unique to each domain -->
@@ -26,28 +26,20 @@ const { domain, title, description, comingSoon = true } = Astro.props;
   <h3>{title}</h3>
   <p>{description}</p>
   {comingSoon ? (
-    <span class="badge">Coming Soon</span>
+    <span class="badge domain-badge">Coming Soon</span>
   ) : (
-    <a href={`/${domain}`} class="card-link">Explore →</a>
+    <a href={`/${domain}`} class="card-link hover-illuminate">Explore →</a>
   )}
 </div>
 
 <style>
   .domain-card {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
     padding: var(--space-lg);
     border-left: 4px solid var(--accent-color);
-    transition: all var(--transition-normal);
+    border-top: 1px solid hsla(234 47% 93% / 0.06);
     position: relative;
     overflow: hidden;
-  }
-
-  .domain-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
   }
 
   .domain-card:hover .card-constellation {

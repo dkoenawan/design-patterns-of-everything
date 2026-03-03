@@ -80,6 +80,7 @@ This is a **Solution Architect portfolio site** built with Astro + MDX, showcasi
 - Create About Me page
 - Write 1 case study
 
+
 ### Sessions 4+: Interactive components, anti-patterns, diagrams, live code, expansion
 
 ## Directory Structure (Target)
