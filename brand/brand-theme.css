@@ -51,10 +51,14 @@
   --color-accent: hsl(var(--color-accent-h) var(--color-accent-s) var(--color-accent-l));
 
   /* Domain Accent Colors */
-  --color-domain-frontend: hsl(174 60% 51%);  /* Aurora Teal */
-  --color-domain-backend:  hsl(38 92% 50%);   /* Pulsar Amber */
-  --color-domain-data:     hsl(258 89% 76%);  /* Nebula Violet */
-  --color-domain-infra:    hsl(213 93% 68%);  /* Supergiant Blue */
+  --color-domain-frontend:  hsl(174 60% 51%);  /* Aurora Teal */
+  --color-domain-backend:   hsl(38 92% 50%);   /* Pulsar Amber */
+  --color-domain-data:      hsl(258 89% 76%);  /* Nebula Violet */
+  --color-domain-infra:     hsl(213 93% 68%);  /* Supergiant Blue */
+  --color-domain-devops:    hsl(20 85% 60%);   /* Chromosphere Orange */
+  --color-domain-network:   hsl(195 80% 60%);  /* Ionosphere Cyan */
+  --color-domain-security:  hsl(350 70% 58%);  /* Red Dwarf Crimson */
+  --color-domain-ai:        hsl(290 75% 68%);  /* Quasar Magenta */
 
   /* Neutrals — The cosmic void and its gradients */
   --color-bg:             hsl(237 44% 7%);    /* Void Black */

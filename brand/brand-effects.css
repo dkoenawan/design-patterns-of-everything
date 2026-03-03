@@ -300,10 +300,14 @@
 }
 
 /* --- Domain Color Utilities --- */
-.domain-frontend { --domain-color: var(--color-domain-frontend); }
-.domain-backend  { --domain-color: var(--color-domain-backend);  }
-.domain-data     { --domain-color: var(--color-domain-data);     }
-.domain-infra    { --domain-color: var(--color-domain-infra);    }
+.domain-frontend  { --domain-color: var(--color-domain-frontend);  }
+.domain-backend   { --domain-color: var(--color-domain-backend);   }
+.domain-data      { --domain-color: var(--color-domain-data);      }
+.domain-infra     { --domain-color: var(--color-domain-infra);     }
+.domain-devops    { --domain-color: var(--color-domain-devops);    }
+.domain-network   { --domain-color: var(--color-domain-network);   }
+.domain-security  { --domain-color: var(--color-domain-security);  }
+.domain-ai        { --domain-color: var(--color-domain-ai);        }
 
 /* Domain accent border */
 .domain-accent-border {

@@ -25,12 +25,16 @@ html {
   background: var(--color-bg);
   color: var(--color-text);
   line-height: var(--leading-normal);
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
   font-size: var(--text-body);
   font-weight: var(--weight-normal);
   position: relative;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* Legacy CSS starfield removed - replaced by Canvas starfield component */
