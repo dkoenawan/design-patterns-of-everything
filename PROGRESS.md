@@ -1,15 +1,16 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-05-14 by automated agent
+Last updated: 2026-05-15 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
 |------|-----------|--------|
 | 2026-05-14 | Backend domain overview page — src/pages/backend.astro | e1465aa |
+| 2026-05-15 | Data Pipeline domain overview page — src/pages/data.astro | 64e86b2 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
-2. [ ] Data Pipeline domain overview page — src/pages/data-pipeline.astro
+2. [x] Data Pipeline domain overview page — src/pages/data-pipeline.astro
 3. [ ] Infrastructure domain overview page — src/pages/infrastructure.astro
 4. [ ] Frontend domain overview page — src/pages/frontend.astro
 5. [ ] Frontend pattern: Component Composition — docs/patterns/frontend/component-composition.mdx
