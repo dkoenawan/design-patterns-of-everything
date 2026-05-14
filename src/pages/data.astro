@@ -1,0 +1,475 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Starfield from '../components/Starfield';
+
+const patterns = [
+  {
+    title: 'Medallion Architecture',
+    complexity: 'Expert',
+    tags: ['bronze-silver-gold', 'data-lakehouse', 'incremental-refinement'],
+    summary: 'Progressively refine raw ingested data through Bronze, Silver, and Gold layers, each adding quality and semantic richness.',
+  },
+  {
+    title: 'Schema-Driven Validation',
+    complexity: 'Core',
+    tags: ['schema-registry', 'data-quality', 'contract-testing'],
+    summary: 'Define and enforce data contracts at pipeline boundaries to catch structural violations before they propagate downstream.',
+  },
+  {
+    title: 'Pure Functions',
+    complexity: 'Core',
+    tags: ['functional', 'deterministic', 'testability'],
+    summary: 'Build transformation logic from functions that depend only on their inputs, enabling deterministic testing and safe composition.',
+  },
+  {
+    title: 'Batch vs Streaming',
+    complexity: 'Advanced',
+    tags: ['lambda-architecture', 'micro-batch', 'event-driven'],
+    summary: 'Choose between bounded batch processing and unbounded stream processing based on latency, throughput, and consistency requirements.',
+  },
+];
+
+const complexityOrder: Record<string, number> = { Core: 0, Advanced: 1, Expert: 2 };
+const sortedPatterns = [...patterns].sort(
+  (a, b) => (complexityOrder[a.complexity] ?? 9) - (complexityOrder[b.complexity] ?? 9)
+);
+---
+
+<BaseLayout
+  title="Data Pipeline Architecture — Design Patterns"
+  description="Medallion architecture, schema-driven validation, pure functional pipelines, and reliable data transformation patterns."
+>
+  <Starfield client:load />
+
+  <main class="data-page">
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <div class="breadcrumb">
+          <a href="/">Portfolio</a>
+          <span class="crumb-sep" aria-hidden="true">›</span>
+          <span>Data Pipeline Architecture</span>
+        </div>
+        <h1 class="page-title">
+          <span class="domain-label">Data Pipeline Architecture</span>
+        </h1>
+        <p class="page-subtitle body-lg">
+          Patterns for reliable, observable data pipelines that maintain quality as data flows
+          from raw ingestion through transformation to analytical consumption. Correctness and
+          reproducibility are the non-negotiables.
+        </p>
+        <div class="domain-stats">
+          <div class="stat glass-surface">
+            <span class="stat-value">{patterns.length}</span>
+            <span class="stat-label">Patterns</span>
+          </div>
+          <div class="stat glass-surface">
+            <span class="stat-value">2</span>
+            <span class="stat-label">Core</span>
+          </div>
+          <div class="stat glass-surface">
+            <span class="stat-value">1</span>
+            <span class="stat-label">Advanced</span>
+          </div>
+          <div class="stat glass-surface">
+            <span class="stat-value">1</span>
+            <span class="stat-label">Expert</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="constellation-divider" />
+
+    <!-- Domain Philosophy -->
+    <section class="philosophy">
+      <div class="container">
+        <div class="philosophy-grid">
+          <div class="philosophy-text">
+            <h2>The Core Principle</h2>
+            <p>
+              Data pipelines fail silently more often than they fail loudly. A corrupted join or
+              a missed schema change can propagate through layers for days before anyone notices.
+              Reliable pipelines treat data quality as a first-class concern — not an afterthought.
+            </p>
+            <p>
+              The patterns in this domain share a common thread: making data state explicit and
+              transitions observable. Layered architectures reveal where data lives and what has
+              been applied to it. Schema contracts catch violations at the boundary, not downstream.
+              Pure transformations allow confident testing without infrastructure scaffolding.
+            </p>
+          </div>
+          <div class="principles-card glass-surface">
+            <h3>Guiding Principles</h3>
+            <ul class="principles-list">
+              <li>
+                <span class="principle-icon" aria-hidden="true">◈</span>
+                Make data quality failures loud and early
+              </li>
+              <li>
+                <span class="principle-icon" aria-hidden="true">◈</span>
+                Preserve raw data — transformations are additive
+              </li>
+              <li>
+                <span class="principle-icon" aria-hidden="true">◈</span>
+                Enforce schema contracts at every boundary
+              </li>
+              <li>
+                <span class="principle-icon" aria-hidden="true">◈</span>
+                Build transformations from pure, composable functions
+              </li>
+              <li>
+                <span class="principle-icon" aria-hidden="true">◈</span>
+                Design for idempotency and safe re-runs
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="constellation-divider" />
+
+    <!-- Pattern Catalog -->
+    <section class="catalog">
+      <div class="container">
+        <h2>Pattern Catalog</h2>
+        <p class="catalog-intro">
+          Each pattern below addresses a recurring challenge in data pipeline design.
+          Complexity ratings reflect implementation effort, not conceptual difficulty.
+        </p>
+        <div class="patterns-grid animate-stagger">
+          {sortedPatterns.map((pattern) => (
+            <article class={`pattern-card glass-surface hover-lift hover-border-glow complexity-${pattern.complexity.toLowerCase()}`}>
+              <div class="card-header">
+                <span class={`complexity-badge complexity-${pattern.complexity.toLowerCase()}`}>
+                  {pattern.complexity}
+                </span>
+              </div>
+              <h3 class="pattern-title">{pattern.title}</h3>
+              <p class="pattern-summary">{pattern.summary}</p>
+              <div class="pattern-tags">
+                {pattern.tags.map((tag) => (
+                  <span class="tag">{tag}</span>
+                ))}
+              </div>
+              <div class="card-footer">
+                <span class="coming-soon-label">Detail page coming soon</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <hr class="constellation-divider" />
+
+    <!-- Back navigation -->
+    <section class="back-nav">
+      <div class="container">
+        <a href="/" class="back-link hover-illuminate">← Back to all domains</a>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .data-page {
+    position: relative;
+    min-height: 100vh;
+  }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--text-body-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-lg);
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    transition: color var(--transition-fast);
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-domain-data);
+  }
+
+  .crumb-sep {
+    opacity: 0.5;
+  }
+
+  /* Page Hero */
+  .page-hero {
+    padding: var(--space-2xl) 0 var(--space-xl);
+  }
+
+  .domain-label {
+    display: block;
+    font-size: var(--text-body-sm);
+    font-family: var(--font-mono);
+    font-weight: var(--weight-normal);
+    color: var(--color-domain-data);
+    letter-spacing: var(--tracking-wider);
+    text-transform: uppercase;
+    margin-bottom: var(--space-sm);
+  }
+
+  .page-title {
+    font-size: var(--text-h1);
+    font-family: var(--font-heading);
+    font-weight: var(--weight-light);
+    color: var(--color-text);
+    line-height: var(--leading-tight);
+    margin-bottom: var(--space-lg);
+  }
+
+  .page-subtitle {
+    max-width: 680px;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-xl);
+  }
+
+  .domain-stats {
+    display: flex;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--color-domain-data);
+    text-align: center;
+    min-width: 80px;
+  }
+
+  .stat-value {
+    display: block;
+    font-size: var(--text-h3);
+    font-family: var(--font-heading);
+    font-weight: var(--weight-normal);
+    color: var(--color-domain-data);
+    line-height: 1;
+  }
+
+  .stat-label {
+    display: block;
+    font-size: var(--text-caption);
+    font-family: var(--font-mono);
+    color: var(--color-text-muted);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    margin-top: var(--space-xs);
+  }
+
+  /* Philosophy */
+  .philosophy {
+    padding: var(--space-xl) 0;
+  }
+
+  .philosophy h2 {
+    color: var(--color-secondary);
+    text-align: left;
+    margin-bottom: var(--space-lg);
+  }
+
+  .philosophy-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 768px) {
+    .philosophy-grid {
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+    }
+  }
+
+  .philosophy-text p {
+    color: var(--color-text-secondary);
+    line-height: var(--leading-relaxed);
+  }
+
+  .principles-card {
+    padding: var(--space-lg);
+    border-radius: var(--radius-md);
+    border-top: 2px solid var(--color-domain-data);
+  }
+
+  .principles-card h3 {
+    color: var(--color-domain-data);
+    font-size: var(--text-body-lg);
+    margin-bottom: var(--space-lg);
+  }
+
+  .principles-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .principles-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-sm);
+    line-height: var(--leading-relaxed);
+  }
+
+  .principle-icon {
+    color: var(--color-domain-data);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* Catalog */
+  .catalog {
+    padding: var(--space-xl) 0 var(--space-2xl);
+  }
+
+  .catalog h2 {
+    color: var(--color-secondary);
+    text-align: center;
+    margin-bottom: var(--space-md);
+  }
+
+  .catalog-intro {
+    text-align: center;
+    color: var(--color-text-muted);
+    max-width: 600px;
+    margin: 0 auto var(--space-2xl);
+    font-size: var(--text-body-sm);
+  }
+
+  .patterns-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 640px) {
+    .patterns-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* Pattern Card */
+  .pattern-card {
+    padding: var(--space-lg);
+    border-radius: var(--radius-md);
+    border-top: 3px solid var(--color-domain-data);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .complexity-badge {
+    font-size: var(--text-caption);
+    font-family: var(--font-mono);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-full);
+    border: 1px solid currentColor;
+  }
+
+  .complexity-badge.complexity-core {
+    color: var(--color-success);
+    border-color: hsla(142 70% 58% / 0.3);
+    background: hsla(142 70% 58% / 0.08);
+  }
+
+  .complexity-badge.complexity-advanced {
+    color: var(--color-warning);
+    border-color: hsla(43 96% 56% / 0.3);
+    background: hsla(43 96% 56% / 0.08);
+  }
+
+  .complexity-badge.complexity-expert {
+    color: var(--color-error);
+    border-color: hsla(0 90% 71% / 0.3);
+    background: hsla(0 90% 71% / 0.08);
+  }
+
+  .pattern-title {
+    font-size: var(--text-h4);
+    font-family: var(--font-heading);
+    color: var(--color-text);
+    margin-bottom: 0;
+    line-height: var(--leading-snug);
+  }
+
+  .pattern-summary {
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-sm);
+    line-height: var(--leading-relaxed);
+    margin-bottom: 0;
+    flex: 1;
+  }
+
+  .pattern-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .tag {
+    font-size: var(--text-caption);
+    font-family: var(--font-mono);
+    color: var(--color-text-muted);
+    background: var(--color-surface-raised);
+    padding: 2px var(--space-sm);
+    border-radius: var(--radius-sm);
+  }
+
+  .card-footer {
+    margin-top: auto;
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .coming-soon-label {
+    font-size: var(--text-body-sm);
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  /* Back nav */
+  .back-nav {
+    padding: 0 0 var(--space-2xl);
+  }
+
+  .back-link {
+    font-size: var(--text-body-sm);
+    color: var(--color-text-muted);
+    transition: color var(--transition-fast);
+  }
+
+  .back-link:hover {
+    color: var(--color-domain-data);
+  }
+
+  /* Constellation divider */
+  .constellation-divider {
+    border: none;
+    margin: var(--space-2xl) auto;
+    max-width: 600px;
+  }
+</style>
