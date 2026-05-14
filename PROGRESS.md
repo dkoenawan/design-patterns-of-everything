@@ -5,7 +5,7 @@ Last updated: 2026-05-14 by automated agent
 ## Completed Increments
 | Date | Increment | Commit |
 |------|-----------|--------|
-| 2026-05-14 | Backend domain overview page — src/pages/backend.astro | TBD |
+| 2026-05-14 | Backend domain overview page — src/pages/backend.astro | e1465aa |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
