@@ -7,11 +7,12 @@ Last updated: 2026-05-15 by automated agent
 |------|-----------|--------|
 | 2026-05-14 | Backend domain overview page — src/pages/backend.astro | e1465aa |
 | 2026-05-15 | Data Pipeline domain overview page — src/pages/data.astro | 64e86b2 |
+| 2026-05-15 | Infrastructure domain overview page — src/pages/infra.astro | 66f168c |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
 2. [x] Data Pipeline domain overview page — src/pages/data-pipeline.astro
-3. [ ] Infrastructure domain overview page — src/pages/infrastructure.astro
+3. [x] Infrastructure domain overview page — src/pages/infra.astro
 4. [ ] Frontend domain overview page — src/pages/frontend.astro
 5. [ ] Frontend pattern: Component Composition — docs/patterns/frontend/component-composition.mdx
 6. [ ] Frontend pattern: State Management — docs/patterns/frontend/state-management-patterns.mdx
