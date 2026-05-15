@@ -1,0 +1,472 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Starfield from '../components/Starfield';
+
+const patterns = [
+  {
+    title: 'Docker Port Mapping',
+    complexity: 'Core',
+    tags: ['containers', 'networking', 'port-binding'],
+    summary: 'Map container ports to host ports to expose services while maintaining network isolation between containers.',
+  },
+  {
+    title: 'Multi-Database Orchestration',
+    complexity: 'Advanced',
+    tags: ['polyglot-persistence', 'service-mesh', 'data-isolation'],
+    summary: 'Coordinate multiple purpose-fit databases within a single system, routing reads and writes to the appropriate store.',
+  },
+  {
+    title: 'Infrastructure as Code',
+    complexity: 'Core',
+    tags: ['iac', 'terraform', 'idempotency'],
+    summary: 'Define and provision infrastructure declaratively through versioned configuration, enabling reproducible environments.',
+  },
+  {
+    title: 'Container Orchestration',
+    complexity: 'Advanced',
+    tags: ['kubernetes', 'scheduling', 'self-healing'],
+    summary: 'Automate deployment, scaling, and management of containerized workloads across a cluster of machines.',
+  },
+];
+
+const complexityOrder: Record<string, number> = { Core: 0, Advanced: 1, Expert: 2 };
+const sortedPatterns = [...patterns].sort(
+  (a, b) => (complexityOrder[a.complexity] ?? 9) - (complexityOrder[b.complexity] ?? 9)
+);
+---
+
+<BaseLayout
+  title="Infrastructure & Platform — Design Patterns"
+  description="Microservices orchestration, container platforms, infrastructure as code, and CI/CD pipeline design for resilient production systems."
+>
+  <Starfield client:load />
+
+  <main class="infra-page">
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <div class="breadcrumb">
+          <a href="/">Portfolio</a>
+          <span class="crumb-sep" aria-hidden="true">›</span>
+          <span>Infrastructure & Platform</span>
+        </div>
+        <h1 class="page-title">
+          <span class="domain-label">Infrastructure & Platform</span>
+        </h1>
+        <p class="page-subtitle body-lg">
+          Patterns for platform engineering that treats infrastructure as a product. Containers,
+          orchestration, and declarative configuration converge to produce systems that are
+          reproducible, observable, and resilient under operational pressure.
+        </p>
+        <div class="domain-stats">
+          <div class="stat glass-surface">
+            <span class="stat-value">{patterns.length}</span>
+            <span class="stat-label">Patterns</span>
+          </div>
+          <div class="stat glass-surface">
+            <span class="stat-value">2</span>
+            <span class="stat-label">Core</span>
+          </div>
+          <div class="stat glass-surface">
+            <span class="stat-value">2</span>
+            <span class="stat-label">Advanced</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="constellation-divider" />
+
+    <!-- Domain Philosophy -->
+    <section class="philosophy">
+      <div class="container">
+        <div class="philosophy-grid">
+          <div class="philosophy-text">
+            <h2>The Core Principle</h2>
+            <p>
+              Infrastructure that cannot be recreated from source control is infrastructure
+              that cannot be trusted. Snowflake servers, manual configuration steps, and tribal
+              knowledge are risks masquerading as operational expertise. The platform exists to
+              serve the product — and it should be as rigorously engineered as the software it runs.
+            </p>
+            <p>
+              The patterns in this domain share a common thread: eliminating drift. Declarative
+              definitions capture intent. Containers enforce environment parity. Orchestrators
+              reconcile desired state against actual state continuously. The goal is a platform
+              where failure is recoverable by design, not by heroics.
+            </p>
+          </div>
+          <div class="principles-card glass-surface">
+            <h3>Guiding Principles</h3>
+            <ul class="principles-list">
+              <li>
+                <span class="principle-icon" aria-hidden="true">◈</span>
+                All infrastructure defined in version-controlled code
+              </li>
+              <li>
+                <span class="principle-icon" aria-hidden="true">◈</span>
+                Immutable artifacts — replace, never modify in place
+              </li>
+              <li>
+                <span class="principle-icon" aria-hidden="true">◈</span>
+                Design for failure: assume components will crash
+              </li>
+              <li>
+                <span class="principle-icon" aria-hidden="true">◈</span>
+                Isolate environments through network and namespace boundaries
+              </li>
+              <li>
+                <span class="principle-icon" aria-hidden="true">◈</span>
+                Instrument everything — observability is not optional
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="constellation-divider" />
+
+    <!-- Pattern Catalog -->
+    <section class="catalog">
+      <div class="container">
+        <h2>Pattern Catalog</h2>
+        <p class="catalog-intro">
+          Each pattern below addresses a recurring challenge in infrastructure and platform design.
+          Complexity ratings reflect implementation effort, not conceptual difficulty.
+        </p>
+        <div class="patterns-grid animate-stagger">
+          {sortedPatterns.map((pattern) => (
+            <article class={`pattern-card glass-surface hover-lift hover-border-glow complexity-${pattern.complexity.toLowerCase()}`}>
+              <div class="card-header">
+                <span class={`complexity-badge complexity-${pattern.complexity.toLowerCase()}`}>
+                  {pattern.complexity}
+                </span>
+              </div>
+              <h3 class="pattern-title">{pattern.title}</h3>
+              <p class="pattern-summary">{pattern.summary}</p>
+              <div class="pattern-tags">
+                {pattern.tags.map((tag) => (
+                  <span class="tag">{tag}</span>
+                ))}
+              </div>
+              <div class="card-footer">
+                <span class="coming-soon-label">Detail page coming soon</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <hr class="constellation-divider" />
+
+    <!-- Back navigation -->
+    <section class="back-nav">
+      <div class="container">
+        <a href="/" class="back-link hover-illuminate">← Back to all domains</a>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .infra-page {
+    position: relative;
+    min-height: 100vh;
+  }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--text-body-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-lg);
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    transition: color var(--transition-fast);
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-domain-infra);
+  }
+
+  .crumb-sep {
+    opacity: 0.5;
+  }
+
+  /* Page Hero */
+  .page-hero {
+    padding: var(--space-2xl) 0 var(--space-xl);
+  }
+
+  .domain-label {
+    display: block;
+    font-size: var(--text-body-sm);
+    font-family: var(--font-mono);
+    font-weight: var(--weight-normal);
+    color: var(--color-domain-infra);
+    letter-spacing: var(--tracking-wider);
+    text-transform: uppercase;
+    margin-bottom: var(--space-sm);
+  }
+
+  .page-title {
+    font-size: var(--text-h1);
+    font-family: var(--font-heading);
+    font-weight: var(--weight-light);
+    color: var(--color-text);
+    line-height: var(--leading-tight);
+    margin-bottom: var(--space-lg);
+  }
+
+  .page-subtitle {
+    max-width: 680px;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-xl);
+  }
+
+  .domain-stats {
+    display: flex;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--color-domain-infra);
+    text-align: center;
+    min-width: 80px;
+  }
+
+  .stat-value {
+    display: block;
+    font-size: var(--text-h3);
+    font-family: var(--font-heading);
+    font-weight: var(--weight-normal);
+    color: var(--color-domain-infra);
+    line-height: 1;
+  }
+
+  .stat-label {
+    display: block;
+    font-size: var(--text-caption);
+    font-family: var(--font-mono);
+    color: var(--color-text-muted);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    margin-top: var(--space-xs);
+  }
+
+  /* Philosophy */
+  .philosophy {
+    padding: var(--space-xl) 0;
+  }
+
+  .philosophy h2 {
+    color: var(--color-secondary);
+    text-align: left;
+    margin-bottom: var(--space-lg);
+  }
+
+  .philosophy-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 768px) {
+    .philosophy-grid {
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+    }
+  }
+
+  .philosophy-text p {
+    color: var(--color-text-secondary);
+    line-height: var(--leading-relaxed);
+  }
+
+  .principles-card {
+    padding: var(--space-lg);
+    border-radius: var(--radius-md);
+    border-top: 2px solid var(--color-domain-infra);
+  }
+
+  .principles-card h3 {
+    color: var(--color-domain-infra);
+    font-size: var(--text-body-lg);
+    margin-bottom: var(--space-lg);
+  }
+
+  .principles-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .principles-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-sm);
+    line-height: var(--leading-relaxed);
+  }
+
+  .principle-icon {
+    color: var(--color-domain-infra);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* Catalog */
+  .catalog {
+    padding: var(--space-xl) 0 var(--space-2xl);
+  }
+
+  .catalog h2 {
+    color: var(--color-secondary);
+    text-align: center;
+    margin-bottom: var(--space-md);
+  }
+
+  .catalog-intro {
+    text-align: center;
+    color: var(--color-text-muted);
+    max-width: 600px;
+    margin: 0 auto var(--space-2xl);
+    font-size: var(--text-body-sm);
+  }
+
+  .patterns-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 640px) {
+    .patterns-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* Pattern Card */
+  .pattern-card {
+    padding: var(--space-lg);
+    border-radius: var(--radius-md);
+    border-top: 3px solid var(--color-domain-infra);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .complexity-badge {
+    font-size: var(--text-caption);
+    font-family: var(--font-mono);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-full);
+    border: 1px solid currentColor;
+  }
+
+  .complexity-badge.complexity-core {
+    color: var(--color-success);
+    border-color: hsla(142 70% 58% / 0.3);
+    background: hsla(142 70% 58% / 0.08);
+  }
+
+  .complexity-badge.complexity-advanced {
+    color: var(--color-warning);
+    border-color: hsla(43 96% 56% / 0.3);
+    background: hsla(43 96% 56% / 0.08);
+  }
+
+  .complexity-badge.complexity-expert {
+    color: var(--color-error);
+    border-color: hsla(0 90% 71% / 0.3);
+    background: hsla(0 90% 71% / 0.08);
+  }
+
+  .pattern-title {
+    font-size: var(--text-h4);
+    font-family: var(--font-heading);
+    color: var(--color-text);
+    margin-bottom: 0;
+    line-height: var(--leading-snug);
+  }
+
+  .pattern-summary {
+    color: var(--color-text-secondary);
+    font-size: var(--text-body-sm);
+    line-height: var(--leading-relaxed);
+    margin-bottom: 0;
+    flex: 1;
+  }
+
+  .pattern-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .tag {
+    font-size: var(--text-caption);
+    font-family: var(--font-mono);
+    color: var(--color-text-muted);
+    background: var(--color-surface-raised);
+    padding: 2px var(--space-sm);
+    border-radius: var(--radius-sm);
+  }
+
+  .card-footer {
+    margin-top: auto;
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .coming-soon-label {
+    font-size: var(--text-body-sm);
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  /* Back nav */
+  .back-nav {
+    padding: 0 0 var(--space-2xl);
+  }
+
+  .back-link {
+    font-size: var(--text-body-sm);
+    color: var(--color-text-muted);
+    transition: color var(--transition-fast);
+  }
+
+  .back-link:hover {
+    color: var(--color-domain-infra);
+  }
+
+  /* Constellation divider */
+  .constellation-divider {
+    border: none;
+    margin: var(--space-2xl) auto;
+    max-width: 600px;
+  }
+</style>
