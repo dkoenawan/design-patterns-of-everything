@@ -28,7 +28,7 @@ const { domain, title, description, comingSoon = true } = Astro.props;
   {comingSoon ? (
     <span class="badge domain-badge">Coming Soon</span>
   ) : (
-    <a href={`${import.meta.env.BASE_URL}${domain}`} class="card-link hover-illuminate">Explore →</a>
+    <a href={`${import.meta.env.BASE_URL}/${domain}`} class="card-link hover-illuminate">Explore →</a>
   )}
 </div>
 
