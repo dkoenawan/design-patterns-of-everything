@@ -2,6 +2,8 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Starfield from '../components/Starfield';
 
+const base = import.meta.env.BASE_URL;
+
 const patterns = [
   {
     title: 'Docker Port Mapping',
@@ -46,7 +48,7 @@ const sortedPatterns = [...patterns].sort(
     <section class="page-hero">
       <div class="container">
         <div class="breadcrumb">
-          <a href="/">Portfolio</a>
+          <a href={base}>Portfolio</a>
           <span class="crumb-sep" aria-hidden="true">›</span>
           <span>Infrastructure & Platform</span>
         </div>
@@ -164,7 +166,7 @@ const sortedPatterns = [...patterns].sort(
     <!-- Back navigation -->
     <section class="back-nav">
       <div class="container">
-        <a href="/" class="back-link hover-illuminate">← Back to all domains</a>
+        <a href={base} class="back-link hover-illuminate">← Back to all domains</a>
       </div>
     </section>
   </main>
