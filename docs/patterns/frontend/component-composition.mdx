@@ -1,0 +1,106 @@
+---
+title: "Component Composition"
+domain: frontend
+complexity: core
+tags: [composition, react, components, props, reusability, separation-of-concerns]
+summary: "Build complex UI by assembling small, focused components rather than inflating a single component with all responsibilities"
+draft: false
+---
+
+## Summary
+
+Component Composition is the practice of combining small, single-purpose components into larger UI structures through nesting and prop-passing rather than inheritance or monolithic components. It is the foundational design principle behind scalable frontend architectures: each component does one thing well, and complexity emerges from their arrangement.
+
+## Problem
+
+As UI requirements grow, components accumulate responsibilities. A `UserCard` gains an avatar, a follow button, a notification badge, and inline editing. What began as 30 lines becomes 300, and changing one concern risks breaking others.
+
+- How do you share layout structure without duplicating markup across variants?
+- How do you let callers control specific regions of a component without threading dozens of props?
+- How do you build a design system where consumers can compose UI without forking internals?
+
+## Solution
+
+Compose components using children, named slots, or render props. The parent component defines structure and layout; the caller supplies the content for each region.
+
+```tsx
+// ❌ Monolithic — caller can't customise without adding props
+function UserCard({ name, avatar, action, badge }) {
+  return (
+    <div className="card">
+      <img src={avatar} />
+      <span>{badge}</span>
+      <h3>{name}</h3>
+      <button>{action}</button>
+    </div>
+  );
+}
+
+// ✅ Composed — structure is stable, regions are caller-supplied
+function Card({ header, body, footer }: {
+  header: React.ReactNode;
+  body: React.ReactNode;
+  footer?: React.ReactNode;
+}) {
+  return (
+    <div className="card">
+      <div className="card__header">{header}</div>
+      <div className="card__body">{body}</div>
+      {footer && <div className="card__footer">{footer}</div>}
+    </div>
+  );
+}
+
+// Caller assembles the full card from focused pieces
+<Card
+  header={<UserAvatar src={user.avatar} badge={user.unread} />}
+  body={<UserBio name={user.name} title={user.title} />}
+  footer={<FollowButton userId={user.id} />}
+/>
+```
+
+### Compound Components
+
+For tightly related UI families (tabs, accordions, form fields), expose a parent plus named child components that share implicit context:
+
+```tsx
+// Compound component pattern — consumers write expressive JSX
+<Tabs defaultTab="overview">
+  <Tabs.List>
+    <Tabs.Tab id="overview">Overview</Tabs.Tab>
+    <Tabs.Tab id="patterns">Patterns</Tabs.Tab>
+  </Tabs.List>
+  <Tabs.Panel id="overview"><OverviewContent /></Tabs.Panel>
+  <Tabs.Panel id="patterns"><PatternList /></Tabs.Panel>
+</Tabs>
+```
+
+The `Tabs` parent owns state; `Tab` and `Panel` children consume it via context. Each component is individually testable, and the caller controls the shape of the UI.
+
+## When to Use
+
+- Any component that must support multiple visual variants without a prop explosion (`size`, `variant`, `withIcon`, `withBadge`, …)
+- Design system primitives: buttons, cards, modals, form fields — regions must be open for extension
+- Dashboard layouts where different pages share chrome (sidebar, header) but own their content regions
+- Component libraries shipped to multiple teams who will supply their own content
+
+**Avoid when:**
+
+- The component has a single, invariant rendering — composability adds complexity without value
+- Deeply nested composition trees obscure data flow; consider co-locating state instead
+
+## Trade-offs
+
+| Benefit | Cost |
+|---|---|
+| Components remain small and single-purpose | Callers must understand the composition API |
+| Structural changes to the parent don't ripple into content | Prop drilling risk if context is not used for deep trees |
+| Each piece is independently testable and reusable | Over-composing trivial UI creates unnecessary indirection |
+| Design system consumers can extend without forking | Compound component context adds internal complexity |
+
+## Related Patterns
+
+- [Micro-Frontend Architecture](./micro-frontend-architecture.mdx) — composition at the application boundary; the same principle applied at a larger scale
+- [State Management Patterns](./state-management-patterns.mdx) — shared state across composed components often requires lifting state or context
+- [Single Responsibility](../cross-domain/single-responsibility.mdx) — component composition is SRP applied to UI: one component, one concern
+- [Composition Over Inheritance](../cross-domain/composition-over-inheritance.mdx) — the OOP principle that motivates this approach in the UI layer
