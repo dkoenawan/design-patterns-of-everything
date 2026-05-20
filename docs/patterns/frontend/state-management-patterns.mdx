@@ -1,0 +1,154 @@
+---
+title: "State Management Patterns"
+domain: frontend
+complexity: advanced
+tags: [state, react, context, redux, zustand, signals, lifting-state, unidirectional-data-flow]
+summary: "Choose the right scope and mechanism for each piece of application state to keep data flow predictable and components loosely coupled"
+draft: false
+---
+
+## Summary
+
+State management is the discipline of deciding *where* state lives, *who* can change it, and *how* changes propagate through the UI. The central insight is that different state has different scope: local UI state belongs in a component; shared domain state belongs in a store; server state belongs in a cache. Mixing these categories in a single global store creates accidental coupling and makes components hard to reason about in isolation.
+
+## Problem
+
+As applications grow, components need to react to the same data. The naive solution — lifting state to a common ancestor — creates prop drilling: data and callbacks thread through layers of components that neither read nor care about them.
+
+- How do you share state across a component tree without coupling every intermediate component to the shape of that state?
+- How do you prevent a single state update from triggering unnecessary re-renders across the entire app?
+- How do you differentiate between UI state (is this modal open?), client domain state (selected filters), and server state (the API response) — each with different invalidation and caching requirements?
+
+## Solution
+
+Categorise state by scope and apply the appropriate mechanism to each category.
+
+### Local UI State — `useState` / `useReducer`
+
+State that only one component cares about belongs in that component. Keep it local and co-located.
+
+```tsx
+// ✅ Local state — no other component needs to know this modal is open
+function FilterPanel() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <button onClick={() => setIsOpen(true)}>Filters</button>
+      {isOpen && <FilterDialog onClose={() => setIsOpen(false)} />}
+    </>
+  );
+}
+```
+
+Use `useReducer` when local transitions are complex or follow a clear command vocabulary:
+
+```tsx
+type Action = { type: 'increment' } | { type: 'decrement' } | { type: 'reset' };
+
+function counterReducer(state: number, action: Action): number {
+  switch (action.type) {
+    case 'increment': return state + 1;
+    case 'decrement': return Math.max(0, state - 1);
+    case 'reset':     return 0;
+  }
+}
+```
+
+### Shared Client State — Context + Zustand
+
+For state shared across multiple components, choose the mechanism based on update frequency:
+
+**React Context** is appropriate for low-frequency state — theme, locale, current user identity — that rarely changes after mount. Frequent updates through context re-render all consumers.
+
+```tsx
+const ThemeContext = createContext<'light' | 'dark'>('dark');
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme] = useState<'light' | 'dark'>('dark');
+  return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
+}
+```
+
+**A lightweight store** (Zustand, Jotai, Signals) is appropriate for high-frequency or granular state where you need selective subscriptions — only the components that subscribe to a specific slice re-render.
+
+```tsx
+// Zustand store — fine-grained subscriptions prevent cascade re-renders
+const useFilterStore = create<FilterState>((set) => ({
+  selectedTags: [],
+  sortOrder: 'asc',
+  addTag: (tag) => set((s) => ({ selectedTags: [...s.selectedTags, tag] })),
+  removeTag: (tag) => set((s) => ({
+    selectedTags: s.selectedTags.filter((t) => t !== tag),
+  })),
+  setSortOrder: (order) => set({ sortOrder: order }),
+}));
+
+// Only re-renders when selectedTags changes — sortOrder changes are ignored
+function TagList() {
+  const tags = useFilterStore((s) => s.selectedTags);
+  return <ul>{tags.map((t) => <li key={t}>{t}</li>)}</ul>;
+}
+```
+
+### Server State — Query Caches (TanStack Query / SWR)
+
+API data is not application state. It is a cache of remote truth. Treat it separately: use a query library that handles loading, error, stale-while-revalidate, and background refresh automatically.
+
+```tsx
+// ✅ Server state — declarative fetching with automatic caching and invalidation
+function PatternList({ domain }: { domain: string }) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['patterns', domain],
+    queryFn: () => fetchPatterns(domain),
+    staleTime: 5 * 60 * 1000, // treat as fresh for 5 minutes
+  });
+
+  if (isLoading) return <LoadingShell />;
+  if (error)     return <ErrorBoundary error={error} />;
+
+  return <ul>{data.map((p) => <PatternCard key={p.id} pattern={p} />)}</ul>;
+}
+```
+
+### Unidirectional Data Flow
+
+All of these mechanisms share a structural invariant: **data flows down, events flow up**. Components receive state as props or via subscriptions; they emit events (callbacks, store actions) to request changes. They never mutate shared state directly.
+
+```
+Store / Context
+     │  (state flows down)
+     ▼
+  Component
+     │  (events flow up via actions/callbacks)
+     ▼
+Store / Context
+```
+
+## When to Use
+
+- **Local `useState`**: toggle state, form field values, animation flags — anything no sibling or parent component needs
+- **`useReducer`**: multi-field local state with transitions that follow explicit action semantics
+- **Context**: auth session, theme, i18n locale — infrequently updated values consumed widely
+- **Lightweight store (Zustand/Jotai)**: UI filters, selections, cart contents — shared, frequently mutated client state
+- **Query cache (TanStack Query/SWR)**: all data fetched from an API
+
+**Avoid when:**
+
+- Reaching for a global store as the default for all state; start local, lift only when you have a concrete sharing requirement
+- Putting server-fetched data in a Redux/Zustand store alongside client state — they have different invalidation models and mixing them creates complexity
+
+## Trade-offs
+
+| Benefit | Cost |
+|---|---|
+| Each state category uses the right primitive | Developers must learn which mechanism to use and when |
+| Granular subscriptions limit re-render surface area | Multiple state libraries in one project can be confusing |
+| Server state is decoupled from client state, with automatic cache management | Query library setup and tuning (staleTime, gcTime) adds initial overhead |
+| Unidirectional flow makes debugging straightforward | Stores and query caches are harder to unit-test than pure local state |
+
+## Related Patterns
+
+- [Component Composition](./component-composition.mdx) — composition trees often need state shared between siblings; this pattern shows where to hoist it
+- [Micro-Frontend Architecture](./micro-frontend-architecture.mdx) — cross-micro-frontend state sharing requires event buses or shared stores with strict ownership contracts
+- [Hexagonal Architecture](../backend/hexagonal-architecture.mdx) — the same separation-of-concerns principle applied server-side; domain state should not leak into infrastructure
