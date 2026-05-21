@@ -1,0 +1,147 @@
+---
+title: "Micro-Frontend Architecture"
+domain: frontend
+complexity: advanced
+tags: [micro-frontends, module-federation, composition, team-autonomy, deployment, shell-app, iframe, web-components]
+summary: "Decompose a large frontend monolith into independently deployable UI applications, each owned by a single team, composed at runtime into a coherent product"
+draft: false
+---
+
+## Summary
+
+Micro-Frontend Architecture applies the microservices decomposition model to the UI layer. Instead of a single frontend codebase owned by everyone (and therefore controlled by no one), the product is split into vertical slices — each slice is a self-contained application that a single team builds, tests, and deploys independently. A shell application composes these slices at runtime into the experience a user sees.
+
+## Problem
+
+Frontend codebases suffer from the same coupling problems as monolithic backends — at scale, faster than backends do. Multiple teams committing to a single repository block each other on releases, share a global dependency graph that makes version upgrades catastrophic, and produce a build pipeline that takes 20 minutes for a one-line change in a single team's widget.
+
+- How do you let 10 teams deploy their UI changes without coordinating a shared release train?
+- How do you let teams choose the right framework version (or even the right framework) for their bounded context?
+- How do you prevent a failure in the recommendations panel from crashing the checkout flow?
+
+## Solution
+
+Divide the product into vertical domains. Each domain owns a remote application — a bundle that exports components or pages. A shell application loads remotes at runtime and places them into named slots in the layout.
+
+### Webpack Module Federation
+
+Module Federation is the most mature runtime composition approach. Remotes expose components; the shell consumes them as if they were local imports.
+
+```javascript
+// Remote: recommendations-app/webpack.config.js
+new ModuleFederationPlugin({
+  name: 'recommendations',
+  filename: 'remoteEntry.js',
+  exposes: {
+    './RecommendationPanel': './src/RecommendationPanel',
+  },
+  shared: { react: { singleton: true }, 'react-dom': { singleton: true } },
+});
+
+// Shell: webpack.config.js
+new ModuleFederationPlugin({
+  name: 'shell',
+  remotes: {
+    recommendations: 'recommendations@https://cdn.example.com/remoteEntry.js',
+  },
+  shared: { react: { singleton: true }, 'react-dom': { singleton: true } },
+});
+```
+
+The shell lazy-loads the remote on demand:
+
+```tsx
+// Shell: lazy-loading a remote component with error isolation
+const RecommendationPanel = React.lazy(
+  () => import('recommendations/RecommendationPanel')
+);
+
+function ProductPage() {
+  return (
+    <main>
+      <ProductDetails />
+      <ErrorBoundary fallback={<EmptyPanel />}>
+        <Suspense fallback={<PanelSkeleton />}>
+          <RecommendationPanel productId={productId} />
+        </Suspense>
+      </ErrorBoundary>
+    </main>
+  );
+}
+```
+
+### Cross-Micro-Frontend Communication
+
+Micro-frontends must communicate without tight coupling. Three mechanisms, in order of preference:
+
+**1. URL / routing** — the most durable contract. If a navigation event carries all required state in the URL, remotes need no shared runtime.
+
+**2. Shared event bus** — a lightweight pub/sub on `window` or a singleton module that both shell and remotes import:
+
+```typescript
+// Thin event bus — no direct import between remotes
+const bus = {
+  emit: (event: string, payload: unknown) =>
+    window.dispatchEvent(new CustomEvent(event, { detail: payload })),
+  on: (event: string, handler: (payload: unknown) => void) =>
+    window.addEventListener(event, (e) => handler((e as CustomEvent).detail)),
+};
+
+// Cart remote emits; checkout remote listens — they never import each other
+bus.emit('cart:item-added', { sku, quantity });
+```
+
+**3. Shared store module** — a singleton Zustand or Redux store exposed as a shared module. Use only for high-frequency shared state (e.g., auth session, cart count in the header). Treat it as a strict API contract: breaking changes require versioning.
+
+### Deployment Contract
+
+Each remote publishes a `remoteEntry.js` at a stable URL. The shell resolves remote URLs at runtime (from config or a manifest API), not at build time. This is what enables independent deployment: the shell does not need to be rebuilt when a remote changes.
+
+```
+┌─────────────────────────────────────────┐
+│              Shell Application          │
+│  ┌──────────┐  ┌──────────┐  ┌───────┐ │
+│  │  Header  │  │  Sidebar │  │ Slots │ │  ← Shell owns layout
+│  └──────────┘  └──────────┘  └───┬───┘ │
+│                                  │     │
+└──────────────────────────────────┼─────┘
+                                   │ runtime load
+        ┌──────────────────────────┼──────────────────┐
+        │                          │                  │
+   ┌────▼────┐               ┌─────▼──────┐   ┌──────▼─────┐
+   │ Product │               │  Reviews   │   │   Cart     │
+   │  Team   │               │   Team     │   │   Team     │
+   │ Remote  │               │   Remote   │   │   Remote   │
+   └─────────┘               └────────────┘   └────────────┘
+   (deploys independently)   (deploys independently)
+```
+
+## When to Use
+
+- Multiple product teams contributing to a single user-facing application where release coordination is a bottleneck
+- A product with clearly bounded vertical domains (search, checkout, recommendations, account) that map cleanly to team ownership
+- A long-running migration from a legacy monolith: the shell wraps the old app while new remotes are extracted incrementally
+- Different domains with legitimately different performance or framework requirements (e.g., a data-heavy dashboard team wanting Svelte while the shell runs React)
+
+**Avoid when:**
+
+- A small team owns the entire frontend — the deployment isolation benefit does not justify the operational overhead of maintaining a shell + multiple remotes
+- Domain boundaries are unclear; premature decomposition creates chatty cross-remote dependencies that are worse than a monolith
+- Shared UI state between remotes is frequent and complex — tight data coupling between remotes signals the decomposition is wrong
+
+## Trade-offs
+
+| Benefit | Cost |
+|---|---|
+| Teams deploy independently; no shared release train | Distributed system complexity: remote availability, version skew, CDN cache management |
+| Failure in one remote is isolated by an error boundary | Duplicate framework bundles inflate initial load unless shared modules are carefully configured |
+| Teams can adopt different frameworks or versions per domain | Testing the integrated product requires a full composition environment |
+| Legacy monolith can be extracted incrementally | Cross-remote debugging is harder: stack traces cross bundle boundaries |
+| Scales team autonomy without scaling coordination overhead | Shared state contracts between remotes must be versioned as APIs |
+
+## Related Patterns
+
+- [Component Composition](./component-composition.mdx) — the same decomposition principle applied at the component level; micro-frontends are composition at the application boundary
+- [State Management Patterns](./state-management-patterns.mdx) — cross-micro-frontend state sharing requires event buses or shared store modules with strict ownership contracts
+- [Hexagonal Architecture](../backend/hexagonal-architecture.mdx) — port-and-adapter thinking maps to the shell/remote contract: remotes are adapters plugged into shell ports
+- [Single Responsibility](../cross-domain/single-responsibility.mdx) — each remote owns exactly one bounded domain; SRP applied at the deployment unit level
