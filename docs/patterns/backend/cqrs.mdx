@@ -1,0 +1,94 @@
+---
+title: "CQRS"
+domain: backend
+complexity: advanced
+tags: [cqrs, command-query-separation, scalability, event-sourcing, read-write-separation]
+summary: "Separate read and write models to optimize each independently and reduce coupling"
+draft: false
+---
+
+## Summary
+
+Command Query Responsibility Segregation (CQRS) splits an application's data access model into two distinct sides: **commands** that mutate state, and **queries** that read state. Each side is optimized independently — writes enforce business invariants, reads serve UI and reporting needs without those constraints.
+
+## Problem
+
+A single unified data model that handles both reads and writes creates competing pressures that are hard to resolve simultaneously.
+
+- Read operations need denormalized, pre-joined data to serve UIs efficiently — but write models need normalized data to enforce consistency
+- Complex domain logic on the write side bleeds into read paths, adding latency and coupling
+- Scaling reads and writes together is inefficient when their load profiles differ dramatically
+- Adding reporting queries forces compromises in the domain model that reduce its integrity
+
+## Solution
+
+Define two separate models: a **command model** that accepts mutations (create, update, delete) and enforces all domain invariants, and a **query model** (read model) that is optimized for the specific data shapes consumers need.
+
+```
+Client
+  │
+  ├─── Command ──▶ [ Command Handler ] ──▶ [ Write DB / Event Store ]
+  │                       │                         │
+  │                       │               [ Projection / Sync ]
+  │                                                 │
+  └─── Query  ──▶ [ Query Handler  ] ◀──  [ Read DB (denormalized) ]
+```
+
+**Commands** are intent-carrying messages (`PlaceOrderCommand`, `CancelSubscriptionCommand`). Command handlers validate input, apply domain logic, persist changes, and optionally emit domain events.
+
+**Queries** bypass the domain model entirely — they read directly from a pre-projected read store optimized for the consumer. No business logic runs on the read path.
+
+The two stores can be synchronized synchronously (same transaction, separate tables) or asynchronously (event-driven projections), depending on consistency requirements.
+
+```typescript
+// Command side — enforces invariants
+class PlaceOrderHandler {
+  async handle(cmd: PlaceOrderCommand): Promise<void> {
+    const cart = await this.cartRepo.findById(cmd.cartId);
+    const order = cart.checkout(cmd.paymentMethod);  // domain logic
+    await this.orderRepo.save(order);
+    await this.eventBus.publish(order.pullDomainEvents());
+  }
+}
+
+// Query side — returns exactly what the UI needs
+class OrderSummaryQuery {
+  async execute(userId: string): Promise<OrderSummaryDTO[]> {
+    return this.db.query(
+      `SELECT o.id, o.total, o.status, p.name AS product
+       FROM order_summaries o JOIN products p ON o.product_id = p.id
+       WHERE o.user_id = $1`,
+      [userId]
+    );
+  }
+}
+```
+
+## When to Use
+
+- Systems with high read/write asymmetry — queries vastly outnumber writes, or vice versa
+- Complex domains where write logic is difficult to express in a schema that also serves reporting
+- Applications that need to support multiple specialized read views of the same data (dashboards, search, feeds)
+- Architectures already using domain events — CQRS is a natural fit with Event Sourcing
+
+**Avoid when:**
+
+- Simple CRUD applications — the indirection adds ceremony without benefit
+- Teams without experience in eventual consistency — async projection lags can surprise developers
+- Small services where a single model is readable and the scalability argument doesn't apply
+
+## Trade-offs
+
+| Benefit | Cost |
+|---|---|
+| Read and write sides scale independently | Two models to maintain — more code surface area |
+| Read model optimized for each consumer | Eventual consistency if projections are async |
+| Write side free of reporting concerns | Synchronization logic between stores adds complexity |
+| Enables Event Sourcing as a natural extension | Debugging across split stores is harder |
+| Clear audit trail when combined with domain events | Higher initial setup cost than a single repository |
+
+## Related Patterns
+
+- [Hexagonal Architecture](./hexagonal-architecture.mdx) — CQRS fits naturally as ports for the command and query sides
+- [Dependency Injection](./dependency-injection.mdx) — Used to wire command/query handlers to their respective stores
+- [Strategy Pattern](./strategy-pattern.mdx) — Command handlers can use strategies for pluggable business rules
