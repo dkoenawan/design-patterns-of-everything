@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-05-21 by automated agent
+Last updated: 2026-05-22 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -12,6 +12,7 @@ Last updated: 2026-05-21 by automated agent
 | 2026-05-19 | Frontend pattern: Component Composition — docs/patterns/frontend/component-composition.mdx | fe367d2 |
 | 2026-05-20 | Frontend pattern: State Management — docs/patterns/frontend/state-management-patterns.mdx | 333f6c5 |
 | 2026-05-21 | Frontend pattern: Micro-Frontend Architecture — docs/patterns/frontend/micro-frontend-architecture.mdx | 4c25323 |
+| 2026-05-22 | Backend pattern: CQRS — docs/patterns/backend/cqrs.mdx | 703f104 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
@@ -21,7 +22,7 @@ Last updated: 2026-05-21 by automated agent
 5. [x] Frontend pattern: Component Composition — docs/patterns/frontend/component-composition.mdx
 6. [x] Frontend pattern: State Management — docs/patterns/frontend/state-management-patterns.mdx
 7. [x] Frontend pattern: Micro-Frontend Architecture — docs/patterns/frontend/micro-frontend-architecture.mdx
-8. [ ] Backend pattern: CQRS — docs/patterns/backend/cqrs.mdx
+8. [x] Backend pattern: CQRS — docs/patterns/backend/cqrs.mdx
 9. [ ] Infrastructure pattern: Infrastructure as Code — docs/patterns/infrastructure/infrastructure-as-code.mdx
 10. [ ] Data Pipeline pattern: Batch vs Streaming — docs/patterns/data-pipeline/batch-vs-streaming.mdx
 11. [ ] Wire DomainCard links to domain pages — src/components/DomainCard.astro
