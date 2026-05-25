@@ -1,0 +1,112 @@
+---
+title: "Infrastructure as Code"
+domain: infrastructure
+complexity: advanced
+tags: [iac, terraform, pulumi, declarative, idempotency, drift-detection, gitops]
+summary: "Define infrastructure topology in version-controlled code so environments are reproducible, auditable, and automatically provisionable"
+draft: false
+---
+
+## Summary
+
+Infrastructure as Code (IaC) replaces manual provisioning with declarative or programmatic definitions stored in version control. The runtime (Terraform, Pulumi, CDK) reconciles desired state against current state, creating, updating, or destroying resources to reach the target topology. The same code that creates a dev environment creates production — eliminating configuration drift by construction.
+
+## Problem
+
+Manually provisioned infrastructure accumulates invisible entropy over time.
+
+- Environments diverge: someone SSH'd into production and changed a security group rule six months ago, and no one knows
+- Onboarding a new environment means asking whoever provisioned the last one to repeat the steps from memory
+- There is no audit trail for infrastructure changes — no blame history, no review process, no rollback path
+- Disaster recovery is a prayer: the runbook exists, but it hasn't been tested since the architecture changed
+
+## Solution
+
+Describe the desired infrastructure state as code. A planning phase shows the diff between desired and actual state; an apply phase executes only the necessary changes.
+
+```hcl
+# Terraform — declarative desired state
+resource "aws_ecs_cluster" "api" {
+  name = "${var.environment}-api-cluster"
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
+}
+
+resource "aws_ecs_service" "api" {
+  name            = "api"
+  cluster         = aws_ecs_cluster.api.id
+  task_definition = aws_ecs_task_definition.api.arn
+  desired_count   = var.api_replica_count
+
+  network_configuration {
+    subnets         = var.private_subnet_ids
+    security_groups = [aws_security_group.api.id]
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.api.arn
+    container_name   = "api"
+    container_port   = 8080
+  }
+}
+```
+
+```hcl
+# Separate tfvars per environment — same code, different values
+# environments/production.tfvars
+environment        = "production"
+api_replica_count  = 3
+private_subnet_ids = ["subnet-abc", "subnet-def"]
+
+# environments/staging.tfvars
+environment        = "staging"
+api_replica_count  = 1
+private_subnet_ids = ["subnet-xyz"]
+```
+
+The workflow becomes code-review driven. A pull request proposes infrastructure changes; CI runs `terraform plan` and posts the diff as a PR comment; approval triggers `terraform apply` in CD. Every change is attributed, reviewed, and reversible by reverting the commit.
+
+**State management** is the critical operational concern. The state file maps resource identifiers in code to real resource IDs in the cloud. Store it remotely (S3 + DynamoDB lock, Terraform Cloud) — never commit it to version control.
+
+```hcl
+# Remote state backend — required for team use
+terraform {
+  backend "s3" {
+    bucket         = "company-terraform-state"
+    key            = "services/api/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-state-lock"
+    encrypt        = true
+  }
+}
+```
+
+## When to Use
+
+- Any environment that must be reproduced (dev, staging, production, disaster recovery)
+- Teams running more than one engineer — shared infrastructure needs shared state and audit history
+- Systems that need to scale horizontally — IaC parameterizes replica counts and sizes cleanly
+- Organizations adopting GitOps — infrastructure PRs fit the same review workflow as application code
+
+**Avoid when:**
+
+- Truly one-off experimental provisioning where the cost of writing and maintaining IaC exceeds the benefit (prototype that will be destroyed in 48 hours)
+- Stateful resources that require careful manual migration steps IaC tooling cannot express (live database schema migrations belong in a migration tool, not Terraform)
+
+## Trade-offs
+
+| Benefit | Cost |
+|---|---|
+| Environments are reproducible from a cold start | State file must be managed carefully — corruption or loss is painful |
+| Changes go through code review before reaching production | Drift between code and reality can still occur if anyone bypasses IaC |
+| Full audit trail via git blame and PR history | Refactoring resource names/identifiers requires state manipulation |
+| Parameterized environments — same code for dev and prod | Initial IaC adoption on an existing environment requires import of existing resources |
+| Drift detection catches unauthorized manual changes | Plan/apply cycle adds latency compared to clicking in a console |
+
+## Related Patterns
+
+- [Multi-Database Orchestration](./multi-database-orchestration.mdx) — IaC manages the cloud-layer orchestration; database orchestration handles the runtime configuration within that infrastructure
+- [Docker Port Mapping](./docker-port-mapping.mdx) — container port assignments should be codified in IaC service definitions to keep networking declarations in one place
