@@ -8,6 +8,7 @@ interface Props {
 }
 
 const { domain, title, description, comingSoon = true } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
 <div class={`domain-card domain-${domain} glass-surface hover-lift hover-border-glow stars-sm`}>
@@ -28,7 +29,7 @@ const { domain, title, description, comingSoon = true } = Astro.props;
   {comingSoon ? (
     <span class="badge domain-badge">Coming Soon</span>
   ) : (
-    <a href={`${import.meta.env.BASE_URL}/${domain}`} class="card-link hover-illuminate">Explore →</a>
+    <a href={`${base}/${domain}`} class="card-link hover-illuminate">Explore →</a>
   )}
 </div>
 
