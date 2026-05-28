@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Starfield from '../components/Starfield';
+import AtlasBackdrop from '../components/AtlasBackdrop';
 
 const base = import.meta.env.BASE_URL;
 
@@ -35,7 +35,7 @@ const sortedPatterns = [...patterns].sort(
   title="Frontend Architecture — Design Patterns"
   description="Component patterns, state management strategies, micro-frontends, and scalable UI systems for complex frontend applications."
 >
-  <Starfield client:load />
+  <AtlasBackdrop client:load />
 
   <main class="frontend-page">
     <!-- Page Hero -->

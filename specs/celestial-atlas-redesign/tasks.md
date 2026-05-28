@@ -3,7 +3,7 @@ issue: 6
 branch: feat/celestial-atlas-redesign
 status: in-progress
 test_command: npm test
-last_skill_commit: 84db743e0ea288da328d48d47ae110f63ec6fdc4
+last_skill_commit: 08f5e01d15cbade2ff082f66274f8f5665aae4bc
 retry_counts:
 schedule: "0 */6 * * *"
 budget:
@@ -16,7 +16,7 @@ budget:
 - [x] Update src/styles/global.css: replace brand/ imports with atlas.css, remove all Inter font imports (depends on: 1)
 - [x] Update src/layouts/BaseLayout.astro: add Google Fonts link tag for Cormorant Garamond + JetBrains Mono, add color-scheme meta dark (depends on: 1)
 - [x] Create src/components/AtlasBackdrop.tsx: fixed sky div + SVG paper grain filter + Milky Way diagonal band + 800 deterministic seeded stars with magnitude-varied radii and sparkle crosses for brightest (depends on: 3)
-- [ ] Replace Starfield.tsx usage in all 5 pages with AtlasBackdrop client:load; delete src/components/Starfield.tsx and StarfieldCanvas.css (depends on: 4)
+- [x] Replace Starfield.tsx usage in all 5 pages with AtlasBackdrop client:load; delete src/components/Starfield.tsx and StarfieldCanvas.css (depends on: 4)
 - [ ] Create src/lib/atlas-data.ts: port all domain entries (4 domains with Latinate names, world coords, tints) and all pattern entries (x/y/mag/type/complexity/note) and connection edges from prototype zip (depends on: 5)
 - [ ] Create src/components/AtlasMap.tsx: full-bleed pannable/zoomable SVG map with RA/Dec grid, ecliptic, domain hatched ellipses, pattern stars (5-layer anatomy), connection lines, 4 floating cartouches (title, search placeholder, legend, zoom), side drawer 420px (depends on: 6)
 - [ ] Rewrite src/pages/index.astro: full-bleed AtlasBackdrop + AtlasMap client:load, remove all old landing sections (Hero, About, Domains, Approach, Contact) (depends on: 7)
