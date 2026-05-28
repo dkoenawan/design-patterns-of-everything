@@ -1,0 +1,137 @@
+---
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const navLinks = [
+  { href: `${base}/`, label: 'Atlas' },
+  { href: `${base}/frontend`, label: 'Frontend' },
+  { href: `${base}/backend`, label: 'Backend' },
+  { href: `${base}/data`, label: 'Data Pipeline' },
+  { href: `${base}/infra`, label: 'Infrastructure' },
+];
+
+const currentPath = Astro.url.pathname;
+
+function isActive(href: string): boolean {
+  if (href === `${base}/`) return currentPath === href || currentPath === `${base}`;
+  return currentPath.startsWith(href);
+}
+---
+
+<nav class="site-nav" aria-label="Primary navigation">
+  <div class="nav-inner">
+    <a href={`${base}/`} class="nav-wordmark" aria-label="Portfolio home">
+      <span class="wordmark-symbol" aria-hidden="true">✦</span>
+      <span class="wordmark-text">Celestial Atlas</span>
+    </a>
+
+    <ul class="nav-links" role="list">
+      {navLinks.slice(1).map((link) => (
+        <li>
+          <a
+            href={link.href}
+            class={`nav-link${isActive(link.href) ? ' active' : ''}`}
+            aria-current={isActive(link.href) ? 'page' : undefined}
+          >
+            {link.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</nav>
+
+<style>
+  .site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10, 14, 26, 0.88);
+    border-bottom: 0.5px solid var(--paper-border);
+    backdrop-filter: blur(12px) saturate(120%);
+  }
+
+  .nav-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 clamp(28px, 5vw, 64px);
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+  }
+
+  /* Wordmark */
+  .nav-wordmark {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink);
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    transition: color 150ms;
+    flex-shrink: 0;
+  }
+
+  .nav-wordmark:hover {
+    color: var(--gold-bright);
+  }
+
+  .wordmark-symbol {
+    color: var(--gold);
+    font-style: normal;
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  /* Nav links */
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .nav-link {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    text-decoration: none;
+    padding: 6px 12px;
+    border: 0.5px solid transparent;
+    transition: color 150ms, border-color 150ms;
+  }
+
+  .nav-link:hover {
+    color: var(--gold-bright);
+    border-color: var(--line);
+  }
+
+  .nav-link.active {
+    color: var(--gold);
+    border-color: var(--line);
+  }
+
+  @media (max-width: 600px) {
+    .nav-links {
+      gap: 0;
+    }
+
+    .nav-link {
+      padding: 6px 8px;
+      letter-spacing: 1.2px;
+      font-size: 9px;
+    }
+
+    .wordmark-text {
+      display: none;
+    }
+  }
+</style>
