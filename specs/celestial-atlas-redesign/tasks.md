@@ -3,7 +3,7 @@ issue: 6
 branch: feat/celestial-atlas-redesign
 status: in-progress
 test_command: npm test
-last_skill_commit: 00914467d0fa206262d8febcfe59b66d47094111
+last_skill_commit: 22148472a5447c1e43fafaa8ca83425c1648bd92
 retry_counts:
 schedule: "0 */6 * * *"
 budget:
@@ -14,7 +14,7 @@ budget:
 
 - [x] Create src/styles/atlas.css with all Midnight theme tokens, .cartouche primitive, link styles, and .page-wrapper
 - [x] Update src/styles/global.css: replace brand/ imports with atlas.css, remove all Inter font imports (depends on: 1)
-- [ ] Update src/layouts/BaseLayout.astro: add Google Fonts link tag for Cormorant Garamond + JetBrains Mono, add color-scheme meta dark (depends on: 1)
+- [x] Update src/layouts/BaseLayout.astro: add Google Fonts link tag for Cormorant Garamond + JetBrains Mono, add color-scheme meta dark (depends on: 1)
 - [ ] Create src/components/AtlasBackdrop.tsx: fixed sky div + SVG paper grain filter + Milky Way diagonal band + 800 deterministic seeded stars with magnitude-varied radii and sparkle crosses for brightest (depends on: 3)
 - [ ] Replace Starfield.tsx usage in all 5 pages with AtlasBackdrop client:load; delete src/components/Starfield.tsx and StarfieldCanvas.css (depends on: 4)
 - [ ] Create src/lib/atlas-data.ts: port all domain entries (4 domains with Latinate names, world coords, tints) and all pattern entries (x/y/mag/type/complexity/note) and connection edges from prototype zip (depends on: 5)
