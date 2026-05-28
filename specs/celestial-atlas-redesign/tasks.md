@@ -3,7 +3,7 @@ issue: 6
 branch: feat/celestial-atlas-redesign
 status: in-progress
 test_command: npm test
-last_skill_commit: null
+last_skill_commit: 1cc21d8c00b3ddd73beca56d910a3970e89c3709
 retry_counts:
 schedule: "0 */6 * * *"
 budget:
@@ -12,7 +12,7 @@ budget:
   stop_on_first_failure: true
 ---
 
-- [ ] Create src/styles/atlas.css with all Midnight theme tokens, .cartouche primitive, link styles, and .page-wrapper
+- [x] Create src/styles/atlas.css with all Midnight theme tokens, .cartouche primitive, link styles, and .page-wrapper
 - [ ] Update src/styles/global.css: replace brand/ imports with atlas.css, remove all Inter font imports (depends on: 1)
 - [ ] Update src/layouts/BaseLayout.astro: add Google Fonts link tag for Cormorant Garamond + JetBrains Mono, add color-scheme meta dark (depends on: 1)
 - [ ] Create src/components/AtlasBackdrop.tsx: fixed sky div + SVG paper grain filter + Milky Way diagonal band + 800 deterministic seeded stars with magnitude-varied radii and sparkle crosses for brightest (depends on: 3)
