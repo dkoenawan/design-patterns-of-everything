@@ -3,7 +3,7 @@ issue: 6
 branch: feat/celestial-atlas-redesign
 status: in-progress
 test_command: npm test
-last_skill_commit: dd27cf7d5d65007f6e2961c3bb29d7ecaa464c1c
+last_skill_commit: 2212012f626218f367d2589472a422bfa3039c8b
 retry_counts:
 schedule: "0 */6 * * *"
 budget:
@@ -28,6 +28,6 @@ budget:
 - [x] Rewrite src/pages/data.astro: Pipea Vallis domain page from Frontalia template, moss tint, MedallionViz as featured viz (depends on: 9, 12)
 - [x] Rewrite src/pages/infra.astro: Infrastructura domain page from Frontalia template, heather tint, static placeholder for featured viz (depends on: 9)
 - [x] Delete src/components/DomainCard.astro and src/components/Hero.astro; delete brand/ directory; audit all files and remove glass-surface, hover-lift, border-radius, box-shadow, radial-gradient, Inter font remnants (depends on: 8, 11, 13, 14, 15)
-- [ ] Add href values to all 13 pattern entries in src/lib/atlas-data.ts pointing to /patterns/{domain}/{slug} routes (depends on: 6)
+- [x] Add href values to all 13 pattern entries in src/lib/atlas-data.ts pointing to /patterns/{domain}/{slug} routes (depends on: 6)
 - [ ] Create src/pages/patterns/[...slug].astro: MDX detail page route using import.meta.glob, Celestial Atlas layout with AtlasBackdrop, breadcrumb, pattern metadata cartouche, MDX body, footer row (depends on: 3, 17)
 - [ ] Update src/components/PatternCatalogue.tsx and AtlasMap.tsx side drawer to render href as "Open detail chart →" link when pattern.href is present (depends on: 9, 17, 18)

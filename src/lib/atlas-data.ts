@@ -109,6 +109,7 @@ export const patterns: Pattern[] = [
     type: 'pattern',
     complexity: 1,
     note: 'Build complex UI from small, focused components that compose cleanly rather than inheriting behaviour.',
+    href: '/patterns/frontend/component-composition',
   },
   {
     id: 'state-management-patterns',
@@ -120,6 +121,7 @@ export const patterns: Pattern[] = [
     type: 'pattern',
     complexity: 2,
     note: 'Manage application state through well-defined flows — local, shared, and server state each handled at the right layer.',
+    href: '/patterns/frontend/state-management-patterns',
   },
   {
     id: 'micro-frontend-architecture',
@@ -131,6 +133,7 @@ export const patterns: Pattern[] = [
     type: 'pattern',
     complexity: 4,
     note: 'Decompose large frontend applications into independently deployable units owned by separate teams.',
+    href: '/patterns/frontend/micro-frontend-architecture',
   },
 
   // Backend — Backendis Major (cx:780, cy:-420, r:360×280)
@@ -144,6 +147,7 @@ export const patterns: Pattern[] = [
     type: 'pattern',
     complexity: 4,
     note: 'Isolate application core logic from external dependencies using ports and adapters.',
+    href: '/patterns/backend/hexagonal-architecture',
   },
   {
     id: 'dependency-injection',
@@ -155,6 +159,7 @@ export const patterns: Pattern[] = [
     type: 'pattern',
     complexity: 2,
     note: 'Provide dependencies to a component from the outside rather than constructing them internally.',
+    href: '/patterns/backend/dependency-injection',
   },
   {
     id: 'strategy-pattern',
@@ -166,6 +171,7 @@ export const patterns: Pattern[] = [
     type: 'pattern',
     complexity: 2,
     note: 'Define a family of algorithms behind a common interface and make them interchangeable at runtime.',
+    href: '/patterns/backend/strategy-pattern',
   },
   {
     id: 'cqrs',
@@ -177,6 +183,7 @@ export const patterns: Pattern[] = [
     type: 'pattern',
     complexity: 4,
     note: 'Separate read and write models to optimise each path independently and reduce contention.',
+    href: '/patterns/backend/cqrs',
   },
 
   // Data Pipeline — Pipea Vallis (cx:780, cy:420, r:360×280)
@@ -190,6 +197,7 @@ export const patterns: Pattern[] = [
     type: 'pattern',
     complexity: 5,
     note: 'Progressively refine raw ingested data through Bronze, Silver, and Gold layers, each adding quality and semantic richness.',
+    href: '/patterns/data/medallion-architecture',
   },
   {
     id: 'schema-driven-validation',
@@ -201,6 +209,7 @@ export const patterns: Pattern[] = [
     type: 'pattern',
     complexity: 2,
     note: 'Define and enforce data contracts at pipeline boundaries to catch structural violations before they propagate downstream.',
+    href: '/patterns/data/schema-driven-validation',
   },
   {
     id: 'pure-functions',
@@ -212,6 +221,7 @@ export const patterns: Pattern[] = [
     type: 'principle',
     complexity: 1,
     note: 'Build transformation logic from functions that depend only on their inputs, enabling deterministic testing and safe composition.',
+    href: '/patterns/data/pure-functions',
   },
   {
     id: 'batch-vs-streaming',
@@ -223,6 +233,7 @@ export const patterns: Pattern[] = [
     type: 'pattern',
     complexity: 3,
     note: 'Choose between bounded batch processing and unbounded stream processing based on latency, throughput, and consistency requirements.',
+    href: '/patterns/data/batch-vs-streaming',
   },
 
   // Infrastructure — Infrastructura (cx:-780, cy:420, r:360×280)
@@ -236,6 +247,7 @@ export const patterns: Pattern[] = [
     type: 'pattern',
     complexity: 1,
     note: 'Map container ports to host ports to expose services while maintaining network isolation between containers.',
+    href: '/patterns/infra/docker-port-mapping',
   },
   {
     id: 'multi-database-orchestration',
@@ -247,6 +259,7 @@ export const patterns: Pattern[] = [
     type: 'pattern',
     complexity: 4,
     note: 'Coordinate multiple purpose-fit databases within a single system, routing reads and writes to the appropriate store.',
+    href: '/patterns/infra/multi-database-orchestration',
   },
   {
     id: 'infrastructure-as-code',
@@ -258,6 +271,7 @@ export const patterns: Pattern[] = [
     type: 'principle',
     complexity: 2,
     note: 'Define and provision infrastructure declaratively through versioned configuration, enabling reproducible environments.',
+    href: '/patterns/infra/infrastructure-as-code',
   },
 
   // Cross-domain — placed at domain boundaries
@@ -271,6 +285,7 @@ export const patterns: Pattern[] = [
     type: 'principle',
     complexity: 1,
     note: 'Every module, class, or function should have one reason to change — separating concerns produces systems that are easier to reason about.',
+    href: '/patterns/backend/single-responsibility',
   },
   {
     id: 'composition-over-inheritance',
@@ -282,6 +297,7 @@ export const patterns: Pattern[] = [
     type: 'principle',
     complexity: 2,
     note: 'Favour assembling behaviour from composable units rather than deep inheritance chains that couple consumers to implementation details.',
+    href: '/patterns/frontend/composition-over-inheritance',
   },
 ];
 
