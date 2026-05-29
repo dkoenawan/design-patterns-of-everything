@@ -3,7 +3,7 @@ issue: 6
 branch: feat/celestial-atlas-redesign
 status: in-progress
 test_command: npm test
-last_skill_commit: ce1962183a732f00fc58324d7f8e60b7e28cdf5c
+last_skill_commit: 9f8f22e05e75856dc7c46f2a3fd847e4c5bb7fae
 retry_counts:
 schedule: "0 */6 * * *"
 budget:
@@ -26,7 +26,7 @@ budget:
 - [x] Create src/components/MedallionViz.tsx: animated Bronze→Silver→Gold mote flow, 28 particles, lane spread tightens, colour shifts, ~10% rejection with red × fade-out, quality bars, requestAnimationFrame (depends on: 9)
 - [x] Rewrite src/pages/backend.astro: Backendis Major domain page from Frontalia template, terracotta tint, static placeholder for featured viz (depends on: 9)
 - [x] Rewrite src/pages/data.astro: Pipea Vallis domain page from Frontalia template, moss tint, MedallionViz as featured viz (depends on: 9, 12)
-- [ ] Rewrite src/pages/infra.astro: Infrastructura domain page from Frontalia template, heather tint, static placeholder for featured viz (depends on: 9)
+- [x] Rewrite src/pages/infra.astro: Infrastructura domain page from Frontalia template, heather tint, static placeholder for featured viz (depends on: 9)
 - [ ] Delete src/components/DomainCard.astro and src/components/Hero.astro; delete brand/ directory; audit all files and remove glass-surface, hover-lift, border-radius, box-shadow, radial-gradient, Inter font remnants (depends on: 8, 11, 13, 14, 15)
 - [ ] Add href values to all 13 pattern entries in src/lib/atlas-data.ts pointing to /patterns/{domain}/{slug} routes (depends on: 6)
 - [ ] Create src/pages/patterns/[...slug].astro: MDX detail page route using import.meta.glob, Celestial Atlas layout with AtlasBackdrop, breadcrumb, pattern metadata cartouche, MDX body, footer row (depends on: 3, 17)
