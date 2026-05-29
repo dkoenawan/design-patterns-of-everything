@@ -20,7 +20,7 @@ budget:
 - [x] Create src/lib/atlas-data.ts: port all domain entries (4 domains with Latinate names, world coords, tints) and all pattern entries (x/y/mag/type/complexity/note) and connection edges from prototype zip (depends on: 5)
 - [x] Create src/components/AtlasMap.tsx: full-bleed pannable/zoomable SVG map with RA/Dec grid, ecliptic, domain hatched ellipses, pattern stars (5-layer anatomy), connection lines, 4 floating cartouches (title, search placeholder, legend, zoom), side drawer 420px (depends on: 6)
 - [x] Rewrite src/pages/index.astro: full-bleed AtlasBackdrop + AtlasMap client:load, remove all old landing sections (Hero, About, Domains, Approach, Contact) (depends on: 7)
-- [ ] Create src/components/Cartouche.astro, src/components/DomainMiniMap.tsx, and src/components/PatternCatalogue.tsx (depends on: 6)
+- [x] Create src/components/Cartouche.astro, src/components/DomainMiniMap.tsx, and src/components/PatternCatalogue.tsx (depends on: 6)
 - [ ] Create src/components/ComponentTreeViz.tsx: animated props-flow component tree (Page → organisms → molecules → atoms), particles cycling through 5 branches every 2.4s via requestAnimationFrame (depends on: 9)
 - [ ] Rewrite src/pages/frontend.astro: Frontalia domain page using Cartouche, DomainMiniMap, ComponentTreeViz, PatternCatalogue — two-column hero, featured viz cartouche, pattern catalogue, footer row (depends on: 9, 10)
 - [ ] Create src/components/MedallionViz.tsx: animated Bronze→Silver→Gold mote flow, 28 particles, lane spread tightens, colour shifts, ~10% rejection with red × fade-out, quality bars, requestAnimationFrame (depends on: 9)
