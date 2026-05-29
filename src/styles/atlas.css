@@ -1,0 +1,113 @@
+/* ── Fonts ───────────────────────────────────────── */
+@import '@fontsource/cormorant-garamond/400.css';
+@import '@fontsource/cormorant-garamond/400-italic.css';
+@import '@fontsource/cormorant-garamond/600.css';
+@import '@fontsource/cormorant-garamond/600-italic.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+
+/* ── Tokens ─────────────────────────────────────── */
+:root {
+  /* Colour — Midnight theme */
+  --sky:          #0a0e1a;
+  --ink:          #e8dcb8;
+  --ink-dim:      #a39570;
+  --ink-faint:    #5a4f33;
+  --gold:         #d4b15e;
+  --gold-bright:  #f1d98a;
+  --line:         rgba(212, 177, 94, 0.28);
+  --line-faint:   rgba(212, 177, 94, 0.10);
+  --anti:         #c46a55;
+  --paper:        rgba(20, 25, 40, 0.78);
+  --paper-border: rgba(212, 177, 94, 0.35);
+
+  /* Domain tints — hatched fills only, never solid or radial */
+  --tint-frontend: #7aa3d4;
+  --tint-backend:  #d49a7a;
+  --tint-data:     #9ec48a;
+  --tint-infra:    #c8a4d4;
+
+  /* Medallion stage colours */
+  --bronze:     #c08850;
+  --silver:     #b8c4cf;
+  --gold-medal: #e8c870;
+
+  /* Typography */
+  --font-display: 'Cormorant Garamond', 'Times New Roman', serif;
+  --font-mono:    'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* ── Reset ───────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Base ────────────────────────────────────────── */
+html {
+  background: var(--sky);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-style: italic;
+}
+
+/* ── Typography ──────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.05;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+code, pre {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+}
+
+pre {
+  padding: 18px 26px;
+  overflow-x: auto;
+}
+
+/* ── Cartouche primitive ─────────────────────────── */
+.cartouche {
+  background: var(--paper);
+  border: 0.5px solid var(--paper-border);
+  backdrop-filter: blur(8px) saturate(110%);
+  padding: 18px 26px;
+  /* NO border-radius. NO box-shadow. NO drop-shadow. */
+}
+
+/* ── Links ───────────────────────────────────────── */
+a {
+  color: var(--gold);
+  text-decoration: none;
+  transition: color 150ms;
+}
+
+a:hover {
+  color: var(--gold-bright);
+}
+
+/* ── Page wrapper ────────────────────────────────── */
+.page-wrapper {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 48px clamp(28px, 5vw, 64px) 96px;
+  position: relative;
+  z-index: 1;
+}

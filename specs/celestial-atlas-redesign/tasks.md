@@ -3,7 +3,7 @@ issue: 6
 branch: feat/celestial-atlas-redesign
 status: in-progress
 test_command: npm test
-last_skill_commit: 9f4d1b2a3fa8b823e987e5dd32bc256ccf0cb404
+last_skill_commit: a8a1dce8c7754e9b4dc094ec9928d8329e6e8b68
 retry_counts:
 schedule: "0 */6 * * *"
 budget:
@@ -18,7 +18,7 @@ budget:
 - [x] Create src/components/AtlasBackdrop.tsx: fixed sky div + SVG paper grain filter + Milky Way diagonal band + 800 deterministic seeded stars with magnitude-varied radii and sparkle crosses for brightest (depends on: 3)
 - [x] Replace Starfield.tsx usage in all 5 pages with AtlasBackdrop client:load; delete src/components/Starfield.tsx and StarfieldCanvas.css (depends on: 4)
 - [x] Create src/lib/atlas-data.ts: port all domain entries (4 domains with Latinate names, world coords, tints) and all pattern entries (x/y/mag/type/complexity/note) and connection edges from prototype zip (depends on: 5)
-- [ ] Create src/components/AtlasMap.tsx: full-bleed pannable/zoomable SVG map with RA/Dec grid, ecliptic, domain hatched ellipses, pattern stars (5-layer anatomy), connection lines, 4 floating cartouches (title, search placeholder, legend, zoom), side drawer 420px (depends on: 6)
+- [x] Create src/components/AtlasMap.tsx: full-bleed pannable/zoomable SVG map with RA/Dec grid, ecliptic, domain hatched ellipses, pattern stars (5-layer anatomy), connection lines, 4 floating cartouches (title, search placeholder, legend, zoom), side drawer 420px (depends on: 6)
 - [ ] Rewrite src/pages/index.astro: full-bleed AtlasBackdrop + AtlasMap client:load, remove all old landing sections (Hero, About, Domains, Approach, Contact) (depends on: 7)
 - [ ] Create src/components/Cartouche.astro, src/components/DomainMiniMap.tsx, and src/components/PatternCatalogue.tsx (depends on: 6)
 - [ ] Create src/components/ComponentTreeViz.tsx: animated props-flow component tree (Page → organisms → molecules → atoms), particles cycling through 5 branches every 2.4s via requestAnimationFrame (depends on: 9)
