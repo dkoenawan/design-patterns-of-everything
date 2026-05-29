@@ -3,7 +3,7 @@ issue: 6
 branch: feat/celestial-atlas-redesign
 status: in-progress
 test_command: npm test
-last_skill_commit: a8a1dce8c7754e9b4dc094ec9928d8329e6e8b68
+last_skill_commit: 28d4e90cc0fac4216d67ca4a197ccb7780dae5e4
 retry_counts:
 schedule: "0 */6 * * *"
 budget:
