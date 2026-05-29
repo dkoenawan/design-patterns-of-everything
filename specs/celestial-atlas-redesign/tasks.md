@@ -22,7 +22,7 @@ budget:
 - [x] Rewrite src/pages/index.astro: full-bleed AtlasBackdrop + AtlasMap client:load, remove all old landing sections (Hero, About, Domains, Approach, Contact) (depends on: 7)
 - [x] Create src/components/Cartouche.astro, src/components/DomainMiniMap.tsx, and src/components/PatternCatalogue.tsx (depends on: 6)
 - [x] Create src/components/ComponentTreeViz.tsx: animated props-flow component tree (Page → organisms → molecules → atoms), particles cycling through 5 branches every 2.4s via requestAnimationFrame (depends on: 9)
-- [ ] Rewrite src/pages/frontend.astro: Frontalia domain page using Cartouche, DomainMiniMap, ComponentTreeViz, PatternCatalogue — two-column hero, featured viz cartouche, pattern catalogue, footer row (depends on: 9, 10)
+- [x] Rewrite src/pages/frontend.astro: Frontalia domain page using Cartouche, DomainMiniMap, ComponentTreeViz, PatternCatalogue — two-column hero, featured viz cartouche, pattern catalogue, footer row (depends on: 9, 10)
 - [ ] Create src/components/MedallionViz.tsx: animated Bronze→Silver→Gold mote flow, 28 particles, lane spread tightens, colour shifts, ~10% rejection with red × fade-out, quality bars, requestAnimationFrame (depends on: 9)
 - [ ] Rewrite src/pages/backend.astro: Backendis Major domain page from Frontalia template, terracotta tint, static placeholder for featured viz (depends on: 9)
 - [ ] Rewrite src/pages/data.astro: Pipea Vallis domain page from Frontalia template, moss tint, MedallionViz as featured viz (depends on: 9, 12)
