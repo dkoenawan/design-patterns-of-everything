@@ -1,484 +1,314 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../components/AtlasBackdrop';
+import Cartouche from '../components/Cartouche.astro';
+import DomainMiniMap from '../components/DomainMiniMap';
+import PatternCatalogue from '../components/PatternCatalogue';
+import { domains, patterns } from '../lib/atlas-data';
 
 const base = import.meta.env.BASE_URL;
 
-const patterns = [
-  {
-    title: 'Hexagonal Architecture',
-    complexity: 'Advanced',
-    tags: ['ports-and-adapters', 'clean-architecture', 'testability'],
-    summary: 'Isolate application core logic from external dependencies using ports and adapters.',
-  },
-  {
-    title: 'Dependency Injection',
-    complexity: 'Core',
-    tags: ['ioc', 'testability', 'decoupling'],
-    summary: 'Provide dependencies to a component from the outside rather than constructing them internally.',
-  },
-  {
-    title: 'Strategy Pattern',
-    complexity: 'Core',
-    tags: ['behavioral', 'open-closed', 'composition'],
-    summary: 'Define a family of algorithms behind a common interface and make them interchangeable at runtime.',
-  },
-  {
-    title: 'CQRS',
-    complexity: 'Advanced',
-    tags: ['cqrs', 'event-driven', 'scalability'],
-    summary: 'Separate read (query) and write (command) models to optimize each path independently.',
-  },
-];
-
-const complexityOrder: Record<string, number> = { Core: 0, Advanced: 1, Expert: 2 };
-const sortedPatterns = [...patterns].sort(
-  (a, b) => (complexityOrder[a.complexity] ?? 9) - (complexityOrder[b.complexity] ?? 9)
-);
+const domain = domains.find((d) => d.id === 'backend')!;
+const domainPatterns = patterns.filter((p) => p.domain === 'backend');
 ---
 
 <BaseLayout
-  title="Backend Architecture — Design Patterns"
+  title="Backendis Major — Backend Architecture"
   description="Clean architecture, CQRS, hexagonal patterns, and API design principles for maintainable server-side systems."
 >
   <AtlasBackdrop client:load />
 
-  <main class="backend-page">
-    <!-- Page Hero -->
-    <section class="page-hero">
-      <div class="container">
+  <main class="domain-page">
+
+    <!-- ── Two-column hero ──────────────────────────────────────── -->
+    <section class="hero-row">
+      <div class="hero-text">
         <div class="breadcrumb">
-          <a href={base}>Portfolio</a>
-          <span class="crumb-sep" aria-hidden="true">›</span>
-          <span>Backend Architecture</span>
+          <a href={base}>Atlas</a>
+          <span aria-hidden="true"> › </span>
+          <span>Backendis Major</span>
         </div>
-        <h1 class="page-title">
-          <span class="domain-label">Backend Architecture</span>
-        </h1>
-        <p class="page-subtitle body-lg">
-          Patterns for server-side systems that remain maintainable as complexity grows.
-          Clean boundaries, explicit contracts, and separated concerns are the load-bearing
-          elements of long-lived backend services.
-        </p>
-        <div class="domain-stats">
-          <div class="stat glass-surface">
-            <span class="stat-value">{patterns.length}</span>
-            <span class="stat-label">Patterns</span>
+
+        <Cartouche label="Domain chart · ii">
+          <h1 class="domain-title">{domain.name}</h1>
+          <p class="domain-subtitle">{domain.subtitle}</p>
+          <p class="domain-blurb">{domain.blurb}</p>
+
+          <div class="domain-meta">
+            <div class="meta-item">
+              <span class="meta-num">{domainPatterns.length}</span>
+              <span class="meta-label">Entries</span>
+            </div>
+            <div class="meta-divider" aria-hidden="true"></div>
+            <div class="meta-item">
+              <span class="meta-num">{domainPatterns.filter(p => p.type === 'principle').length}</span>
+              <span class="meta-label">Principles</span>
+            </div>
+            <div class="meta-divider" aria-hidden="true"></div>
+            <div class="meta-item">
+              <span class="meta-num">{domainPatterns.filter(p => p.type === 'anti').length}</span>
+              <span class="meta-label">Anti-patterns</span>
+            </div>
           </div>
-          <div class="stat glass-surface">
-            <span class="stat-value">3</span>
-            <span class="stat-label">Core</span>
+        </Cartouche>
+      </div>
+
+      <!-- Mini-map column -->
+      <div class="hero-map">
+        <Cartouche label="Celestial position">
+          <div class="minimap-container">
+            <DomainMiniMap domain="backend" client:load />
           </div>
-          <div class="stat glass-surface">
-            <span class="stat-value">1</span>
-            <span class="stat-label">Advanced</span>
-          </div>
-        </div>
+        </Cartouche>
       </div>
     </section>
 
-    <hr class="constellation-divider" />
-
-    <!-- Domain Philosophy -->
-    <section class="philosophy">
-      <div class="container">
-        <div class="philosophy-grid">
-          <div class="philosophy-text">
-            <h2>The Core Principle</h2>
-            <p>
-              Good backend architecture isolates what changes from what stays stable. Business rules
-              should not depend on how data is stored, how it's transported, or what external services
-              are called. These concerns are details — they belong at the edges.
-            </p>
-            <p>
-              The patterns in this domain share a common thread: inversion of control. Rather than
-              letting infrastructure drive design, domain logic defines contracts that infrastructure
-              must satisfy. This creates systems where the database can change, the transport layer
-              can evolve, and tests can run in memory — without touching the core.
-            </p>
-          </div>
-          <div class="principles-card glass-surface">
-            <h3>Guiding Principles</h3>
-            <ul class="principles-list">
-              <li>
-                <span class="principle-icon" aria-hidden="true">◈</span>
-                Separate domain logic from infrastructure concerns
-              </li>
-              <li>
-                <span class="principle-icon" aria-hidden="true">◈</span>
-                Depend on abstractions, not concretions
-              </li>
-              <li>
-                <span class="principle-icon" aria-hidden="true">◈</span>
-                Make side effects explicit at boundaries
-              </li>
-              <li>
-                <span class="principle-icon" aria-hidden="true">◈</span>
-                Design for testability from the start
-              </li>
-              <li>
-                <span class="principle-icon" aria-hidden="true">◈</span>
-                Model commands and queries as distinct flows
-              </li>
-            </ul>
+    <!-- ── Featured visualisation (placeholder) ────────────────── -->
+    <section class="viz-row">
+      <Cartouche label="Featured visualisation — ports &amp; adapters">
+        <div class="viz-header">
+          <h2 class="viz-title">Hexagonal Boundary</h2>
+          <p class="viz-caption">
+            Domain logic sits at the centre, insulated from the outside world.
+            Ports define the contracts; adapters satisfy them. Infrastructure
+            depends inward — the core depends on nothing.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <div class="viz-placeholder">
+            <span class="placeholder-glyph" aria-hidden="true">⬡</span>
+            <p class="placeholder-text">Interactive chart in preparation</p>
+            <p class="placeholder-coord">Plate ii · viz forthcoming</p>
           </div>
         </div>
-      </div>
+      </Cartouche>
     </section>
 
-    <hr class="constellation-divider" />
-
-    <!-- Pattern Catalog -->
-    <section class="catalog">
-      <div class="container">
-        <h2>Pattern Catalog</h2>
-        <p class="catalog-intro">
-          Each pattern below represents a tested approach to a recurring backend challenge.
-          Complexity ratings reflect implementation effort, not conceptual difficulty.
-        </p>
-        <div class="patterns-grid animate-stagger">
-          {sortedPatterns.map((pattern) => (
-            <article class={`pattern-card glass-surface hover-lift hover-border-glow complexity-${pattern.complexity.toLowerCase()}`}>
-              <div class="card-header">
-                <span class={`complexity-badge complexity-${pattern.complexity.toLowerCase()}`}>
-                  {pattern.complexity}
-                </span>
-              </div>
-              <h3 class="pattern-title">{pattern.title}</h3>
-              <p class="pattern-summary">{pattern.summary}</p>
-              <div class="pattern-tags">
-                {pattern.tags.map((tag) => (
-                  <span class="tag">{tag}</span>
-                ))}
-              </div>
-              <div class="card-footer">
-                <span class="coming-soon-label">Detail page coming soon</span>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
+    <!-- ── Pattern catalogue ───────────────────────────────────── -->
+    <section class="catalogue-row">
+      <Cartouche label="Pattern catalogue — Backendis Major">
+        <PatternCatalogue domain="backend" patterns={domainPatterns} client:load />
+      </Cartouche>
     </section>
 
-    <hr class="constellation-divider" />
-
-    <!-- Back navigation -->
-    <section class="back-nav">
-      <div class="container">
-        <a href={base} class="back-link hover-illuminate">← Back to all domains</a>
+    <!-- ── Footer row ──────────────────────────────────────────── -->
+    <section class="footer-row">
+      <div class="footer-nav">
+        <a href={`${base}frontend`} class="nav-link">← Frontalia</a>
+        <a href={`${base}data`} class="nav-link">Pipea Vallis →</a>
       </div>
+      <p class="footer-coord">Plate ii — Backendis Major · RA +780° Dec −420°</p>
     </section>
+
   </main>
 </BaseLayout>
 
 <style>
-  .backend-page {
+  .domain-page {
     position: relative;
-    min-height: 100vh;
+    z-index: 1;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 80px 32px 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
   }
 
   /* Breadcrumb */
   .breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    font-size: var(--text-body-sm);
-    color: var(--color-text-muted);
-    margin-bottom: var(--space-lg);
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 24px;
   }
 
   .breadcrumb a {
-    color: var(--color-text-muted);
-    transition: color var(--transition-fast);
+    color: var(--ink-dim);
+    text-decoration: none;
   }
 
   .breadcrumb a:hover {
-    color: var(--color-domain-backend);
+    color: var(--gold);
   }
 
-  .crumb-sep {
-    opacity: 0.5;
+  /* ── Hero row ── */
+  .hero-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
   }
 
-  /* Page Hero */
-  .page-hero {
-    padding: var(--space-2xl) 0 var(--space-xl);
+  @media (max-width: 768px) {
+    .hero-row {
+      grid-template-columns: 1fr;
+    }
   }
 
-  .domain-label {
-    display: block;
-    font-size: var(--text-body-sm);
-    font-family: var(--font-mono);
-    font-weight: var(--weight-normal);
-    color: var(--color-domain-backend);
-    letter-spacing: var(--tracking-wider);
-    text-transform: uppercase;
-    margin-bottom: var(--space-sm);
-  }
-
-  .page-title {
-    font-size: var(--text-h1);
-    font-family: var(--font-heading);
-    font-weight: var(--weight-light);
-    color: var(--color-text);
-    line-height: var(--leading-tight);
-    margin-bottom: var(--space-lg);
-  }
-
-  .page-subtitle {
-    max-width: 680px;
-    color: var(--color-text-secondary);
-    margin-bottom: var(--space-xl);
-  }
-
-  .domain-stats {
-    display: flex;
-    gap: var(--space-md);
-    flex-wrap: wrap;
-  }
-
-  .stat {
-    padding: var(--space-md) var(--space-lg);
-    border-radius: var(--radius-md);
-    border-left: 3px solid var(--color-domain-backend);
-    text-align: center;
-    min-width: 80px;
-  }
-
-  .stat-value {
-    display: block;
-    font-size: var(--text-h3);
-    font-family: var(--font-heading);
-    font-weight: var(--weight-normal);
-    color: var(--color-domain-backend);
+  .domain-title {
+    font-size: 56px;
+    color: var(--tint-backend);
     line-height: 1;
+    margin-bottom: 8px;
   }
 
-  .stat-label {
-    display: block;
-    font-size: var(--text-caption);
-    font-family: var(--font-mono);
-    color: var(--color-text-muted);
-    letter-spacing: var(--tracking-wide);
-    text-transform: uppercase;
-    margin-top: var(--space-xs);
-  }
-
-  /* Philosophy */
-  .philosophy {
-    padding: var(--space-xl) 0;
-  }
-
-  .philosophy h2 {
-    color: var(--color-secondary);
-    text-align: left;
-    margin-bottom: var(--space-lg);
-  }
-
-  .philosophy-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-xl);
-    max-width: 1000px;
-    margin: 0 auto;
-  }
-
-  @media (min-width: 768px) {
-    .philosophy-grid {
-      grid-template-columns: 1fr 1fr;
-      align-items: start;
-    }
-  }
-
-  .philosophy-text p {
-    color: var(--color-text-secondary);
-    line-height: var(--leading-relaxed);
-  }
-
-  .principles-card {
-    padding: var(--space-lg);
-    border-radius: var(--radius-md);
-    border-top: 2px solid var(--color-domain-backend);
-  }
-
-  .principles-card h3 {
-    color: var(--color-domain-backend);
-    font-size: var(--text-body-lg);
-    margin-bottom: var(--space-lg);
-  }
-
-  .principles-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
-  }
-
-  .principles-list li {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-sm);
-    color: var(--color-text-secondary);
-    font-size: var(--text-body-sm);
-    line-height: var(--leading-relaxed);
-  }
-
-  .principle-icon {
-    color: var(--color-domain-backend);
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  /* Catalog */
-  .catalog {
-    padding: var(--space-xl) 0 var(--space-2xl);
-  }
-
-  .catalog h2 {
-    color: var(--color-secondary);
-    text-align: center;
-    margin-bottom: var(--space-md);
-  }
-
-  .catalog-intro {
-    text-align: center;
-    color: var(--color-text-muted);
-    max-width: 600px;
-    margin: 0 auto var(--space-2xl);
-    font-size: var(--text-body-sm);
-  }
-
-  .patterns-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-lg);
-    max-width: 1000px;
-    margin: 0 auto;
-  }
-
-  @media (min-width: 640px) {
-    .patterns-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  /* Pattern Card */
-  .pattern-card {
-    padding: var(--space-lg);
-    border-radius: var(--radius-md);
-    border-top: 3px solid var(--color-domain-backend);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
-  }
-
-  .card-header {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-  }
-
-  .complexity-badge {
-    font-size: var(--text-caption);
-    font-family: var(--font-mono);
-    letter-spacing: var(--tracking-wide);
-    text-transform: uppercase;
-    padding: var(--space-xs) var(--space-sm);
-    border-radius: var(--radius-full);
-    border: 1px solid currentColor;
-  }
-
-  .complexity-badge.complexity-core {
-    color: var(--color-success);
-    border-color: hsla(142 70% 58% / 0.3);
-    background: hsla(142 70% 58% / 0.08);
-  }
-
-  .complexity-badge.complexity-advanced {
-    color: var(--color-warning);
-    border-color: hsla(43 96% 56% / 0.3);
-    background: hsla(43 96% 56% / 0.08);
-  }
-
-  .complexity-badge.complexity-expert {
-    color: var(--color-error);
-    border-color: hsla(0 90% 71% / 0.3);
-    background: hsla(0 90% 71% / 0.08);
-  }
-
-  .pattern-title {
-    font-size: var(--text-h4);
-    font-family: var(--font-heading);
-    color: var(--color-text);
-    margin-bottom: 0;
-    line-height: var(--leading-snug);
-  }
-
-  .pattern-summary {
-    color: var(--color-text-secondary);
-    font-size: var(--text-body-sm);
-    line-height: var(--leading-relaxed);
-    margin-bottom: 0;
-    flex: 1;
-  }
-
-  .pattern-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-xs);
-  }
-
-  .tag {
-    font-size: var(--text-caption);
-    font-family: var(--font-mono);
-    color: var(--color-text-muted);
-    background: var(--color-surface-raised);
-    padding: 2px var(--space-sm);
-    border-radius: var(--radius-sm);
-  }
-
-  .card-footer {
-    margin-top: auto;
-    padding-top: var(--space-sm);
-    border-top: 1px solid var(--color-border);
-  }
-
-  .pattern-link {
-    font-size: var(--text-body-sm);
-    font-weight: var(--weight-semibold);
-    color: var(--color-domain-backend);
-    transition: color var(--transition-fast);
-  }
-
-  .pattern-link:hover {
-    color: var(--color-secondary);
-  }
-
-  .coming-soon-label {
-    font-size: var(--text-body-sm);
-    color: var(--color-text-muted);
+  .domain-subtitle {
+    font-size: 18px;
+    color: var(--ink-dim);
+    margin-bottom: 20px;
     font-style: italic;
   }
 
-  /* Back nav */
-  .back-nav {
-    padding: 0 0 var(--space-2xl);
+  .domain-blurb {
+    font-size: 17px;
+    color: var(--ink);
+    line-height: 1.55;
+    margin-bottom: 28px;
   }
 
-  .back-link {
-    font-size: var(--text-body-sm);
-    color: var(--color-text-muted);
-    transition: color var(--transition-fast);
+  .domain-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
   }
 
-  .back-link:hover {
-    color: var(--color-domain-backend);
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
   }
 
-  /* Constellation divider */
-  .constellation-divider {
-    border: none;
-    margin: var(--space-2xl) auto;
-    max-width: 600px;
+  .meta-num {
+    font-size: 32px;
+    font-style: italic;
+    color: var(--tint-backend);
+    line-height: 1;
+  }
+
+  .meta-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .meta-divider {
+    width: 0.5px;
+    height: 32px;
+    background: var(--paper-border);
+  }
+
+  .minimap-container {
+    width: 100%;
+    height: 280px;
+  }
+
+  /* ── Visualisation row ── */
+  .viz-header {
+    margin-bottom: 28px;
+  }
+
+  .viz-title {
+    font-size: 28px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+
+  .viz-caption {
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.55;
+    max-width: 560px;
+  }
+
+  .viz-canvas {
+    width: 100%;
+  }
+
+  /* Static placeholder — viz forthcoming */
+  .viz-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 280px;
+    border: 0.5px dashed var(--paper-border);
+    text-align: center;
+  }
+
+  .placeholder-glyph {
+    font-size: 48px;
+    color: var(--tint-backend);
+    opacity: 0.5;
+    line-height: 1;
+  }
+
+  .placeholder-text {
+    font-size: 16px;
+    font-style: italic;
+    color: var(--ink-dim);
+  }
+
+  .placeholder-coord {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* ── Footer row ── */
+  .footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 32px;
+    border-top: 0.5px solid var(--line-faint);
+  }
+
+  .footer-nav {
+    display: flex;
+    gap: 32px;
+  }
+
+  .nav-link {
+    font-size: 15px;
+    color: var(--gold);
+    text-decoration: none;
+    font-style: italic;
+  }
+
+  .nav-link:hover {
+    color: var(--gold-bright);
+  }
+
+  .footer-coord {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 640px) {
+    .domain-page {
+      padding: 60px 20px 80px;
+    }
+
+    .footer-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
   }
 </style>

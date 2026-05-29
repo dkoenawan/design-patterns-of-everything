@@ -3,7 +3,7 @@ issue: 6
 branch: feat/celestial-atlas-redesign
 status: in-progress
 test_command: npm test
-last_skill_commit: f5b7f16168c08b89347c4b26e1b839411a7da0cd
+last_skill_commit: f4c9d9faf8455148fe3ac868aad4c982f60dfc09
 retry_counts:
 schedule: "0 */6 * * *"
 budget:
@@ -24,7 +24,7 @@ budget:
 - [x] Create src/components/ComponentTreeViz.tsx: animated props-flow component tree (Page → organisms → molecules → atoms), particles cycling through 5 branches every 2.4s via requestAnimationFrame (depends on: 9)
 - [x] Rewrite src/pages/frontend.astro: Frontalia domain page using Cartouche, DomainMiniMap, ComponentTreeViz, PatternCatalogue — two-column hero, featured viz cartouche, pattern catalogue, footer row (depends on: 9, 10)
 - [x] Create src/components/MedallionViz.tsx: animated Bronze→Silver→Gold mote flow, 28 particles, lane spread tightens, colour shifts, ~10% rejection with red × fade-out, quality bars, requestAnimationFrame (depends on: 9)
-- [ ] Rewrite src/pages/backend.astro: Backendis Major domain page from Frontalia template, terracotta tint, static placeholder for featured viz (depends on: 9)
+- [x] Rewrite src/pages/backend.astro: Backendis Major domain page from Frontalia template, terracotta tint, static placeholder for featured viz (depends on: 9)
 - [ ] Rewrite src/pages/data.astro: Pipea Vallis domain page from Frontalia template, moss tint, MedallionViz as featured viz (depends on: 9, 12)
 - [ ] Rewrite src/pages/infra.astro: Infrastructura domain page from Frontalia template, heather tint, static placeholder for featured viz (depends on: 9)
 - [ ] Delete src/components/DomainCard.astro and src/components/Hero.astro; delete brand/ directory; audit all files and remove glass-surface, hover-lift, border-radius, box-shadow, radial-gradient, Inter font remnants (depends on: 8, 11, 13, 14, 15)
