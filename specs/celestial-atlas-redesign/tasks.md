@@ -3,7 +3,7 @@ issue: 6
 branch: feat/celestial-atlas-redesign
 status: in-progress
 test_command: npm test
-last_skill_commit: 28d4e90cc0fac4216d67ca4a197ccb7780dae5e4
+last_skill_commit: 72793a4fe1962befd9535f3544acaa4a5b8bd4ce
 retry_counts:
 schedule: "0 */6 * * *"
 budget:
@@ -21,7 +21,7 @@ budget:
 - [x] Create src/components/AtlasMap.tsx: full-bleed pannable/zoomable SVG map with RA/Dec grid, ecliptic, domain hatched ellipses, pattern stars (5-layer anatomy), connection lines, 4 floating cartouches (title, search placeholder, legend, zoom), side drawer 420px (depends on: 6)
 - [x] Rewrite src/pages/index.astro: full-bleed AtlasBackdrop + AtlasMap client:load, remove all old landing sections (Hero, About, Domains, Approach, Contact) (depends on: 7)
 - [x] Create src/components/Cartouche.astro, src/components/DomainMiniMap.tsx, and src/components/PatternCatalogue.tsx (depends on: 6)
-- [ ] Create src/components/ComponentTreeViz.tsx: animated props-flow component tree (Page → organisms → molecules → atoms), particles cycling through 5 branches every 2.4s via requestAnimationFrame (depends on: 9)
+- [x] Create src/components/ComponentTreeViz.tsx: animated props-flow component tree (Page → organisms → molecules → atoms), particles cycling through 5 branches every 2.4s via requestAnimationFrame (depends on: 9)
 - [ ] Rewrite src/pages/frontend.astro: Frontalia domain page using Cartouche, DomainMiniMap, ComponentTreeViz, PatternCatalogue — two-column hero, featured viz cartouche, pattern catalogue, footer row (depends on: 9, 10)
 - [ ] Create src/components/MedallionViz.tsx: animated Bronze→Silver→Gold mote flow, 28 particles, lane spread tightens, colour shifts, ~10% rejection with red × fade-out, quality bars, requestAnimationFrame (depends on: 9)
 - [ ] Rewrite src/pages/backend.astro: Backendis Major domain page from Frontalia template, terracotta tint, static placeholder for featured viz (depends on: 9)
