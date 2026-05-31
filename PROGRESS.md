@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-05-27 by automated agent
+Last updated: 2026-05-28 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -16,6 +16,7 @@ Last updated: 2026-05-27 by automated agent
 | 2026-05-25 | Infrastructure pattern: Infrastructure as Code — docs/patterns/infrastructure/infrastructure-as-code.mdx | 0a9bd3c |
 | 2026-05-26 | Data Pipeline pattern: Batch vs Streaming — docs/patterns/data-pipeline/batch-vs-streaming.mdx | 1cde59e |
 | 2026-05-27 | Wire DomainCard links to domain pages — fix BASE_URL trailing slash in src/components/DomainCard.astro | d8df2aa |
+| 2026-05-28 | Add navigation bar to BaseLayout — SiteNav.astro with sticky cartouche nav, domain links, active-page state | 0d691e2 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
@@ -29,7 +30,7 @@ Last updated: 2026-05-27 by automated agent
 9. [x] Infrastructure pattern: Infrastructure as Code — docs/patterns/infrastructure/infrastructure-as-code.mdx
 10. [x] Data Pipeline pattern: Batch vs Streaming — docs/patterns/data-pipeline/batch-vs-streaming.mdx
 11. [x] Wire DomainCard links to domain pages — src/components/DomainCard.astro
-12. [ ] Add navigation bar to BaseLayout — src/layouts/BaseLayout.astro
+12. [x] Add navigation bar to BaseLayout — src/layouts/BaseLayout.astro
 13. [ ] Add footer to BaseLayout — src/layouts/BaseLayout.astro
 14. [ ] PatternCard component — src/components/PatternCard.astro
 15. [ ] Retrofit domain pages to use PatternCard — all 4 domain pages

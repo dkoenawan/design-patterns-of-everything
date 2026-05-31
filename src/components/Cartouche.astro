@@ -1,0 +1,32 @@
+---
+interface Props {
+  label?: string;
+  class?: string;
+}
+
+const { label, class: className } = Astro.props;
+---
+
+<div class:list={['cartouche', className]}>
+  {label && <span class="cartouche-eyebrow">{label}</span>}
+  <slot />
+</div>
+
+<style>
+  .cartouche {
+    background: var(--paper);
+    border: 0.5px solid var(--paper-border);
+    backdrop-filter: blur(8px) saturate(110%);
+    padding: 18px 26px;
+  }
+
+  .cartouche-eyebrow {
+    display: block;
+    font-size: 10px;
+    font-style: italic;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 14px;
+  }
+</style>

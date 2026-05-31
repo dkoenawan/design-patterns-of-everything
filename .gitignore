@@ -27,3 +27,14 @@ pnpm-debug.log*
 test-results/
 playwright-report/
 .playwright-mcp/
+
+# design feedback images
+feedback/*.png
+feedback/*.jpg
+feedback/*.jpeg
+
+# task-executor run logs
+logs/
+
+# local design artefacts (canonical design-system source zip)
+claude-design/

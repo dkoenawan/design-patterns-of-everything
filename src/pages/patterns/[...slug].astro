@@ -1,0 +1,344 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AtlasBackdrop from '../../components/AtlasBackdrop';
+import Cartouche from '../../components/Cartouche.astro';
+import { domains, patterns, type Pattern } from '../../lib/atlas-data';
+
+export async function getStaticPaths() {
+  // Astro 5 deprecated Astro.glob — use import.meta.glob (eager) instead.
+  const modules = import.meta.glob('../../../docs/patterns/**/*.mdx', { eager: true });
+
+  // Index MDX modules by their bare filename (without extension), which matches
+  // each pattern's `id` in atlas-data.ts.
+  const byFilename = new Map<string, any>();
+  for (const [filepath, mod] of Object.entries(modules)) {
+    const filename = filepath.split('/').pop()!.replace(/\.mdx$/, '');
+    byFilename.set(filename, mod);
+  }
+
+  // Drive route generation from the canonical pattern list so generated URLs
+  // exactly match the `href` values wired into atlas-data.ts
+  // (`/patterns/{domain}/{id}`). The slug is everything after `/patterns/`.
+  return patterns
+    .filter((p) => p.href && byFilename.has(p.id))
+    .map((p) => {
+      const mod = byFilename.get(p.id);
+      const slug = p.href!.replace(/^\/patterns\//, '');
+      return {
+        params: { slug },
+        props: { pattern: p, Content: mod.Content, frontmatter: mod.frontmatter ?? {} },
+      };
+    });
+}
+
+interface Props {
+  pattern: Pattern;
+  Content: any;
+  frontmatter: Record<string, any>;
+}
+
+const { pattern, Content, frontmatter } = Astro.props as Props;
+const base = import.meta.env.BASE_URL;
+
+const domain = domains.find((d) => d.id === pattern.domain)!;
+
+function typeLabel(type: string) {
+  if (type === 'principle') return 'Principle';
+  if (type === 'anti') return 'Anti-pattern';
+  return 'Pattern';
+}
+
+function typeGlyph(type: string) {
+  if (type === 'principle') return '✦';
+  if (type === 'anti') return '✗';
+  return '★';
+}
+
+const diamonds = Array.from({ length: 5 }, (_, i) =>
+  i < pattern.complexity ? '◆' : '◇'
+).join('');
+
+const title = frontmatter.title ?? pattern.name;
+const summary = frontmatter.summary ?? pattern.note;
+---
+
+<BaseLayout title={`${title} — ${domain.english}`} description={summary}>
+  <AtlasBackdrop client:only="react" />
+
+  <main class="pattern-page" data-domain={pattern.domain}>
+
+    <!-- ── Breadcrumb ──────────────────────────────────────────── -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href={base}>Atlas</a>
+      <span aria-hidden="true"> › </span>
+      <a href={`${base}${pattern.domain}`}>{domain.name}</a>
+      <span aria-hidden="true"> › </span>
+      <span>{pattern.name}</span>
+    </nav>
+
+    <!-- ── Pattern metadata cartouche ──────────────────────────── -->
+    <Cartouche label={`Detail chart · ${domain.name}`}>
+      <div class="meta-head">
+        <span class="meta-glyph" aria-hidden="true">{typeGlyph(pattern.type)}</span>
+        <h1 class="pattern-title">{pattern.name}</h1>
+      </div>
+
+      <div class="meta-row">
+        <span class="meta-type">{typeLabel(pattern.type)}</span>
+        <span class="meta-sep" aria-hidden="true">·</span>
+        <span class="meta-complexity" title={`Complexity ${pattern.complexity} of 5`}>
+          {diamonds}
+        </span>
+      </div>
+
+      <p class="pattern-note">{pattern.note}</p>
+    </Cartouche>
+
+    <!-- ── MDX body ────────────────────────────────────────────── -->
+    <article class="pattern-body">
+      <Content />
+    </article>
+
+    <!-- ── Footer row ──────────────────────────────────────────── -->
+    <section class="footer-row">
+      <a href={`${base}${pattern.domain}`} class="nav-link">← Return to {domain.name}</a>
+      <p class="footer-coord">Celestial Atlas · {domain.english}</p>
+    </section>
+
+  </main>
+</BaseLayout>
+
+<style>
+  .pattern-page {
+    position: relative;
+    z-index: 1;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 80px 32px 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  .breadcrumb a {
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--gold);
+  }
+
+  /* ── Metadata cartouche ── */
+  .meta-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+
+  .meta-glyph {
+    font-size: 28px;
+    color: var(--tint, var(--gold));
+    line-height: 1;
+  }
+
+  .pattern-title {
+    font-size: 48px;
+    line-height: 1.05;
+    color: var(--ink);
+  }
+
+  .meta-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .meta-type {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  .meta-sep {
+    color: var(--ink-faint);
+  }
+
+  .meta-complexity {
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--gold);
+  }
+
+  .pattern-note {
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink);
+    margin-top: 18px;
+  }
+
+  /* ── MDX body — editorial column ── */
+  .pattern-body {
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--ink);
+  }
+
+  .pattern-body :global(h2) {
+    font-size: 28px;
+    color: var(--ink);
+    margin: 40px 0 14px;
+  }
+
+  .pattern-body :global(h3) {
+    font-size: 21px;
+    color: var(--ink);
+    margin: 28px 0 10px;
+  }
+
+  .pattern-body :global(p) {
+    margin: 0 0 18px;
+  }
+
+  .pattern-body :global(ul),
+  .pattern-body :global(ol) {
+    margin: 0 0 18px;
+    padding-left: 24px;
+  }
+
+  .pattern-body :global(li) {
+    margin-bottom: 8px;
+  }
+
+  .pattern-body :global(a) {
+    color: var(--gold);
+    text-decoration: none;
+    border-bottom: 0.5px solid var(--paper-border);
+  }
+
+  .pattern-body :global(a:hover) {
+    color: var(--gold-bright);
+  }
+
+  .pattern-body :global(code) {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 14px;
+    color: var(--gold-bright);
+    background: rgba(212, 177, 94, 0.08);
+    padding: 1px 5px;
+  }
+
+  .pattern-body :global(pre) {
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    line-height: 1.6;
+    background: var(--paper);
+    border: 0.5px solid var(--paper-border);
+    padding: 18px 20px;
+    overflow-x: auto;
+    margin: 0 0 24px;
+  }
+
+  .pattern-body :global(pre code) {
+    background: none;
+    padding: 0;
+    color: var(--ink);
+  }
+
+  .pattern-body :global(blockquote) {
+    border-left: 0.5px solid var(--paper-border);
+    padding-left: 18px;
+    margin: 0 0 18px;
+    color: var(--ink-dim);
+    font-style: italic;
+  }
+
+  .pattern-body :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 24px;
+    font-size: 15px;
+  }
+
+  .pattern-body :global(th),
+  .pattern-body :global(td) {
+    border: 0.5px solid var(--paper-border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+
+  .pattern-body :global(th) {
+    font-style: normal;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  /* ── Footer row ── */
+  .footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 32px;
+    border-top: 0.5px solid var(--line-faint);
+  }
+
+  .nav-link {
+    font-size: 15px;
+    color: var(--gold);
+    text-decoration: none;
+    font-style: italic;
+  }
+
+  .nav-link:hover {
+    color: var(--gold-bright);
+  }
+
+  .footer-coord {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* Domain-tinted glyph */
+  .pattern-page[data-domain='frontend'] { --tint: var(--tint-frontend); }
+  .pattern-page[data-domain='backend']  { --tint: var(--tint-backend); }
+  .pattern-page[data-domain='data']     { --tint: var(--tint-data); }
+  .pattern-page[data-domain='infra']    { --tint: var(--tint-infra); }
+
+  @media (max-width: 640px) {
+    .pattern-page {
+      padding: 60px 20px 80px;
+    }
+
+    .pattern-title {
+      font-size: 36px;
+    }
+
+    .footer-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+  }
+</style>
