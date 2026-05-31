@@ -5,8 +5,8 @@ import AtlasMap from '../components/AtlasMap';
 ---
 
 <BaseLayout title="Design Patterns of Everything · Celestial Atlas">
-  <AtlasBackdrop client:load />
-  <AtlasMap client:load />
+  <AtlasBackdrop client:only="react" />
+  <AtlasMap client:only="react" />
 </BaseLayout>
 
 <style>

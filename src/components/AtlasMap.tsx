@@ -1,6 +1,8 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { domains, patterns, connections, type Pattern, type DomainId } from '../lib/atlas-data';
 
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const DOMAIN_TINTS: Record<DomainId, string> = {
@@ -48,14 +50,23 @@ const patternById = new Map(patterns.map((p) => [p.id, p]));
 
 // ── Star geometry helpers ─────────────────────────────────────────────────────
 
+// Canonical: brighter = larger. Bumped slightly above the spec's 1.6 + mag*2.2
+// so pattern stars clearly outrank the dense backdrop field.
 function starRadius(mag: number) {
-  return 2.5 + mag * 6.0;
+  return 2.0 + mag * 2.8;
 }
 
+// Core colour — pattern stars use gold-bright so they outshine the backdrop's
+// flat --gold field. Principles already bright; anti-patterns terracotta.
 function starColor(p: Pattern) {
-  if (p.type === 'principle') return '#f1d98a';
   if (p.type === 'anti') return '#c46a55';
-  return DOMAIN_TINTS[p.domain];
+  return '#f1d98a';
+}
+
+// Glow colour — warm gold halo around the core.
+function glowColor(p: Pattern) {
+  if (p.type === 'anti') return '#c46a55';
+  return '#d4b15e';
 }
 
 interface StarGroupProps {
@@ -68,6 +79,7 @@ interface StarGroupProps {
 function StarGroup({ p, selected, scale, onClick }: StarGroupProps) {
   const r = starRadius(p.mag);
   const col = starColor(p);
+  const glow = glowColor(p);
   const showLabel = scale > 0.7;
   const showDots = scale > 1.1;
 
@@ -76,12 +88,14 @@ function StarGroup({ p, selected, scale, onClick }: StarGroupProps) {
       onClick={() => onClick(p.id)}
       style={{ cursor: 'pointer' }}
     >
+      {/* Layer 0: sky halo — softly dims the dense backdrop behind the star so it reads as foreground */}
+      <circle cx={p.x} cy={p.y} r={r * 3.2} fill="#0a0e1a" opacity={selected ? 0.55 : 0.40} />
       {/* Layer 1: outer glow */}
-      <circle cx={p.x} cy={p.y} r={r * 3.5} fill={col} opacity={0.10} />
+      <circle cx={p.x} cy={p.y} r={r * 3.0} fill={glow} opacity={selected ? 0.22 : 0.14} />
       {/* Layer 2: inner glow */}
-      <circle cx={p.x} cy={p.y} r={r * 2.0} fill={col} opacity={0.18} />
+      <circle cx={p.x} cy={p.y} r={r * 1.8} fill={glow} opacity={selected ? 0.42 : 0.28} />
       {/* Layer 3: core */}
-      <circle cx={p.x} cy={p.y} r={r} fill={col} opacity={0.92} />
+      <circle cx={p.x} cy={p.y} r={r} fill={col} opacity={1} />
 
       {/* Layer 4: principle sparkle cross */}
       {p.type === 'principle' && (
@@ -164,7 +178,7 @@ function Drawer({ pattern, onClose }: DrawerProps) {
     <div
       style={{
         position: 'fixed',
-        top: 0,
+        top: 52,
         right: 0,
         bottom: 0,
         width: 420,
@@ -312,7 +326,7 @@ function Drawer({ pattern, onClose }: DrawerProps) {
           {/* Open detail chart link */}
           {pattern.href && (
             <a
-              href={pattern.href}
+              href={`${BASE}${pattern.href}`}
               style={{
                 display: 'block',
                 marginTop: 32,
@@ -513,9 +527,12 @@ export default function AtlasMap() {
         ref={svgRef}
         style={{
           position: 'fixed',
-          inset: 0,
+          top: 52,
+          left: 0,
+          right: 0,
+          bottom: 0,
           width: '100vw',
-          height: '100vh',
+          height: 'calc(100vh - 52px)',
           cursor: dragging.current ? 'grabbing' : 'grab',
           zIndex: 10,
         }}
@@ -673,7 +690,7 @@ export default function AtlasMap() {
       {/* Top-left: Atlas title */}
       <div style={{
         position: 'fixed',
-        top: 24,
+        top: 76,
         left: 24,
         zIndex: 20,
         background: 'rgba(20,25,40,0.84)',
@@ -718,7 +735,7 @@ export default function AtlasMap() {
       {/* Top-right: Search placeholder */}
       <div style={{
         position: 'fixed',
-        top: 24,
+        top: 76,
         right: selectedPattern ? 444 : 24,
         zIndex: 20,
         background: 'rgba(20,25,40,0.84)',
@@ -827,7 +844,7 @@ export default function AtlasMap() {
         {domains.map((d) => (
           <a
             key={d.id}
-            href={d.href}
+            href={`${BASE}${d.href}`}
             style={{
               display: 'flex',
               alignItems: 'center',

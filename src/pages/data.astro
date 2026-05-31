@@ -14,10 +14,10 @@ const domainPatterns = patterns.filter((p) => p.domain === 'data');
 ---
 
 <BaseLayout
-  title="Pipea Vallis — Data Pipeline Architecture"
+  title="Data Pipeline Architecture"
   description="Medallion architecture, schema-driven validation, pure functional pipelines, and reliable data transformation patterns."
 >
-  <AtlasBackdrop client:load />
+  <AtlasBackdrop client:only="react" />
 
   <main class="domain-page">
 
@@ -27,7 +27,7 @@ const domainPatterns = patterns.filter((p) => p.domain === 'data');
         <div class="breadcrumb">
           <a href={base}>Atlas</a>
           <span aria-hidden="true"> › </span>
-          <span>Pipea Vallis</span>
+          <span>Data Pipeline</span>
         </div>
 
         <Cartouche label="Domain chart · iii">
@@ -96,7 +96,7 @@ const domainPatterns = patterns.filter((p) => p.domain === 'data');
 
     <!-- ── Pattern catalogue ───────────────────────────────────── -->
     <section class="catalogue-row">
-      <Cartouche label="Pattern catalogue — Pipea Vallis">
+      <Cartouche label="Pattern catalogue — Data Pipeline">
         <PatternCatalogue domain="data" patterns={domainPatterns} client:load />
       </Cartouche>
     </section>
@@ -104,10 +104,10 @@ const domainPatterns = patterns.filter((p) => p.domain === 'data');
     <!-- ── Footer row ──────────────────────────────────────────── -->
     <section class="footer-row">
       <div class="footer-nav">
-        <a href={`${base}backend`} class="nav-link">← Backendis Major</a>
-        <a href={`${base}infra`} class="nav-link">Infrastructura →</a>
+        <a href={`${base}/backend`} class="nav-link">← Backend</a>
+        <a href={`${base}/infra`} class="nav-link">Infrastructure →</a>
       </div>
-      <p class="footer-coord">Plate iii — Pipea Vallis · RA +780° Dec +420°</p>
+      <p class="footer-coord">Plate iii — Data Pipeline · RA +780° Dec +420°</p>
     </section>
 
   </main>

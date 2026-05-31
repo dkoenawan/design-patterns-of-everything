@@ -14,10 +14,10 @@ const domainPatterns = patterns.filter((p) => p.domain === 'frontend');
 ---
 
 <BaseLayout
-  title="Frontalia — Frontend Architecture"
+  title="Frontend Architecture"
   description="Component patterns, state management strategies, micro-frontends, and scalable UI systems for complex frontend applications."
 >
-  <AtlasBackdrop client:load />
+  <AtlasBackdrop client:only="react" />
 
   <main class="domain-page">
 
@@ -27,7 +27,7 @@ const domainPatterns = patterns.filter((p) => p.domain === 'frontend');
         <div class="breadcrumb">
           <a href={base}>Atlas</a>
           <span aria-hidden="true"> › </span>
-          <span>Frontalia</span>
+          <span>Frontend</span>
         </div>
 
         <Cartouche label="Domain chart · i">
@@ -97,7 +97,7 @@ const domainPatterns = patterns.filter((p) => p.domain === 'frontend');
 
     <!-- ── Pattern catalogue ───────────────────────────────────── -->
     <section class="catalogue-row">
-      <Cartouche label="Pattern catalogue — Frontalia">
+      <Cartouche label="Pattern catalogue — Frontend">
         <PatternCatalogue domain="frontend" patterns={domainPatterns} client:load />
       </Cartouche>
     </section>
@@ -106,9 +106,9 @@ const domainPatterns = patterns.filter((p) => p.domain === 'frontend');
     <section class="footer-row">
       <div class="footer-nav">
         <a href={base} class="nav-link">← Return to Atlas</a>
-        <a href={`${base}backend`} class="nav-link">Backendis Major →</a>
+        <a href={`${base}/backend`} class="nav-link">Backend →</a>
       </div>
-      <p class="footer-coord">Plate i — Frontalia · RA −780° Dec −420°</p>
+      <p class="footer-coord">Plate i — Frontend · RA −780° Dec −420°</p>
     </section>
 
   </main>

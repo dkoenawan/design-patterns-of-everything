@@ -63,7 +63,7 @@ const summary = frontmatter.summary ?? pattern.note;
 ---
 
 <BaseLayout title={`${title} — ${domain.english}`} description={summary}>
-  <AtlasBackdrop client:load />
+  <AtlasBackdrop client:only="react" />
 
   <main class="pattern-page" data-domain={pattern.domain}>
 

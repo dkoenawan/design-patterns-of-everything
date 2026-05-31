@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { connections, type Pattern, type DomainId } from '../lib/atlas-data';
 
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+
 const DOMAIN_TINTS: Record<DomainId, string> = {
   frontend: '#7aa3d4',
   backend:  '#d49a7a',
@@ -143,7 +145,7 @@ function CatalogueEntry({ pattern, index, domain }: EntryProps) {
           {/* Toggle / link */}
           {hasHref ? (
             <a
-              href={pattern.href}
+              href={`${BASE}${pattern.href}`}
               style={{
                 fontSize: 14,
                 fontFamily: "'Cormorant Garamond', serif",

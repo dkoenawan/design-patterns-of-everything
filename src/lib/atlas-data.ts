@@ -39,7 +39,7 @@ export interface Connection {
 export const domains: Domain[] = [
   {
     id: 'frontend',
-    name: 'Frontalia',
+    name: 'Frontend',
     subtitle: 'the Frontend Reach',
     english: 'Frontend Architecture',
     blurb:
@@ -53,7 +53,7 @@ export const domains: Domain[] = [
   },
   {
     id: 'backend',
-    name: 'Backendis Major',
+    name: 'Backend',
     subtitle: 'the Backend Expanse',
     english: 'Backend Architecture',
     blurb:
@@ -67,7 +67,7 @@ export const domains: Domain[] = [
   },
   {
     id: 'data',
-    name: 'Pipea Vallis',
+    name: 'Data Pipeline',
     subtitle: 'the Data Confluence',
     english: 'Data Pipeline Architecture',
     blurb:
@@ -81,7 +81,7 @@ export const domains: Domain[] = [
   },
   {
     id: 'infra',
-    name: 'Infrastructura',
+    name: 'Infrastructure',
     subtitle: 'the Platform Frontier',
     english: 'Infrastructure & Platform',
     blurb:
@@ -98,7 +98,7 @@ export const domains: Domain[] = [
 // ── Patterns ─────────────────────────────────────────────────────────────────
 
 export const patterns: Pattern[] = [
-  // Frontend — Frontalia (cx:-780, cy:-420, r:360×280)
+  // Frontend — Frontend (cx:-780, cy:-420, r:360×280)
   {
     id: 'component-composition',
     domain: 'frontend',
@@ -136,7 +136,7 @@ export const patterns: Pattern[] = [
     href: '/patterns/frontend/micro-frontend-architecture',
   },
 
-  // Backend — Backendis Major (cx:780, cy:-420, r:360×280)
+  // Backend — Backend (cx:780, cy:-420, r:360×280)
   {
     id: 'hexagonal-architecture',
     domain: 'backend',
@@ -186,7 +186,7 @@ export const patterns: Pattern[] = [
     href: '/patterns/backend/cqrs',
   },
 
-  // Data Pipeline — Pipea Vallis (cx:780, cy:420, r:360×280)
+  // Data Pipeline — Data Pipeline (cx:780, cy:420, r:360×280)
   {
     id: 'medallion-architecture',
     domain: 'data',
@@ -236,7 +236,7 @@ export const patterns: Pattern[] = [
     href: '/patterns/data/batch-vs-streaming',
   },
 
-  // Infrastructure — Infrastructura (cx:-780, cy:420, r:360×280)
+  // Infrastructure — Infrastructure (cx:-780, cy:420, r:360×280)
   {
     id: 'docker-port-mapping',
     domain: 'infra',
