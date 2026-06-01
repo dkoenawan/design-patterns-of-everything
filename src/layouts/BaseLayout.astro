@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import SiteNav from '../components/SiteNav.astro';
+import SiteFooter from '../components/SiteFooter.astro';
 
 interface Props {
   title?: string;
@@ -31,5 +32,6 @@ const {
   <body>
     <SiteNav />
     <slot />
+    <SiteFooter />
   </body>
 </html>

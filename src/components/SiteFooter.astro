@@ -1,0 +1,175 @@
+---
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const domainLinks = [
+  { href: `${base}/frontend`, label: 'Frontalia' },
+  { href: `${base}/backend`, label: 'Backendis Major' },
+  { href: `${base}/data`, label: 'Pipea Vallis' },
+  { href: `${base}/infra`, label: 'Infrastructura' },
+];
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-inner">
+
+    <div class="footer-brand">
+      <a href={`${base}/`} class="footer-wordmark" aria-label="Portfolio home">
+        <span class="wordmark-symbol" aria-hidden="true">✦</span>
+        <span>Celestial Atlas</span>
+      </a>
+      <p class="footer-tagline">
+        A cartographic record of software architecture — patterns charted for navigators.
+      </p>
+    </div>
+
+    <nav class="footer-nav" aria-label="Domain navigation">
+      <p class="footer-nav-heading">Domains</p>
+      <ul role="list">
+        {domainLinks.map((link) => (
+          <li><a href={link.href}>{link.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+
+  </div>
+
+  <div class="footer-base">
+    <span class="footer-coords" aria-hidden="true">
+      <span class="mono">RA 00h 00m · Dec +00° 00′</span>
+    </span>
+    <span class="footer-copy">
+      © {year} · Solution Architect Portfolio
+    </span>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 0.5px solid var(--paper-border);
+    background: rgba(10, 14, 26, 0.72);
+    backdrop-filter: blur(8px) saturate(110%);
+    margin-top: auto;
+  }
+
+  .footer-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 48px clamp(28px, 5vw, 64px) 36px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 48px;
+    align-items: start;
+  }
+
+  /* Brand column */
+  .footer-wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    transition: color 150ms;
+    margin-bottom: 12px;
+  }
+
+  .footer-wordmark:hover {
+    color: var(--gold-bright);
+  }
+
+  .wordmark-symbol {
+    color: var(--gold);
+    font-style: normal;
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  .footer-tagline {
+    color: var(--ink-dim);
+    font-size: 13px;
+    max-width: 38ch;
+    line-height: 1.6;
+  }
+
+  /* Domain nav column */
+  .footer-nav-heading {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-style: normal;
+    margin-bottom: 12px;
+  }
+
+  .footer-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .footer-nav a {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-dim);
+    text-decoration: none;
+    transition: color 150ms;
+  }
+
+  .footer-nav a:hover {
+    color: var(--gold-bright);
+  }
+
+  /* Base strip */
+  .footer-base {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 20px clamp(28px, 5vw, 64px) 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-top: 0.5px solid var(--line-faint);
+  }
+
+  .footer-coords {
+    color: var(--ink-faint);
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    font-style: normal;
+  }
+
+  .footer-copy {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    font-style: normal;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 600px) {
+    .footer-inner {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+
+    .footer-base {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+  }
+</style>
