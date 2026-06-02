@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-06-01 by automated agent
+Last updated: 2026-06-02 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -18,6 +18,7 @@ Last updated: 2026-06-01 by automated agent
 | 2026-05-27 | Wire DomainCard links to domain pages — fix BASE_URL trailing slash in src/components/DomainCard.astro | d8df2aa |
 | 2026-05-28 | Add navigation bar to BaseLayout — SiteNav.astro with sticky cartouche nav, domain links, active-page state | 0d691e2 |
 | 2026-06-01 | Add footer to BaseLayout — SiteFooter.astro with domain nav, tagline, coordinates strip, and copyright | 3f76fcf |
+| 2026-06-02 | PatternCard component — src/components/PatternCard.astro | 6ca5ac2 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
@@ -33,7 +34,7 @@ Last updated: 2026-06-01 by automated agent
 11. [x] Wire DomainCard links to domain pages — src/components/DomainCard.astro
 12. [x] Add navigation bar to BaseLayout — src/layouts/BaseLayout.astro
 13. [x] Add footer to BaseLayout — src/layouts/BaseLayout.astro
-14. [ ] PatternCard component — src/components/PatternCard.astro
+14. [x] PatternCard component — src/components/PatternCard.astro
 15. [ ] Retrofit domain pages to use PatternCard — all 4 domain pages
 16. [ ] About page skeleton — src/pages/about.astro
 17. [ ] ProfileSheet React island (proficiency bars) — src/components/ProfileSheet.tsx
