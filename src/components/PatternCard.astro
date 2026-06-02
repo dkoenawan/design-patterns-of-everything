@@ -1,0 +1,194 @@
+---
+import type { DomainId, PatternType } from '../lib/atlas-data';
+
+interface Props {
+  id: string;
+  name: string;
+  domain: DomainId;
+  type?: PatternType;
+  complexity?: 1 | 2 | 3 | 4 | 5;
+  note: string;
+  href?: string;
+  index?: number;
+}
+
+const {
+  id,
+  name,
+  domain,
+  type = 'pattern',
+  complexity = 1,
+  note,
+  href,
+  index,
+} = Astro.props;
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const TINTS: Record<DomainId, string> = {
+  frontend: 'var(--tint-frontend)',
+  backend:  'var(--tint-backend)',
+  data:     'var(--tint-data)',
+  infra:    'var(--tint-infra)',
+};
+
+const PREFIXES: Record<DomainId, string> = {
+  frontend: 'FE',
+  backend:  'BE',
+  data:     'DP',
+  infra:    'IN',
+};
+
+const tint = TINTS[domain];
+
+const typeGlyph = type === 'principle' ? '✦' : type === 'anti' ? '✗' : '●';
+const typeLabel = type === 'principle' ? 'Principle' : type === 'anti' ? 'Anti-pattern' : 'Pattern';
+const typeColor = type === 'principle' ? 'var(--gold-bright)' : type === 'anti' ? 'var(--anti)' : tint;
+
+const diamonds = Array.from({ length: 5 }, (_, i) => i < complexity ? '◆' : '◇').join('');
+
+const prefix = PREFIXES[domain];
+const catalogueNum = index !== undefined
+  ? `${prefix}.${String(index + 1).padStart(3, '0')}`
+  : `${prefix}.${id.slice(0, 3).toUpperCase()}`;
+
+const resolvedHref = href ? `${base}${href}` : undefined;
+---
+
+<article class="pattern-card">
+  <div class="card-rail">
+    <span class="card-type" style={`color: ${typeColor}`}>
+      <span class="type-glyph" aria-hidden="true">{typeGlyph}</span>
+      {typeLabel}
+    </span>
+    <span class="card-diamonds" aria-label={`Complexity ${complexity} of 5`}>{diamonds}</span>
+    <span class="card-num">{catalogueNum}</span>
+  </div>
+
+  <div class="card-body">
+    <h3 class="card-name" style={`color: ${tint}`}>{name}</h3>
+    <p class="card-note">{note}</p>
+
+    {resolvedHref ? (
+      <a href={resolvedHref} class="card-link">Open detail chart →</a>
+    ) : (
+      <slot />
+    )}
+  </div>
+</article>
+
+<style>
+  .pattern-card {
+    display: flex;
+    gap: 0;
+    border-top: 0.5px solid var(--line-faint);
+    padding: 28px 0;
+  }
+
+  .pattern-card:last-child {
+    border-bottom: 0.5px solid var(--line-faint);
+  }
+
+  /* ── Metadata rail ── */
+  .card-rail {
+    width: 160px;
+    flex-shrink: 0;
+    padding-right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .card-type {
+    font-size: 13px;
+    font-family: var(--font-display);
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .type-glyph {
+    font-size: 11px;
+  }
+
+  .card-diamonds {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 11px;
+    color: var(--ink-dim);
+    letter-spacing: 1.5px;
+  }
+
+  .card-num {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 1.5px;
+    margin-top: 4px;
+  }
+
+  /* ── Main body ── */
+  .card-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .card-name {
+    font-size: 38px;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    line-height: 1.05;
+    margin-bottom: 14px;
+  }
+
+  .card-note {
+    font-size: 17px;
+    font-family: var(--font-display);
+    font-style: italic;
+    color: var(--ink-dim);
+    line-height: 1.55;
+    margin-bottom: 18px;
+  }
+
+  .card-link {
+    font-size: 14px;
+    font-family: var(--font-display);
+    font-style: italic;
+    color: var(--gold);
+    letter-spacing: 0.3px;
+    text-decoration: none;
+    transition: color 150ms;
+  }
+
+  .card-link:hover {
+    color: var(--gold-bright);
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 560px) {
+    .pattern-card {
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card-rail {
+      width: auto;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding-right: 0;
+    }
+
+    .card-num {
+      margin-top: 0;
+    }
+
+    .card-name {
+      font-size: 28px;
+    }
+  }
+</style>
