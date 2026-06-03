@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../components/AtlasBackdrop';
 import Cartouche from '../components/Cartouche.astro';
 import DomainMiniMap from '../components/DomainMiniMap';
-import PatternCatalogue from '../components/PatternCatalogue';
+import PatternCard from '../components/PatternCard.astro';
 import { domains, patterns } from '../lib/atlas-data';
 
 const base = import.meta.env.BASE_URL;
@@ -87,7 +87,18 @@ const domainPatterns = patterns.filter((p) => p.domain === 'backend');
     <!-- ── Pattern catalogue ───────────────────────────────────── -->
     <section class="catalogue-row">
       <Cartouche label="Pattern catalogue — Backend">
-        <PatternCatalogue domain="backend" patterns={domainPatterns} client:load />
+        {domainPatterns.map((p, i) => (
+          <PatternCard
+            id={p.id}
+            name={p.name}
+            domain={p.domain}
+            type={p.type}
+            complexity={p.complexity}
+            note={p.note}
+            href={p.href}
+            index={i}
+          />
+        ))}
       </Cartouche>
     </section>
 
