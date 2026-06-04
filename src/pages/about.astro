@@ -1,0 +1,385 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AtlasBackdrop from '../components/AtlasBackdrop';
+import Cartouche from '../components/Cartouche.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const domains = [
+  { id: 'backend',  label: 'Backend Architecture',       tint: 'var(--tint-backend)',  years: 8,  level: 88 },
+  { id: 'data',     label: 'Data Pipeline Architecture', tint: 'var(--tint-data)',     years: 6,  level: 80 },
+  { id: 'infra',    label: 'Infrastructure & Platform',  tint: 'var(--tint-infra)',    years: 7,  level: 82 },
+  { id: 'frontend', label: 'Frontend Architecture',      tint: 'var(--tint-frontend)', years: 5,  level: 72 },
+];
+
+const certifications = [
+  { code: 'AWS-SAA', label: 'AWS Solutions Architect — Associate', tier: 'silver', issued: '2023' },
+  { code: 'AWS-SAP', label: 'AWS Solutions Architect — Professional', tier: 'gold',   issued: '2024' },
+  { code: 'CKA',     label: 'Certified Kubernetes Administrator',    tier: 'silver', issued: '2023' },
+  { code: 'GCP-PCA', label: 'GCP Professional Cloud Architect',      tier: 'gold',   issued: '2024' },
+];
+
+const principles = [
+  'Design for replaceability, not reuse',
+  'Constraints clarify; options paralyse',
+  'The model is the documentation',
+  'Automate the mundane; reserve judgement for the novel',
+  'Complexity is always the enemy — even when you invited it in',
+];
+---
+
+<BaseLayout
+  title="About — Celestial Atlas"
+  description="Solution architect with experience across backend systems, data pipelines, cloud infrastructure, and frontend architecture."
+>
+  <AtlasBackdrop client:only="react" />
+
+  <main class="about-page">
+
+    <!-- ── Identity cartouche ──────────────────────────────────── -->
+    <section class="identity-row">
+      <Cartouche label="Catalogue entry · observer">
+        <div class="identity-inner">
+          <div class="identity-glyph" aria-hidden="true">✦</div>
+          <div class="identity-text">
+            <h1 class="identity-name">Daniel Koenawan</h1>
+            <p class="identity-role">Solution Architect · Systems Thinker · Pattern Collector</p>
+            <p class="identity-bio">
+              A decade mapping distributed systems, data flows, and cloud platforms.
+              I work at the boundary where business constraints meet technical possibility —
+              turning ambiguous problems into legible architecture and durable engineering practice.
+              This atlas is the record of that work.
+            </p>
+          </div>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Domain proficiency ──────────────────────────────────── -->
+    <section class="proficiency-row">
+      <Cartouche label="Domain proficiency — years mapped">
+        <h2 class="section-title">Architecture Domains</h2>
+        <div class="domain-bars">
+          {domains.map((d) => (
+            <div class="bar-row">
+              <a href={`${base}/${d.id}`} class="bar-label">{d.label}</a>
+              <div class="bar-track">
+                <div
+                  class="bar-fill"
+                  style={`width: ${d.level}%; background: ${d.tint};`}
+                  role="meter"
+                  aria-valuenow={d.level}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`${d.label} proficiency ${d.level}%`}
+                />
+              </div>
+              <span class="bar-years">{d.years} yr</span>
+            </div>
+          ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Principles ─────────────────────────────────────────── -->
+    <section class="principles-row">
+      <Cartouche label="Guiding principles — first axioms">
+        <h2 class="section-title">Five Axioms I Design By</h2>
+        <ol class="principles-list">
+          {principles.map((p, i) => (
+            <li class="principle-item">
+              <span class="principle-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+              <span class="principle-text">{p}</span>
+            </li>
+          ))}
+        </ol>
+      </Cartouche>
+    </section>
+
+    <!-- ── Certifications ─────────────────────────────────────── -->
+    <section class="certs-row">
+      <Cartouche label="Credentials — verified instruments">
+        <h2 class="section-title">Certifications</h2>
+        <div class="certs-grid">
+          {certifications.map((c) => (
+            <div class={`cert-badge cert-badge--${c.tier}`}>
+              <span class="cert-code">{c.code}</span>
+              <span class="cert-label">{c.label}</span>
+              <span class="cert-issued">{c.issued}</span>
+            </div>
+          ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Atlas navigation ───────────────────────────────────── -->
+    <section class="footer-row">
+      <div class="footer-nav">
+        <a href={`${base}/`} class="nav-link">← Atlas home</a>
+        <a href={`${base}/backend`} class="nav-link">Explore patterns →</a>
+      </div>
+      <p class="footer-coord">Observer chart · RA +000° Dec +000°</p>
+    </section>
+
+  </main>
+</BaseLayout>
+
+<style>
+  .about-page {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 32px 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  /* ── Identity ── */
+  .identity-inner {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+  }
+
+  .identity-glyph {
+    font-size: 48px;
+    color: var(--gold);
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  .identity-name {
+    font-size: 52px;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .identity-role {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+  }
+
+  .identity-bio {
+    font-size: 17px;
+    color: var(--ink-dim);
+    line-height: 1.65;
+    max-width: 600px;
+  }
+
+  @media (max-width: 600px) {
+    .identity-inner {
+      flex-direction: column;
+      gap: 20px;
+    }
+    .identity-glyph {
+      font-size: 36px;
+    }
+    .identity-name {
+      font-size: 38px;
+    }
+  }
+
+  /* ── Section heading ── */
+  .section-title {
+    font-size: 22px;
+    color: var(--ink-dim);
+    margin-bottom: 24px;
+  }
+
+  /* ── Domain bars ── */
+  .domain-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: 240px 1fr 40px;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .bar-label {
+    font-size: 15px;
+    color: var(--ink);
+    text-decoration: none;
+    transition: color 150ms;
+  }
+
+  .bar-label:hover {
+    color: var(--gold-bright);
+  }
+
+  .bar-track {
+    height: 4px;
+    background: var(--line-faint);
+    position: relative;
+  }
+
+  .bar-fill {
+    height: 100%;
+    opacity: 0.72;
+  }
+
+  .bar-years {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--ink-faint);
+    text-align: right;
+  }
+
+  @media (max-width: 640px) {
+    .bar-row {
+      grid-template-columns: 1fr 40px;
+      row-gap: 6px;
+    }
+    .bar-label {
+      grid-column: 1 / -1;
+    }
+    .bar-track {
+      grid-column: 1;
+    }
+    .bar-years {
+      grid-column: 2;
+      grid-row: 2;
+    }
+  }
+
+  /* ── Principles ── */
+  .principles-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .principle-item {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+  }
+
+  .principle-num {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--ink-faint);
+    flex-shrink: 0;
+    min-width: 24px;
+  }
+
+  .principle-text {
+    font-size: 18px;
+    color: var(--gold-bright);
+    font-style: italic;
+    line-height: 1.4;
+  }
+
+  /* ── Certifications ── */
+  .certs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  .cert-badge {
+    border: 0.5px solid var(--paper-border);
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+  }
+
+  .cert-badge--gold {
+    border-color: rgba(232, 200, 112, 0.55);
+  }
+
+  .cert-badge--silver {
+    border-color: rgba(184, 196, 207, 0.45);
+  }
+
+  .cert-code {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .cert-badge--gold .cert-code   { color: var(--gold-medal); }
+  .cert-badge--silver .cert-code { color: var(--silver); }
+
+  .cert-label {
+    font-size: 15px;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+
+  .cert-issued {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--ink-faint);
+    margin-top: 4px;
+  }
+
+  /* ── Footer row ── */
+  .footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 32px;
+    border-top: 0.5px solid var(--line-faint);
+  }
+
+  .footer-nav {
+    display: flex;
+    gap: 32px;
+  }
+
+  .nav-link {
+    font-size: 15px;
+    color: var(--gold);
+    text-decoration: none;
+    font-style: italic;
+  }
+
+  .nav-link:hover {
+    color: var(--gold-bright);
+  }
+
+  .footer-coord {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 640px) {
+    .about-page {
+      padding: 60px 20px 80px;
+    }
+    .footer-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+  }
+</style>
