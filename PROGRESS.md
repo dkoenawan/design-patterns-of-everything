@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-06-03 by automated agent
+Last updated: 2026-06-04 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -20,6 +20,7 @@ Last updated: 2026-06-03 by automated agent
 | 2026-06-01 | Add footer to BaseLayout — SiteFooter.astro with domain nav, tagline, coordinates strip, and copyright | 3f76fcf |
 | 2026-06-02 | PatternCard component — src/components/PatternCard.astro | 6ca5ac2 |
 | 2026-06-03 | Retrofit domain pages to use PatternCard — all 4 domain pages | e7b9119 |
+| 2026-06-04 | About page skeleton — src/pages/about.astro + About link in SiteNav | bf140b6 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
@@ -37,7 +38,7 @@ Last updated: 2026-06-03 by automated agent
 13. [x] Add footer to BaseLayout — src/layouts/BaseLayout.astro
 14. [x] PatternCard component — src/components/PatternCard.astro
 15. [x] Retrofit domain pages to use PatternCard — all 4 domain pages
-16. [ ] About page skeleton — src/pages/about.astro
+16. [x] About page skeleton — src/pages/about.astro
 17. [ ] ProfileSheet React island (proficiency bars) — src/components/ProfileSheet.tsx
 18. [ ] Anti-pattern catalog page (3 initial entries) — src/pages/anti-patterns.astro
 19. [ ] SkillTree React island (static data, interactive) — src/components/SkillTree.tsx
