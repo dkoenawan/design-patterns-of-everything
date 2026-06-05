@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../components/AtlasBackdrop';
 import Cartouche from '../components/Cartouche.astro';
+import ProfileSheet from '../components/ProfileSheet';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -59,25 +60,11 @@ const principles = [
     <section class="proficiency-row">
       <Cartouche label="Domain proficiency — years mapped">
         <h2 class="section-title">Architecture Domains</h2>
-        <div class="domain-bars">
-          {domains.map((d) => (
-            <div class="bar-row">
-              <a href={`${base}/${d.id}`} class="bar-label">{d.label}</a>
-              <div class="bar-track">
-                <div
-                  class="bar-fill"
-                  style={`width: ${d.level}%; background: ${d.tint};`}
-                  role="meter"
-                  aria-valuenow={d.level}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label={`${d.label} proficiency ${d.level}%`}
-                />
-              </div>
-              <span class="bar-years">{d.years} yr</span>
-            </div>
-          ))}
-        </div>
+        <ProfileSheet
+          client:visible
+          domains={domains}
+          base={base}
+        />
       </Cartouche>
     </section>
 
@@ -193,68 +180,6 @@ const principles = [
     font-size: 22px;
     color: var(--ink-dim);
     margin-bottom: 24px;
-  }
-
-  /* ── Domain bars ── */
-  .domain-bars {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-  }
-
-  .bar-row {
-    display: grid;
-    grid-template-columns: 240px 1fr 40px;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .bar-label {
-    font-size: 15px;
-    color: var(--ink);
-    text-decoration: none;
-    transition: color 150ms;
-  }
-
-  .bar-label:hover {
-    color: var(--gold-bright);
-  }
-
-  .bar-track {
-    height: 4px;
-    background: var(--line-faint);
-    position: relative;
-  }
-
-  .bar-fill {
-    height: 100%;
-    opacity: 0.72;
-  }
-
-  .bar-years {
-    font-family: var(--font-mono);
-    font-style: normal;
-    font-size: 10px;
-    letter-spacing: 1px;
-    color: var(--ink-faint);
-    text-align: right;
-  }
-
-  @media (max-width: 640px) {
-    .bar-row {
-      grid-template-columns: 1fr 40px;
-      row-gap: 6px;
-    }
-    .bar-label {
-      grid-column: 1 / -1;
-    }
-    .bar-track {
-      grid-column: 1;
-    }
-    .bar-years {
-      grid-column: 2;
-      grid-row: 2;
-    }
   }
 
   /* ── Principles ── */
