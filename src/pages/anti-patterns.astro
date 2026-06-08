@@ -1,0 +1,466 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AtlasBackdrop from '../components/AtlasBackdrop';
+import Cartouche from '../components/Cartouche.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+interface AntiPattern {
+  id: string;
+  name: string;
+  domain: string;
+  domainLabel: string;
+  severity: 1 | 2 | 3 | 4 | 5;
+  symptom: string;
+  consequence: string;
+  mitigation: string;
+  tint: string;
+}
+
+const antiPatterns: AntiPattern[] = [
+  {
+    id: 'god-object',
+    name: 'God Object',
+    domain: 'BE',
+    domainLabel: 'Backend',
+    severity: 5,
+    symptom:
+      'A single class or service accumulates unrelated responsibilities — models, validation, persistence, formatting, and business logic all cohabit.',
+    consequence:
+      'Changes ripple unpredictably. Testing requires instantiating the universe. Onboarding becomes archaeology.',
+    mitigation:
+      'Apply Single Responsibility rigorously. Extract cohesive subsets into focused services. Use hexagonal boundaries to enforce dependency direction.',
+    tint: 'var(--tint-backend)',
+  },
+  {
+    id: 'premature-generalisation',
+    name: 'Premature Generalisation',
+    domain: 'XD',
+    domainLabel: 'Cross-Domain',
+    severity: 3,
+    symptom:
+      'Abstractions are introduced before the second concrete use case exists — base classes, plugin systems, and configuration-driven behaviour built for hypothetical callers.',
+    consequence:
+      'The abstraction hardens against the actual requirements that arrive later. You end up rewriting both the abstraction and its one real consumer.',
+    mitigation:
+      'Follow the Rule of Three: duplicate once, abstract on the third instance. Prefer composition over inheritance until the seam is proven stable.',
+    tint: 'var(--gold)',
+  },
+  {
+    id: 'pipeline-fan-out-without-backpressure',
+    name: 'Unbounded Fan-out',
+    domain: 'DP',
+    domainLabel: 'Data Pipeline',
+    severity: 4,
+    symptom:
+      'A pipeline stage emits work faster than downstream stages can consume it — queues grow without bound, memory pressure climbs, and latency degrades silently.',
+    consequence:
+      'Under load the system collapses, not gracefully degrades. Recovery requires manual intervention and replay. Data may be lost or double-processed.',
+    mitigation:
+      'Design backpressure into every fan-out: bounded queues with blocking or drop-with-alert semantics. Monitor queue depth as a first-class SLI. Apply schema-driven validation at ingest to reduce downstream volume early.',
+    tint: 'var(--tint-data)',
+  },
+];
+
+const severityLabel = ['', 'Minor', 'Low', 'Moderate', 'High', 'Critical'] as const;
+const severityDots = (s: number) =>
+  Array.from({ length: 5 }, (_, i) => (i < s ? '◆' : '◇')).join('');
+---
+
+<BaseLayout
+  title="Anti-Pattern Catalog — Celestial Atlas"
+  description="Common architectural anti-patterns — what they look like, why they persist, and how to eliminate them."
+>
+  <AtlasBackdrop client:only="react" />
+
+  <main class="catalog-page">
+
+    <!-- ── Page header ──────────────────────────────────────────── -->
+    <section class="page-header">
+      <div class="breadcrumb">
+        <a href={`${base}/`}>Atlas</a>
+        <span aria-hidden="true"> › </span>
+        <span>Anti-Patterns</span>
+      </div>
+
+      <Cartouche label="Catalog of hazards — known failure modes">
+        <div class="header-inner">
+          <div class="header-glyph" aria-hidden="true">✗</div>
+          <div class="header-text">
+            <h1 class="page-title">Anti-Pattern Catalog</h1>
+            <p class="page-subtitle">
+              Patterns that feel like solutions but compound the problems they were meant to solve.
+              Severity is measured by blast radius and recovery cost, not by frequency.
+            </p>
+
+            <div class="header-stats">
+              <div class="stat-item">
+                <span class="stat-num">{antiPatterns.length}</span>
+                <span class="stat-label">Entries</span>
+              </div>
+              <div class="stat-divider" aria-hidden="true"></div>
+              <div class="stat-item">
+                <span class="stat-num">{antiPatterns.filter((a) => a.severity >= 4).length}</span>
+                <span class="stat-label">High / Critical</span>
+              </div>
+              <div class="stat-divider" aria-hidden="true"></div>
+              <div class="stat-item">
+                <span class="stat-num">
+                  {[...new Set(antiPatterns.map((a) => a.domain))].length}
+                </span>
+                <span class="stat-label">Domains</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Anti-pattern entries ───────────────────────────────── -->
+    <section class="entries-row">
+      <Cartouche label="Hazard register — field observations">
+        {antiPatterns.map((ap, i) => (
+          <article class="entry">
+            <!-- Rail -->
+            <div class="entry-rail">
+              <span class="entry-domain" style={`color: ${ap.tint}`}>
+                {ap.domainLabel}
+              </span>
+              <span class="entry-severity" aria-label={`Severity ${severityLabel[ap.severity]}`}>
+                {severityDots(ap.severity)}
+              </span>
+              <span class="entry-severity-label"
+                    style={ap.severity >= 4 ? 'color: var(--anti)' : ''}>
+                {severityLabel[ap.severity]}
+              </span>
+              <span class="entry-num">
+                {`AP.${String(i + 1).padStart(3, '0')}`}
+              </span>
+            </div>
+
+            <!-- Body -->
+            <div class="entry-body">
+              <h2 class="entry-name" style={`color: ${ap.tint}`}>
+                <span class="entry-glyph" aria-hidden="true">✗</span>
+                {ap.name}
+              </h2>
+
+              <div class="entry-section">
+                <h3 class="entry-section-label">Symptom</h3>
+                <p class="entry-text">{ap.symptom}</p>
+              </div>
+
+              <div class="entry-section">
+                <h3 class="entry-section-label">Consequence</h3>
+                <p class="entry-text">{ap.consequence}</p>
+              </div>
+
+              <div class="entry-section">
+                <h3 class="entry-section-label">Mitigation</h3>
+                <p class="entry-text entry-text--mitigation">{ap.mitigation}</p>
+              </div>
+            </div>
+          </article>
+        ))}
+      </Cartouche>
+    </section>
+
+    <!-- ── Footer row ─────────────────────────────────────────── -->
+    <section class="footer-row">
+      <div class="footer-nav">
+        <a href={`${base}/`} class="nav-link">← Atlas home</a>
+        <a href={`${base}/backend`} class="nav-link">Pattern catalog →</a>
+      </div>
+      <p class="footer-coord">Hazard register · Supplement I</p>
+    </section>
+
+  </main>
+</BaseLayout>
+
+<style>
+  .catalog-page {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 80px 32px 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  /* ── Breadcrumb ── */
+  .breadcrumb {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 24px;
+  }
+
+  .breadcrumb a {
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--gold);
+  }
+
+  /* ── Header ── */
+  .header-inner {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+  }
+
+  .header-glyph {
+    font-size: 44px;
+    color: var(--anti);
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+
+  .page-title {
+    font-size: 52px;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+
+  .page-subtitle {
+    font-size: 17px;
+    color: var(--ink-dim);
+    line-height: 1.6;
+    max-width: 580px;
+    margin-bottom: 24px;
+  }
+
+  .header-stats {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-num {
+    font-size: 28px;
+    font-style: italic;
+    color: var(--anti);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .stat-divider {
+    width: 0.5px;
+    height: 28px;
+    background: var(--paper-border);
+  }
+
+  @media (max-width: 600px) {
+    .header-inner {
+      flex-direction: column;
+      gap: 16px;
+    }
+    .header-glyph {
+      font-size: 32px;
+    }
+    .page-title {
+      font-size: 38px;
+    }
+  }
+
+  /* ── Entry ── */
+  .entry {
+    display: flex;
+    gap: 0;
+    border-top: 0.5px solid var(--line-faint);
+    padding: 36px 0;
+  }
+
+  .entry:last-child {
+    border-bottom: 0.5px solid var(--line-faint);
+  }
+
+  /* Rail */
+  .entry-rail {
+    width: 140px;
+    flex-shrink: 0;
+    padding-right: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .entry-domain {
+    font-size: 12px;
+    font-family: var(--font-display);
+    font-style: italic;
+  }
+
+  .entry-severity {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 11px;
+    color: var(--ink-dim);
+    letter-spacing: 1.5px;
+  }
+
+  .entry-severity-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .entry-num {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--ink-faint);
+    margin-top: 4px;
+  }
+
+  /* Body */
+  .entry-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .entry-name {
+    font-size: 38px;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    line-height: 1.05;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .entry-glyph {
+    font-size: 20px;
+    color: var(--anti);
+    flex-shrink: 0;
+  }
+
+  .entry-section {
+    margin-bottom: 20px;
+  }
+
+  .entry-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .entry-section-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+  }
+
+  .entry-text {
+    font-size: 16px;
+    font-family: var(--font-display);
+    font-style: italic;
+    color: var(--ink-dim);
+    line-height: 1.6;
+  }
+
+  .entry-text--mitigation {
+    color: var(--ink);
+  }
+
+  @media (max-width: 560px) {
+    .entry {
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .entry-rail {
+      width: auto;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding-right: 0;
+    }
+
+    .entry-num {
+      margin-top: 0;
+    }
+
+    .entry-name {
+      font-size: 28px;
+    }
+  }
+
+  /* ── Footer ── */
+  .footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 32px;
+    border-top: 0.5px solid var(--line-faint);
+  }
+
+  .footer-nav {
+    display: flex;
+    gap: 32px;
+  }
+
+  .nav-link {
+    font-size: 15px;
+    color: var(--gold);
+    text-decoration: none;
+    font-style: italic;
+  }
+
+  .nav-link:hover {
+    color: var(--gold-bright);
+  }
+
+  .footer-coord {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 640px) {
+    .catalog-page {
+      padding: 60px 20px 80px;
+    }
+
+    .footer-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+  }
+</style>
