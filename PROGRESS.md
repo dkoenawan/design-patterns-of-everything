@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-06-05 by automated agent
+Last updated: 2026-06-08 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -22,6 +22,7 @@ Last updated: 2026-06-05 by automated agent
 | 2026-06-03 | Retrofit domain pages to use PatternCard — all 4 domain pages | e7b9119 |
 | 2026-06-04 | About page skeleton — src/pages/about.astro + About link in SiteNav | bf140b6 |
 | 2026-06-05 | ProfileSheet React island (proficiency bars) — src/components/ProfileSheet.tsx | 20a4f2e |
+| 2026-06-08 | Anti-pattern catalog page (3 initial entries) — src/pages/anti-patterns.astro | f3b326f |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
@@ -41,7 +42,7 @@ Last updated: 2026-06-05 by automated agent
 15. [x] Retrofit domain pages to use PatternCard — all 4 domain pages
 16. [x] About page skeleton — src/pages/about.astro
 17. [x] ProfileSheet React island (proficiency bars) — src/components/ProfileSheet.tsx
-18. [ ] Anti-pattern catalog page (3 initial entries) — src/pages/anti-patterns.astro
+18. [x] Anti-pattern catalog page (3 initial entries) — src/pages/anti-patterns.astro
 19. [ ] SkillTree React island (static data, interactive) — src/components/SkillTree.tsx
 20. [ ] Integrate SkillTree into domain pages — all 4 domain pages
 21. [ ] Case study 1: Backend (Mermaid diagram) — src/pages/case-studies/backend-api-redesign.astro
