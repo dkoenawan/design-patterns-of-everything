@@ -5,6 +5,7 @@ import Cartouche from '../components/Cartouche.astro';
 import DomainMiniMap from '../components/DomainMiniMap';
 import MedallionViz from '../components/MedallionViz';
 import PatternCard from '../components/PatternCard.astro';
+import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
 
 const base = import.meta.env.BASE_URL;
@@ -90,6 +91,22 @@ const domainPatterns = patterns.filter((p) => p.domain === 'data');
               <span class="legend-text">{label}</span>
             </div>
           ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Skill tree ─────────────────────────────────────────── -->
+    <section class="skill-tree-row">
+      <Cartouche label="Skill progression — Data Pipeline Architecture">
+        <div class="skill-tree-header">
+          <h2 class="skill-tree-title">Pipeline Proficiency</h2>
+          <p class="skill-tree-caption">
+            Pure functions and schema contracts underpin every higher-order
+            pattern. Select any node to see how skills build on one another.
+          </p>
+        </div>
+        <div class="skill-tree-container">
+          <SkillTree domain="data" client:load />
         </div>
       </Cartouche>
     </section>
@@ -315,6 +332,29 @@ const domainPatterns = patterns.filter((p) => p.domain === 'data');
     letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--ink-faint);
+  }
+
+  /* ── Skill tree row ── */
+  .skill-tree-header {
+    margin-bottom: 28px;
+  }
+
+  .skill-tree-title {
+    font-size: 28px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+
+  .skill-tree-caption {
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.55;
+    max-width: 560px;
+  }
+
+  .skill-tree-container {
+    max-width: 520px;
+    margin: 0 auto;
   }
 
   @media (max-width: 640px) {

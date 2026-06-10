@@ -4,6 +4,7 @@ import AtlasBackdrop from '../components/AtlasBackdrop';
 import Cartouche from '../components/Cartouche.astro';
 import DomainMiniMap from '../components/DomainMiniMap';
 import PatternCard from '../components/PatternCard.astro';
+import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
 
 const base = import.meta.env.BASE_URL;
@@ -80,6 +81,22 @@ const domainPatterns = patterns.filter((p) => p.domain === 'backend');
             <p class="placeholder-text">Interactive chart in preparation</p>
             <p class="placeholder-coord">Plate ii · viz forthcoming</p>
           </div>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Skill tree ─────────────────────────────────────────── -->
+    <section class="skill-tree-row">
+      <Cartouche label="Skill progression — Backend Architecture">
+        <div class="skill-tree-header">
+          <h2 class="skill-tree-title">Architecture Proficiency</h2>
+          <p class="skill-tree-caption">
+            Foundational principles compose into advanced patterns. Select any
+            node to inspect the skill and its role in the broader architecture.
+          </p>
+        </div>
+        <div class="skill-tree-container">
+          <SkillTree domain="backend" client:load />
         </div>
       </Cartouche>
     </section>
@@ -309,6 +326,29 @@ const domainPatterns = patterns.filter((p) => p.domain === 'backend');
     letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--ink-faint);
+  }
+
+  /* ── Skill tree row ── */
+  .skill-tree-header {
+    margin-bottom: 28px;
+  }
+
+  .skill-tree-title {
+    font-size: 28px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+
+  .skill-tree-caption {
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.55;
+    max-width: 560px;
+  }
+
+  .skill-tree-container {
+    max-width: 520px;
+    margin: 0 auto;
   }
 
   @media (max-width: 640px) {
