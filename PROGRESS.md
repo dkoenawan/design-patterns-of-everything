@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-06-09 by automated agent
+Last updated: 2026-06-10 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -24,6 +24,7 @@ Last updated: 2026-06-09 by automated agent
 | 2026-06-05 | ProfileSheet React island (proficiency bars) — src/components/ProfileSheet.tsx | 20a4f2e |
 | 2026-06-08 | Anti-pattern catalog page (3 initial entries) — src/pages/anti-patterns.astro | f3b326f |
 | 2026-06-09 | SkillTree React island (static data, interactive) — src/components/SkillTree.tsx | 7c871a0 |
+| 2026-06-10 | Integrate SkillTree into domain pages — all 4 domain pages | 9b9272f |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
@@ -45,7 +46,7 @@ Last updated: 2026-06-09 by automated agent
 17. [x] ProfileSheet React island (proficiency bars) — src/components/ProfileSheet.tsx
 18. [x] Anti-pattern catalog page (3 initial entries) — src/pages/anti-patterns.astro
 19. [x] SkillTree React island (static data, interactive) — src/components/SkillTree.tsx
-20. [ ] Integrate SkillTree into domain pages — all 4 domain pages
+20. [x] Integrate SkillTree into domain pages — all 4 domain pages
 21. [ ] Case study 1: Backend (Mermaid diagram) — src/pages/case-studies/backend-api-redesign.astro
 22. [ ] Case study 2: Data Pipeline — src/pages/case-studies/data-pipeline-migration.astro
 23. [ ] Content cross-linking pass — all 10 existing MDX patterns
