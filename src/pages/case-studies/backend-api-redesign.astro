@@ -1,0 +1,943 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AtlasBackdrop from '../../components/AtlasBackdrop';
+import Cartouche from '../../components/Cartouche.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<BaseLayout
+  title="Case Study: Backend API Redesign"
+  description="How hexagonal architecture and CQRS transformed a monolithic REST API into a maintainable, testable service — handling 10× traffic growth without rewrites."
+>
+  <AtlasBackdrop client:only="react" />
+
+  <main class="case-study-page">
+
+    <!-- ── Breadcrumb & header ─────────────────────────────────── -->
+    <header class="cs-header">
+      <div class="breadcrumb">
+        <a href={base + '/'}>Atlas</a>
+        <span aria-hidden="true"> › </span>
+        <a href={base + '/backend'}>Backend</a>
+        <span aria-hidden="true"> › </span>
+        <span>Case Study</span>
+      </div>
+
+      <Cartouche label="Case study · Plate iii-A · Backend Architecture">
+        <div class="cs-title-block">
+          <p class="cs-catalogue">Study ref. BE-01</p>
+          <h1 class="cs-title">Backend API Redesign</h1>
+          <p class="cs-subtitle">Hexagonal Architecture &amp; CQRS at Scale</p>
+        </div>
+
+        <div class="cs-meta-row">
+          <div class="cs-meta-item">
+            <span class="meta-label">Context</span>
+            <span class="meta-value">FinTech platform, ~1.2M active users</span>
+          </div>
+          <div class="cs-meta-divider" aria-hidden="true"></div>
+          <div class="cs-meta-item">
+            <span class="meta-label">Scale</span>
+            <span class="meta-value">10× traffic over 18 months</span>
+          </div>
+          <div class="cs-meta-divider" aria-hidden="true"></div>
+          <div class="cs-meta-item">
+            <span class="meta-label">Duration</span>
+            <span class="meta-value">14 weeks (iterative)</span>
+          </div>
+          <div class="cs-meta-divider" aria-hidden="true"></div>
+          <div class="cs-meta-item">
+            <span class="meta-label">Role</span>
+            <span class="meta-value">Lead Solution Architect</span>
+          </div>
+        </div>
+      </Cartouche>
+    </header>
+
+    <!-- ── Context ──────────────────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="I — Context &amp; Problem Statement">
+        <div class="prose-grid">
+          <div class="prose-main">
+            <h2 class="section-heading">The Situation</h2>
+            <p>
+              A payments platform had grown from an internal tool into a customer-facing
+              API serving hundreds of third-party integrations. The original codebase was
+              a single Express.js monolith: business logic interleaved with SQL queries,
+              HTTP handlers directly instantiating database connections, and no meaningful
+              test coverage below the integration layer.
+            </p>
+            <p>
+              Every release required a 2-hour manual regression suite. Onboarding a new
+              engineer to a domain area averaged six weeks. When traffic doubled in Q3,
+              the team spent three weekends firefighting cascading timeouts that originated
+              in untestable, deeply nested query logic.
+            </p>
+
+            <h2 class="section-heading">Constraints</h2>
+            <ul class="prose-list">
+              <li>Zero-downtime migration — 94 external integrations cannot break</li>
+              <li>Existing database schema must be preserved (migration risk too high)</li>
+              <li>Team of five: two seniors, three mid-level engineers unfamiliar with DDD</li>
+              <li>No greenfield rewrite — iterative strangling of the monolith</li>
+            </ul>
+          </div>
+
+          <aside class="prose-sidebar">
+            <Cartouche label="Patterns applied">
+              <ul class="sidebar-list">
+                <li>
+                  <span class="pattern-bullet" aria-hidden="true">◈</span>
+                  <a href={base + '/backend#hexagonal-architecture'} class="pattern-link">
+                    Hexagonal Architecture
+                  </a>
+                </li>
+                <li>
+                  <span class="pattern-bullet" aria-hidden="true">◈</span>
+                  <a href={base + '/backend#cqrs'} class="pattern-link">
+                    CQRS
+                  </a>
+                </li>
+                <li>
+                  <span class="pattern-bullet" aria-hidden="true">◈</span>
+                  <a href={base + '/backend#dependency-injection'} class="pattern-link">
+                    Dependency Injection
+                  </a>
+                </li>
+                <li>
+                  <span class="pattern-bullet" aria-hidden="true">◈</span>
+                  <a href={base + '/backend#strategy-pattern'} class="pattern-link">
+                    Strategy Pattern
+                  </a>
+                </li>
+              </ul>
+            </Cartouche>
+
+            <Cartouche label="Outcome metrics">
+              <ul class="sidebar-metrics">
+                <li>
+                  <span class="metric-num">82%</span>
+                  <span class="metric-label">reduction in regression time</span>
+                </li>
+                <li>
+                  <span class="metric-num">10×</span>
+                  <span class="metric-label">throughput under load test</span>
+                </li>
+                <li>
+                  <span class="metric-num">0</span>
+                  <span class="metric-label">integration breakages during migration</span>
+                </li>
+                <li>
+                  <span class="metric-num">3 wks</span>
+                  <span class="metric-label">new-engineer onboarding (down from 6)</span>
+                </li>
+              </ul>
+            </Cartouche>
+          </aside>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Architecture diagram ──────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="II — Architecture Diagram · Before &amp; After">
+        <div class="diagram-header">
+          <h2 class="section-heading">System Evolution</h2>
+          <p class="diagram-caption">
+            Left: original layered monolith with tight coupling between transport,
+            business logic, and persistence. Right: hexagonal target state with isolated
+            domain core and read/write separation via CQRS.
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <!-- ── Before ───────────────── -->
+          <figure class="diagram-figure">
+            <figcaption class="diagram-label">Before — Coupled Monolith</figcaption>
+            <svg
+              class="arch-diagram"
+              viewBox="0 0 340 380"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="Before architecture: HTTP Handler → Service Layer → Repository → Database, all in a single coupled module"
+            >
+              <!-- Background -->
+              <rect width="340" height="380" fill="rgba(10,14,26,0.0)" />
+
+              <!-- Outer module boundary -->
+              <rect x="20" y="20" width="300" height="340" rx="0"
+                fill="rgba(212,177,94,0.03)" stroke="rgba(212,177,94,0.18)" stroke-width="0.5"
+                stroke-dasharray="4 3" />
+              <text x="170" y="38" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="2"
+                text-transform="uppercase" fill="rgba(212,177,94,0.35)">
+                EXPRESS MONOLITH
+              </text>
+
+              <!-- HTTP Handler box -->
+              <rect x="95" y="50" width="150" height="44" rx="0"
+                fill="rgba(212,154,122,0.12)" stroke="rgba(212,154,122,0.45)" stroke-width="0.5" />
+              <text x="170" y="70" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1.5"
+                fill="#d49a7a">HTTP HANDLER</text>
+              <text x="170" y="85" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(212,154,122,0.55)">routes/*.js</text>
+
+              <!-- Arrow 1 -->
+              <line x1="170" y1="94" x2="170" y2="116"
+                stroke="rgba(196,106,85,0.6)" stroke-width="0.5" marker-end="url(#arrowRed)" />
+              <text x="176" y="109" font-family="JetBrains Mono, monospace" font-size="7"
+                fill="rgba(196,106,85,0.5)" letter-spacing="1">tight</text>
+
+              <!-- Service Layer box -->
+              <rect x="95" y="116" width="150" height="44" rx="0"
+                fill="rgba(212,154,122,0.12)" stroke="rgba(212,154,122,0.45)" stroke-width="0.5" />
+              <text x="170" y="136" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1.5"
+                fill="#d49a7a">SERVICE LAYER</text>
+              <text x="170" y="151" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(212,154,122,0.55)">services/*.js</text>
+
+              <!-- Arrow 2 -->
+              <line x1="170" y1="160" x2="170" y2="182"
+                stroke="rgba(196,106,85,0.6)" stroke-width="0.5" marker-end="url(#arrowRed)" />
+              <text x="176" y="175" font-family="JetBrains Mono, monospace" font-size="7"
+                fill="rgba(196,106,85,0.5)" letter-spacing="1">tight</text>
+
+              <!-- Repository box -->
+              <rect x="95" y="182" width="150" height="44" rx="0"
+                fill="rgba(212,154,122,0.12)" stroke="rgba(212,154,122,0.45)" stroke-width="0.5" />
+              <text x="170" y="202" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1.5"
+                fill="#d49a7a">REPOSITORY</text>
+              <text x="170" y="217" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(212,154,122,0.55)">models/*.js (raw SQL)</text>
+
+              <!-- Arrow 3 -->
+              <line x1="170" y1="226" x2="170" y2="248"
+                stroke="rgba(196,106,85,0.6)" stroke-width="0.5" marker-end="url(#arrowRed)" />
+
+              <!-- Database box -->
+              <rect x="95" y="248" width="150" height="44" rx="0"
+                fill="rgba(90,79,51,0.2)" stroke="rgba(212,177,94,0.25)" stroke-width="0.5" />
+              <text x="170" y="268" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1.5"
+                fill="rgba(212,177,94,0.6)">POSTGRESQL</text>
+              <text x="170" y="283" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(212,177,94,0.35)">shared connection pool</text>
+
+              <!-- Problem annotation -->
+              <text x="170" y="330" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(196,106,85,0.7)">NO TESTS · NO ISOLATION</text>
+              <text x="170" y="348" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(196,106,85,0.5)">EVERY LAYER KNOWS DB</text>
+
+              <defs>
+                <marker id="arrowRed" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(196,106,85,0.6)" />
+                </marker>
+              </defs>
+            </svg>
+          </figure>
+
+          <!-- ── Divider ──────────────── -->
+          <div class="diagram-divider" aria-hidden="true">
+            <span class="divider-glyph">→</span>
+          </div>
+
+          <!-- ── After ────────────────── -->
+          <figure class="diagram-figure">
+            <figcaption class="diagram-label">After — Hexagonal + CQRS</figcaption>
+            <svg
+              class="arch-diagram"
+              viewBox="0 0 340 380"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="After architecture: REST and gRPC adapters feed into command and query ports, domain core in center, database adapter implements outbound port"
+            >
+              <rect width="340" height="380" fill="rgba(10,14,26,0.0)" />
+
+              <!-- Adapters (left inbound) -->
+              <rect x="8" y="60" width="80" height="36" rx="0"
+                fill="rgba(158,196,138,0.08)" stroke="rgba(158,196,138,0.35)" stroke-width="0.5" />
+              <text x="48" y="76" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="#9ec48a">REST</text>
+              <text x="48" y="89" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(158,196,138,0.5)">adapter</text>
+
+              <rect x="8" y="110" width="80" height="36" rx="0"
+                fill="rgba(158,196,138,0.08)" stroke="rgba(158,196,138,0.35)" stroke-width="0.5" />
+              <text x="48" y="126" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="#9ec48a">gRPC</text>
+              <text x="48" y="139" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(158,196,138,0.5)">adapter</text>
+
+              <!-- Arrows: adapters → ports -->
+              <line x1="88" y1="78" x2="116" y2="105"
+                stroke="rgba(158,196,138,0.4)" stroke-width="0.5" marker-end="url(#arrowGreen)" />
+              <line x1="88" y1="128" x2="116" y2="138"
+                stroke="rgba(158,196,138,0.4)" stroke-width="0.5" marker-end="url(#arrowGreen)" />
+
+              <!-- Port labels (inbound) -->
+              <text x="100" y="100" font-family="JetBrains Mono, monospace" font-size="7"
+                letter-spacing="1" fill="rgba(212,177,94,0.5)">port</text>
+
+              <!-- Domain core (hexagon approximation: rect with label) -->
+              <rect x="118" y="80" width="104" height="220" rx="0"
+                fill="rgba(212,177,94,0.06)" stroke="rgba(212,177,94,0.45)" stroke-width="0.5" />
+              <text x="170" y="100" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="2"
+                fill="rgba(212,177,94,0.55)">DOMAIN CORE</text>
+
+              <!-- Command side -->
+              <rect x="130" y="112" width="80" height="32" rx="0"
+                fill="rgba(212,177,94,0.1)" stroke="rgba(212,177,94,0.3)" stroke-width="0.5" />
+              <text x="170" y="126" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="var(--gold)">COMMANDS</text>
+              <text x="170" y="138" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(212,177,94,0.5)">write path</text>
+
+              <!-- Domain model block -->
+              <rect x="130" y="158" width="80" height="44" rx="0"
+                fill="rgba(212,177,94,0.12)" stroke="rgba(212,177,94,0.45)" stroke-width="0.5" />
+              <text x="170" y="176" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="var(--gold-bright)">DOMAIN</text>
+              <text x="170" y="189" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="var(--gold-bright)">MODELS</text>
+              <text x="170" y="198" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="1"
+                fill="rgba(241,217,138,0.4)">pure, no deps</text>
+
+              <!-- Query side -->
+              <rect x="130" y="216" width="80" height="32" rx="0"
+                fill="rgba(122,163,212,0.1)" stroke="rgba(122,163,212,0.3)" stroke-width="0.5" />
+              <text x="170" y="230" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="#7aa3d4">QUERIES</text>
+              <text x="170" y="242" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(122,163,212,0.5)">read path</text>
+
+              <!-- Arrows: core → outbound port -->
+              <line x1="222" y1="128" x2="248" y2="128"
+                stroke="rgba(212,177,94,0.4)" stroke-width="0.5" marker-end="url(#arrowGold)" />
+              <line x1="222" y1="232" x2="248" y2="210"
+                stroke="rgba(122,163,212,0.4)" stroke-width="0.5" marker-end="url(#arrowBlue)" />
+
+              <!-- Port labels (outbound) -->
+              <text x="226" y="120" font-family="JetBrains Mono, monospace" font-size="7"
+                letter-spacing="1" fill="rgba(212,177,94,0.5)">port</text>
+
+              <!-- Outbound adapters (right) -->
+              <rect x="252" y="110" width="80" height="36" rx="0"
+                fill="rgba(90,79,51,0.2)" stroke="rgba(212,177,94,0.25)" stroke-width="0.5" />
+              <text x="292" y="126" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="rgba(212,177,94,0.6)">POSTGRES</text>
+              <text x="292" y="139" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(212,177,94,0.35)">write repo</text>
+
+              <rect x="252" y="190" width="80" height="36" rx="0"
+                fill="rgba(90,79,51,0.15)" stroke="rgba(122,163,212,0.25)" stroke-width="0.5" />
+              <text x="292" y="206" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="rgba(122,163,212,0.6)">READ DB</text>
+              <text x="292" y="219" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(122,163,212,0.35)">read replica</text>
+
+              <!-- Annotation -->
+              <text x="170" y="326" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(158,196,138,0.7)">CORE HAS ZERO INFRA IMPORTS</text>
+              <text x="170" y="344" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(158,196,138,0.5)">ADAPTERS SATISFY PORTS</text>
+
+              <defs>
+                <marker id="arrowGreen" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(158,196,138,0.6)" />
+                </marker>
+                <marker id="arrowGold" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(212,177,94,0.6)" />
+                </marker>
+                <marker id="arrowBlue" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(122,163,212,0.6)" />
+                </marker>
+              </defs>
+            </svg>
+          </figure>
+        </div>
+
+        <p class="diagram-note">
+          The critical insight: the domain core imports nothing from infrastructure.
+          Dependency arrows always point inward. Adapters are swappable — the domain
+          logic is unchanged whether persistence is Postgres, Redis, or an in-memory
+          test double.
+        </p>
+      </Cartouche>
+    </section>
+
+    <!-- ── Approach ─────────────────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="III — Approach &amp; Key Decisions">
+        <div class="approach-grid">
+          <div class="approach-col">
+            <h2 class="section-heading">Migration Strategy: Strangler Fig</h2>
+            <p>
+              Rather than a big-bang rewrite, new domain bounded contexts were built
+              alongside the existing monolith. The API gateway layer was introduced to
+              route requests — legacy endpoints remained on the monolith while new
+              command and query handlers were stood up in the hexagonal core.
+            </p>
+            <p>
+              Over 14 weeks, each domain area (payments, accounts, notifications)
+              was migrated in sequence. Feature flags controlled traffic shifting per
+              endpoint, allowing rollback within minutes if issues surfaced.
+            </p>
+
+            <h2 class="section-heading">CQRS Split Decision</h2>
+            <p>
+              The read/write ratio was 9:1 (reads dominated). Separating the query path
+              allowed introduction of a read replica without touching the write path.
+              Command handlers became lean: accept a validated command object, execute
+              domain logic, persist via the outbound port, publish a domain event.
+            </p>
+            <p>
+              Query handlers bypassed the domain model entirely for simple reads — thin
+              projections directly from the read replica. This eliminated N+1 queries
+              that had caused the timeout cascades.
+            </p>
+          </div>
+
+          <div class="approach-col">
+            <h2 class="section-heading">Testing Architecture</h2>
+            <p>
+              The domain core — containing all business rules — is pure TypeScript with
+              zero infrastructure imports. The full suite of domain unit tests runs in
+              under 800 ms. No database. No HTTP. No test containers.
+            </p>
+            <p>
+              Adapters are tested at the integration layer with a real database in CI.
+              Port contracts are verified independently. The regression suite shrank
+              from a 2-hour manual process to a 12-minute automated pipeline.
+            </p>
+
+            <h2 class="section-heading">Team Enablement</h2>
+            <p>
+              The hexagonal boundary provided a clear mental model for engineers unfamiliar
+              with DDD. A simple rule — <em>"if you're writing a new feature, start in
+              the domain core with a failing test; only touch adapters once the logic
+              is correct in isolation"</em> — was enough to guide the team through the
+              migration with high confidence.
+            </p>
+          </div>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Results ───────────────────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="IV — Results &amp; Reflection">
+        <div class="results-grid">
+          <div class="result-card">
+            <span class="result-num">82%</span>
+            <p class="result-label">Regression time reduction</p>
+            <p class="result-detail">2-hour manual suite → 12-minute automated pipeline</p>
+          </div>
+          <div class="result-card">
+            <span class="result-num">10×</span>
+            <p class="result-label">Throughput under sustained load</p>
+            <p class="result-detail">Read replica offloaded query pressure from the write path</p>
+          </div>
+          <div class="result-card">
+            <span class="result-num">0</span>
+            <p class="result-label">Integration breakages</p>
+            <p class="result-detail">94 external integrations migrated without incidents</p>
+          </div>
+          <div class="result-card">
+            <span class="result-num">3 wks</span>
+            <p class="result-label">New engineer time-to-productivity</p>
+            <p class="result-detail">Down from 6 weeks; clear hexagonal boundary as mental model</p>
+          </div>
+        </div>
+
+        <div class="reflection">
+          <h2 class="section-heading">What I Would Do Differently</h2>
+          <p>
+            The CQRS split introduced eventual consistency in the read projection layer —
+            a trade-off that was not communicated clearly to the product team initially.
+            Two edge cases in notifications relied on read-after-write consistency.
+            Both required compensating logic. A domain event log (the write side publishing
+            events the query side consumes) would have made this explicit and testable
+            from day one rather than discovered in staging.
+          </p>
+          <p>
+            The strangler fig approach worked well technically, but the feature-flag
+            routing layer added operational overhead for three months after the migration
+            completed. A harder cutover date — with a one-week rollback window rather than
+            indefinite routing — would have been cleaner.
+          </p>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Navigation ───────────────────────────────────────────── -->
+    <section class="cs-footer">
+      <div class="footer-nav">
+        <a href={base + '/backend'} class="nav-link">← Backend Domain</a>
+        <a href={base + '/case-studies/data-pipeline-migration'} class="nav-link">
+          Case Study: Data Pipeline Migration →
+        </a>
+      </div>
+      <p class="footer-coord">Plate iii-A · Case Study BE-01 · RA +500° Dec −200°</p>
+    </section>
+
+  </main>
+</BaseLayout>
+
+<style>
+  .case-study-page {
+    position: relative;
+    z-index: 1;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 80px 32px 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  /* ── Breadcrumb ── */
+  .breadcrumb {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 24px;
+  }
+
+  .breadcrumb a {
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--gold);
+  }
+
+  /* ── Header ── */
+  .cs-title-block {
+    margin-bottom: 32px;
+  }
+
+  .cs-catalogue {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 12px;
+  }
+
+  .cs-title {
+    font-size: clamp(42px, 6vw, 64px);
+    color: var(--tint-backend);
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+
+  .cs-subtitle {
+    font-size: 20px;
+    color: var(--ink-dim);
+    font-style: italic;
+  }
+
+  .cs-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+    padding-top: 24px;
+    border-top: 0.5px solid var(--line-faint);
+  }
+
+  .cs-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .meta-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .meta-value {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-dim);
+  }
+
+  .cs-meta-divider {
+    width: 0.5px;
+    height: 28px;
+    background: var(--paper-border);
+    flex-shrink: 0;
+  }
+
+  /* ── Section ── */
+  .cs-section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section-heading {
+    font-size: 22px;
+    color: var(--ink);
+    margin-bottom: 14px;
+    margin-top: 28px;
+  }
+
+  .section-heading:first-child {
+    margin-top: 0;
+  }
+
+  /* ── Prose grid ── */
+  .prose-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 40px;
+    align-items: start;
+  }
+
+  @media (max-width: 800px) {
+    .prose-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .prose-main p {
+    font-size: 16px;
+    color: var(--ink-dim);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  .prose-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .prose-list li {
+    font-size: 15px;
+    color: var(--ink-dim);
+    padding-left: 18px;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .prose-list li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+    font-style: normal;
+  }
+
+  /* ── Sidebar ── */
+  .prose-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .sidebar-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sidebar-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pattern-bullet {
+    color: var(--tint-backend);
+    font-style: normal;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .pattern-link {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-dim);
+    text-decoration: none;
+    transition: color 150ms;
+  }
+
+  .pattern-link:hover {
+    color: var(--gold);
+  }
+
+  .sidebar-metrics {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .sidebar-metrics li {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .metric-num {
+    font-size: 28px;
+    font-style: italic;
+    color: var(--tint-backend);
+    line-height: 1;
+  }
+
+  .metric-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* ── Diagram ── */
+  .diagram-header {
+    margin-bottom: 28px;
+  }
+
+  .diagram-caption {
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.55;
+    max-width: 640px;
+    margin-top: 10px;
+  }
+
+  .diagram-container {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px;
+    align-items: center;
+  }
+
+  @media (max-width: 700px) {
+    .diagram-container {
+      grid-template-columns: 1fr;
+    }
+
+    .diagram-divider {
+      display: none;
+    }
+  }
+
+  .diagram-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .diagram-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    text-align: center;
+  }
+
+  .arch-diagram {
+    width: 100%;
+    height: auto;
+    border: 0.5px solid var(--line-faint);
+    background: rgba(10, 14, 26, 0.4);
+  }
+
+  .diagram-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: var(--gold);
+    font-style: normal;
+    opacity: 0.5;
+  }
+
+  .diagram-note {
+    margin-top: 24px;
+    padding: 16px;
+    border-left: 0.5px solid var(--gold);
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-dim);
+    line-height: 1.6;
+  }
+
+  /* ── Approach grid ── */
+  .approach-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+
+  @media (max-width: 768px) {
+    .approach-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .approach-col p {
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+
+  .approach-col em {
+    color: var(--ink);
+  }
+
+  /* ── Results ── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+
+  @media (max-width: 900px) {
+    .results-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .results-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .result-card {
+    padding: 20px 16px;
+    border: 0.5px solid var(--paper-border);
+    background: rgba(212, 154, 122, 0.04);
+  }
+
+  .result-num {
+    display: block;
+    font-size: 42px;
+    font-style: italic;
+    color: var(--tint-backend);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .result-label {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink);
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+
+  .result-detail {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--ink-faint);
+    line-height: 1.5;
+  }
+
+  .reflection p {
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+
+  /* ── Footer ── */
+  .cs-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 32px;
+    border-top: 0.5px solid var(--line-faint);
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .footer-nav {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .nav-link {
+    font-size: 15px;
+    color: var(--gold);
+    text-decoration: none;
+    font-style: italic;
+  }
+
+  .nav-link:hover {
+    color: var(--gold-bright);
+  }
+
+  .footer-coord {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 640px) {
+    .case-study-page {
+      padding: 60px 20px 80px;
+    }
+  }
+</style>
