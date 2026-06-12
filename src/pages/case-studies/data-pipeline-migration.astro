@@ -1,0 +1,933 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AtlasBackdrop from '../../components/AtlasBackdrop';
+import Cartouche from '../../components/Cartouche.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<BaseLayout
+  title="Case Study: Data Pipeline Migration"
+  description="How Medallion Architecture and schema-driven validation transformed an unstable ETL monolith into an observable, contract-tested data platform — reducing pipeline failures by 94%."
+>
+  <AtlasBackdrop client:only="react" />
+
+  <main class="case-study-page">
+
+    <!-- ── Breadcrumb & header ─────────────────────────────────── -->
+    <header class="cs-header">
+      <div class="breadcrumb">
+        <a href={base + '/'}>Atlas</a>
+        <span aria-hidden="true"> › </span>
+        <a href={base + '/data'}>Data Pipeline</a>
+        <span aria-hidden="true"> › </span>
+        <span>Case Study</span>
+      </div>
+
+      <Cartouche label="Case study · Plate iv-B · Data Pipeline Architecture">
+        <div class="cs-title-block">
+          <p class="cs-catalogue">Study ref. DP-01</p>
+          <h1 class="cs-title">Data Pipeline Migration</h1>
+          <p class="cs-subtitle">Medallion Architecture &amp; Schema-Driven Validation at Scale</p>
+        </div>
+
+        <div class="cs-meta-row">
+          <div class="cs-meta-item">
+            <span class="meta-label">Context</span>
+            <span class="meta-value">SaaS analytics platform, 40+ data sources</span>
+          </div>
+          <div class="cs-meta-divider" aria-hidden="true"></div>
+          <div class="cs-meta-item">
+            <span class="meta-label">Scale</span>
+            <span class="meta-value">~800 GB ingested daily</span>
+          </div>
+          <div class="cs-meta-divider" aria-hidden="true"></div>
+          <div class="cs-meta-item">
+            <span class="meta-label">Duration</span>
+            <span class="meta-value">11 weeks (phased)</span>
+          </div>
+          <div class="cs-meta-divider" aria-hidden="true"></div>
+          <div class="cs-meta-item">
+            <span class="meta-label">Role</span>
+            <span class="meta-value">Lead Solution Architect</span>
+          </div>
+        </div>
+      </Cartouche>
+    </header>
+
+    <!-- ── Context ──────────────────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="I — Context &amp; Problem Statement">
+        <div class="prose-grid">
+          <div class="prose-main">
+            <h2 class="section-heading">The Situation</h2>
+            <p>
+              A B2B analytics platform was ingesting data from over 40 upstream sources
+              via a single Python ETL monolith that had grown organically over four years.
+              Source schemas were embedded as string literals inside transformation functions.
+              There were no data contracts, no intermediate validation layers, and no
+              visibility into where a record failed and why.
+            </p>
+            <p>
+              The consequence was a 6–8% daily pipeline failure rate — each failure
+              requiring manual triage to locate the offending source row. A schema
+              change upstream (a column renamed, a nullable field going non-null) would
+              silently corrupt downstream aggregations for hours before an alert fired on
+              the BI layer. Consumer teams had learned not to trust the platform for
+              anything time-sensitive.
+            </p>
+
+            <h2 class="section-heading">Constraints</h2>
+            <ul class="prose-list">
+              <li>Live production system — no maintenance windows available</li>
+              <li>Upstream sources owned by separate teams; schema changes happen without notice</li>
+              <li>Existing consumers depend on current output table structure (cannot rename columns)</li>
+              <li>Small data engineering team: three engineers, none with prior lakehouse experience</li>
+            </ul>
+          </div>
+
+          <aside class="prose-sidebar">
+            <Cartouche label="Patterns applied">
+              <ul class="sidebar-list">
+                <li>
+                  <span class="pattern-bullet" aria-hidden="true">◈</span>
+                  <a href={base + '/data#medallion-architecture'} class="pattern-link">
+                    Medallion Architecture
+                  </a>
+                </li>
+                <li>
+                  <span class="pattern-bullet" aria-hidden="true">◈</span>
+                  <a href={base + '/data#schema-driven-validation'} class="pattern-link">
+                    Schema-Driven Validation
+                  </a>
+                </li>
+                <li>
+                  <span class="pattern-bullet" aria-hidden="true">◈</span>
+                  <a href={base + '/data#pure-functions'} class="pattern-link">
+                    Pure Functions
+                  </a>
+                </li>
+                <li>
+                  <span class="pattern-bullet" aria-hidden="true">◈</span>
+                  <a href={base + '/data#batch-vs-streaming'} class="pattern-link">
+                    Batch vs Streaming
+                  </a>
+                </li>
+              </ul>
+            </Cartouche>
+
+            <Cartouche label="Outcome metrics">
+              <ul class="sidebar-metrics">
+                <li>
+                  <span class="metric-num">94%</span>
+                  <span class="metric-label">reduction in pipeline failures</span>
+                </li>
+                <li>
+                  <span class="metric-num">40+</span>
+                  <span class="metric-label">sources with enforced schema contracts</span>
+                </li>
+                <li>
+                  <span class="metric-num">12 min</span>
+                  <span class="metric-label">mean time to failure isolation (down from 3h)</span>
+                </li>
+                <li>
+                  <span class="metric-num">0</span>
+                  <span class="metric-label">silent corruption incidents post-migration</span>
+                </li>
+              </ul>
+            </Cartouche>
+          </aside>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Architecture diagram ──────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="II — Architecture Diagram · Before &amp; After">
+        <div class="diagram-header">
+          <h2 class="section-heading">System Evolution</h2>
+          <p class="diagram-caption">
+            Left: raw-to-gold ETL monolith with no intermediate validation — schema
+            errors propagate silently to consumers. Right: Medallion target state with
+            Bronze landing, Silver validation, and Gold aggregation as distinct,
+            observable stages.
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <!-- ── Before ───────────────── -->
+          <figure class="diagram-figure">
+            <figcaption class="diagram-label">Before — ETL Monolith</figcaption>
+            <svg
+              class="arch-diagram"
+              viewBox="0 0 340 400"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="Before architecture: 40+ sources feed directly into a single ETL script that writes to one shared database; no validation layer, no intermediate state"
+            >
+              <rect width="340" height="400" fill="rgba(10,14,26,0.0)" />
+
+              <!-- Source group -->
+              <text x="170" y="28" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="2"
+                fill="rgba(158,196,138,0.4)">UPSTREAM SOURCES (40+)</text>
+
+              <rect x="20" y="36" width="60" height="28" rx="0"
+                fill="rgba(158,196,138,0.07)" stroke="rgba(158,196,138,0.3)" stroke-width="0.5" />
+              <text x="50" y="53" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(158,196,138,0.6)">CRM</text>
+
+              <rect x="95" y="36" width="60" height="28" rx="0"
+                fill="rgba(158,196,138,0.07)" stroke="rgba(158,196,138,0.3)" stroke-width="0.5" />
+              <text x="125" y="53" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(158,196,138,0.6)">EVENTS</text>
+
+              <rect x="170" y="36" width="60" height="28" rx="0"
+                fill="rgba(158,196,138,0.07)" stroke="rgba(158,196,138,0.3)" stroke-width="0.5" />
+              <text x="200" y="53" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(158,196,138,0.6)">BILLING</text>
+
+              <rect x="245" y="36" width="70" height="28" rx="0"
+                fill="rgba(158,196,138,0.07)" stroke="rgba(158,196,138,0.3)" stroke-width="0.5" />
+              <text x="280" y="53" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(158,196,138,0.6)">…37 more</text>
+
+              <!-- Arrows to ETL -->
+              <line x1="50" y1="64" x2="140" y2="138"
+                stroke="rgba(196,106,85,0.4)" stroke-width="0.5" marker-end="url(#arrowRed)" />
+              <line x1="125" y1="64" x2="155" y2="138"
+                stroke="rgba(196,106,85,0.4)" stroke-width="0.5" marker-end="url(#arrowRed)" />
+              <line x1="200" y1="64" x2="175" y2="138"
+                stroke="rgba(196,106,85,0.4)" stroke-width="0.5" marker-end="url(#arrowRed)" />
+              <line x1="280" y1="64" x2="200" y2="138"
+                stroke="rgba(196,106,85,0.4)" stroke-width="0.5" marker-end="url(#arrowRed)" />
+
+              <!-- ETL monolith box -->
+              <rect x="60" y="138" width="220" height="80" rx="0"
+                fill="rgba(212,154,122,0.1)" stroke="rgba(212,154,122,0.4)" stroke-width="0.5"
+                stroke-dasharray="4 3" />
+              <text x="170" y="164" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="2"
+                fill="#d49a7a">ETL MONOLITH</text>
+              <text x="170" y="180" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(212,154,122,0.55)">transform.py · 4800 lines</text>
+              <text x="170" y="196" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(196,106,85,0.6)">NO SCHEMA CONTRACTS</text>
+              <text x="170" y="210" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(196,106,85,0.45)">NO INTERMEDIATE STATE</text>
+
+              <!-- Arrow to DB -->
+              <line x1="170" y1="218" x2="170" y2="258"
+                stroke="rgba(196,106,85,0.6)" stroke-width="0.5" marker-end="url(#arrowRed)" />
+
+              <!-- Shared DB -->
+              <rect x="80" y="258" width="180" height="50" rx="0"
+                fill="rgba(90,79,51,0.2)" stroke="rgba(212,177,94,0.25)" stroke-width="0.5" />
+              <text x="170" y="279" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1.5"
+                fill="rgba(212,177,94,0.6)">DATA WAREHOUSE</text>
+              <text x="170" y="296" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(212,177,94,0.35)">shared output tables</text>
+
+              <!-- Corruption annotation -->
+              <text x="170" y="342" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(196,106,85,0.7)">SCHEMA ERRORS SILENTLY</text>
+              <text x="170" y="358" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(196,106,85,0.5)">CORRUPT GOLD LAYER</text>
+
+              <defs>
+                <marker id="arrowRed" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(196,106,85,0.6)" />
+                </marker>
+              </defs>
+            </svg>
+          </figure>
+
+          <!-- ── Divider ──────────────── -->
+          <div class="diagram-divider" aria-hidden="true">
+            <span class="divider-glyph">→</span>
+          </div>
+
+          <!-- ── After ────────────────── -->
+          <figure class="diagram-figure">
+            <figcaption class="diagram-label">After — Medallion Architecture</figcaption>
+            <svg
+              class="arch-diagram"
+              viewBox="0 0 340 400"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="After architecture: sources land in Bronze (raw), pass schema validation to Silver (clean, typed), aggregate to Gold (consumer-ready); failures quarantined at each boundary"
+            >
+              <rect width="340" height="400" fill="rgba(10,14,26,0.0)" />
+
+              <!-- Sources (abbreviated) -->
+              <rect x="110" y="14" width="120" height="26" rx="0"
+                fill="rgba(158,196,138,0.07)" stroke="rgba(158,196,138,0.3)" stroke-width="0.5" />
+              <text x="170" y="31" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(158,196,138,0.6)">40+ SOURCES</text>
+
+              <!-- Arrow: sources → bronze -->
+              <line x1="170" y1="40" x2="170" y2="62"
+                stroke="rgba(158,196,138,0.5)" stroke-width="0.5" marker-end="url(#arrowGreen2)" />
+
+              <!-- Bronze layer -->
+              <rect x="40" y="62" width="260" height="52" rx="0"
+                fill="rgba(150,115,70,0.12)" stroke="rgba(196,156,90,0.45)" stroke-width="0.5" />
+              <text x="170" y="82" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="2"
+                fill="rgba(196,156,90,0.8)">BRONZE</text>
+              <text x="170" y="96" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(196,156,90,0.5)">raw landing · immutable · append-only</text>
+              <text x="170" y="108" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(196,156,90,0.4)">source schema preserved verbatim</text>
+
+              <!-- Schema validation gate -->
+              <line x1="170" y1="114" x2="170" y2="134"
+                stroke="rgba(212,177,94,0.5)" stroke-width="0.5" marker-end="url(#arrowGold2)" />
+              <rect x="110" y="134" width="120" height="28" rx="0"
+                fill="rgba(212,177,94,0.1)" stroke="rgba(212,177,94,0.55)" stroke-width="0.5" />
+              <text x="170" y="151" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="2"
+                fill="var(--gold)">SCHEMA GATE</text>
+
+              <!-- Quarantine path -->
+              <line x1="110" y1="148" x2="68" y2="148"
+                stroke="rgba(196,106,85,0.5)" stroke-width="0.5" marker-end="url(#arrowRed2)" />
+              <rect x="8" y="136" width="60" height="24" rx="0"
+                fill="rgba(196,106,85,0.08)" stroke="rgba(196,106,85,0.35)" stroke-width="0.5" />
+              <text x="38" y="151" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6.5" letter-spacing="1"
+                fill="rgba(196,106,85,0.6)">QUARANTINE</text>
+
+              <!-- Arrow: gate → silver -->
+              <line x1="170" y1="162" x2="170" y2="182"
+                stroke="rgba(212,177,94,0.5)" stroke-width="0.5" marker-end="url(#arrowGold2)" />
+
+              <!-- Silver layer -->
+              <rect x="40" y="182" width="260" height="52" rx="0"
+                fill="rgba(160,175,200,0.1)" stroke="rgba(160,175,200,0.45)" stroke-width="0.5" />
+              <text x="170" y="202" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="2"
+                fill="rgba(160,175,200,0.8)">SILVER</text>
+              <text x="170" y="216" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(160,175,200,0.5)">cleansed · typed · deduplicated</text>
+              <text x="170" y="228" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(160,175,200,0.4)">contract-tested against Pandera schemas</text>
+
+              <!-- Arrow: silver → gold -->
+              <line x1="170" y1="234" x2="170" y2="260"
+                stroke="rgba(158,196,138,0.5)" stroke-width="0.5" marker-end="url(#arrowGreen2)" />
+
+              <!-- Gold layer -->
+              <rect x="40" y="260" width="260" height="52" rx="0"
+                fill="rgba(158,196,138,0.1)" stroke="rgba(158,196,138,0.45)" stroke-width="0.5" />
+              <text x="170" y="280" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="2"
+                fill="rgba(158,196,138,0.8)">GOLD</text>
+              <text x="170" y="294" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(158,196,138,0.5)">aggregated · consumer-ready · SLA-governed</text>
+              <text x="170" y="306" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(158,196,138,0.4)">output schema immutable (consumer contracts)</text>
+
+              <!-- Annotation -->
+              <text x="170" y="344" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(158,196,138,0.7)">FAILURES ISOLATED AT EACH BOUNDARY</text>
+              <text x="170" y="360" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(158,196,138,0.5)">GOLD NEVER SEES RAW ROWS</text>
+
+              <defs>
+                <marker id="arrowGreen2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(158,196,138,0.6)" />
+                </marker>
+                <marker id="arrowGold2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(212,177,94,0.6)" />
+                </marker>
+                <marker id="arrowRed2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(196,106,85,0.6)" />
+                </marker>
+              </defs>
+            </svg>
+          </figure>
+        </div>
+
+        <p class="diagram-note">
+          The Medallion boundary guarantee: Gold consumers never touch a row that has not
+          passed the Silver schema contract. A Bronze-to-Silver failure quarantines the
+          offending records and pages the on-call engineer with the exact row, source,
+          and field that violated the contract.
+        </p>
+      </Cartouche>
+    </section>
+
+    <!-- ── Approach ─────────────────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="III — Approach &amp; Key Decisions">
+        <div class="approach-grid">
+          <div class="approach-col">
+            <h2 class="section-heading">Migration Strategy: Parallel Write</h2>
+            <p>
+              Rather than cutting over sources one-by-one and risking consumer disruption,
+              the new Medallion pipeline was built alongside the existing ETL. For the
+              first four weeks, both pipelines wrote to separate output tables. A data
+              reconciliation job ran nightly, comparing row counts and aggregate sums
+              across 14 key metrics.
+            </p>
+            <p>
+              This approach surfaced three categories of silent data discrepancy in the
+              old pipeline — differences the consumers had accepted as "normal variance."
+              Consumer teams were briefed on the corrected figures before cutover, avoiding
+              the appearance of a regression when accuracy improved.
+            </p>
+
+            <h2 class="section-heading">Schema Contract Design</h2>
+            <p>
+              Each of the 40+ sources received a Pandera schema definition checked into
+              version control. Schema files specify field types, nullable constraints,
+              value ranges, and cross-field invariants. The Bronze-to-Silver transition
+              validates every incoming batch against the registered schema version for
+              that source.
+            </p>
+            <p>
+              Schema versioning follows a two-step promotion process: a PR to register
+              the new schema version, then a feature flag to activate it on the next
+              batch run. This means upstream schema changes are visible in git history
+              and always intentional — not discovered via downstream failures.
+            </p>
+          </div>
+
+          <div class="approach-col">
+            <h2 class="section-heading">Pure Transformation Functions</h2>
+            <p>
+              All Silver-layer transformations were rewritten as pure functions:
+              deterministic, no side effects, no database reads mid-transform. Given
+              the same input batch, the same output is produced. This made the
+              transformation logic trivially unit-testable without fixtures, mocks,
+              or running infrastructure.
+            </p>
+            <p>
+              The test suite for transformation logic runs in under 30 seconds and
+              covers 600+ property-based test cases generated from schema definitions.
+              Any change to a transformation function requires a corresponding test
+              that exercises the affected schema constraints.
+            </p>
+
+            <h2 class="section-heading">Observability First</h2>
+            <p>
+              Each layer emits structured log events with a batch ID, row counts,
+              validation failure counts, and latency. A lightweight Grafana dashboard
+              was built before cutover — not after — so the team had baseline metrics
+              from week one of the migration. The 12-minute mean time to failure
+              isolation metric was achievable because operators could pinpoint the
+              exact Bronze→Silver transition for any suspect batch without querying
+              the data itself.
+            </p>
+          </div>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Results ───────────────────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="IV — Results &amp; Reflection">
+        <div class="results-grid">
+          <div class="result-card">
+            <span class="result-num">94%</span>
+            <p class="result-label">Pipeline failure reduction</p>
+            <p class="result-detail">6–8% daily failure rate → under 0.5% within 6 weeks of cutover</p>
+          </div>
+          <div class="result-card">
+            <span class="result-num">12 min</span>
+            <p class="result-label">Mean time to failure isolation</p>
+            <p class="result-detail">Down from ~3 hours of manual triage per incident</p>
+          </div>
+          <div class="result-card">
+            <span class="result-num">0</span>
+            <p class="result-label">Silent corruption incidents</p>
+            <p class="result-detail">Schema gate prevents invalid rows from ever reaching Gold</p>
+          </div>
+          <div class="result-card">
+            <span class="result-num">40+</span>
+            <p class="result-label">Sources under contract</p>
+            <p class="result-detail">Every source has a versioned schema definition in git</p>
+          </div>
+        </div>
+
+        <div class="reflection">
+          <h2 class="section-heading">What I Would Do Differently</h2>
+          <p>
+            The parallel-write migration approach was the right call for data correctness,
+            but it ran for seven weeks — three weeks longer than planned — because three
+            source teams delayed schema registration while their own systems were in flux.
+            In hindsight, schema registration should have been a hard pre-requisite for
+            source onboarding with a published cutover date, rather than a soft deadline
+            that kept slipping.
+          </p>
+          <p>
+            The Grafana dashboard was built manually and has since accumulated metric
+            debt — adding a new source requires a manual dashboard update. Replacing it
+            with auto-generated dashboards from the schema registry (each registered source
+            automatically gets a row-count and failure-rate panel) would have removed
+            the operational overhead and been achievable within the original project scope.
+          </p>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Navigation ───────────────────────────────────────────── -->
+    <section class="cs-footer">
+      <div class="footer-nav">
+        <a href={base + '/case-studies/backend-api-redesign'} class="nav-link">
+          ← Case Study: Backend API Redesign
+        </a>
+        <a href={base + '/data'} class="nav-link">Data Pipeline Domain →</a>
+      </div>
+      <p class="footer-coord">Plate iv-B · Case Study DP-01 · RA +600° Dec −250°</p>
+    </section>
+
+  </main>
+</BaseLayout>
+
+<style>
+  .case-study-page {
+    position: relative;
+    z-index: 1;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 80px 32px 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  /* ── Breadcrumb ── */
+  .breadcrumb {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 24px;
+  }
+
+  .breadcrumb a {
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--gold);
+  }
+
+  /* ── Header ── */
+  .cs-title-block {
+    margin-bottom: 32px;
+  }
+
+  .cs-catalogue {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 12px;
+  }
+
+  .cs-title {
+    font-size: clamp(42px, 6vw, 64px);
+    color: var(--tint-data);
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+
+  .cs-subtitle {
+    font-size: 20px;
+    color: var(--ink-dim);
+    font-style: italic;
+  }
+
+  .cs-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+    padding-top: 24px;
+    border-top: 0.5px solid var(--line-faint);
+  }
+
+  .cs-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .meta-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .meta-value {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-dim);
+  }
+
+  .cs-meta-divider {
+    width: 0.5px;
+    height: 28px;
+    background: var(--paper-border);
+    flex-shrink: 0;
+  }
+
+  /* ── Section ── */
+  .cs-section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section-heading {
+    font-size: 22px;
+    color: var(--ink);
+    margin-bottom: 14px;
+    margin-top: 28px;
+  }
+
+  .section-heading:first-child {
+    margin-top: 0;
+  }
+
+  /* ── Prose grid ── */
+  .prose-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 40px;
+    align-items: start;
+  }
+
+  @media (max-width: 800px) {
+    .prose-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .prose-main p {
+    font-size: 16px;
+    color: var(--ink-dim);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  .prose-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .prose-list li {
+    font-size: 15px;
+    color: var(--ink-dim);
+    padding-left: 18px;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .prose-list li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+    font-style: normal;
+  }
+
+  /* ── Sidebar ── */
+  .prose-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .sidebar-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sidebar-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pattern-bullet {
+    color: var(--tint-data);
+    font-style: normal;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .pattern-link {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-dim);
+    text-decoration: none;
+    transition: color 150ms;
+  }
+
+  .pattern-link:hover {
+    color: var(--gold);
+  }
+
+  .sidebar-metrics {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .sidebar-metrics li {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .metric-num {
+    font-size: 28px;
+    font-style: italic;
+    color: var(--tint-data);
+    line-height: 1;
+  }
+
+  .metric-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* ── Diagram ── */
+  .diagram-header {
+    margin-bottom: 28px;
+  }
+
+  .diagram-caption {
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.55;
+    max-width: 640px;
+    margin-top: 10px;
+  }
+
+  .diagram-container {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px;
+    align-items: center;
+  }
+
+  @media (max-width: 700px) {
+    .diagram-container {
+      grid-template-columns: 1fr;
+    }
+
+    .diagram-divider {
+      display: none;
+    }
+  }
+
+  .diagram-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .diagram-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    text-align: center;
+  }
+
+  .arch-diagram {
+    width: 100%;
+    height: auto;
+    border: 0.5px solid var(--line-faint);
+    background: rgba(10, 14, 26, 0.4);
+  }
+
+  .diagram-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: var(--gold);
+    font-style: normal;
+    opacity: 0.5;
+  }
+
+  .diagram-note {
+    margin-top: 24px;
+    padding: 16px;
+    border-left: 0.5px solid var(--gold);
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-dim);
+    line-height: 1.6;
+  }
+
+  /* ── Approach grid ── */
+  .approach-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+
+  @media (max-width: 768px) {
+    .approach-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .approach-col p {
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+
+  /* ── Results ── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+
+  @media (max-width: 900px) {
+    .results-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .results-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .result-card {
+    padding: 20px 16px;
+    border: 0.5px solid var(--paper-border);
+    background: rgba(158, 196, 138, 0.04);
+  }
+
+  .result-num {
+    display: block;
+    font-size: 42px;
+    font-style: italic;
+    color: var(--tint-data);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .result-label {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink);
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+
+  .result-detail {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--ink-faint);
+    line-height: 1.5;
+  }
+
+  .reflection p {
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+
+  /* ── Footer ── */
+  .cs-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 32px;
+    border-top: 0.5px solid var(--line-faint);
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .footer-nav {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .nav-link {
+    font-size: 15px;
+    color: var(--gold);
+    text-decoration: none;
+    font-style: italic;
+  }
+
+  .nav-link:hover {
+    color: var(--gold-bright);
+  }
+
+  .footer-coord {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 640px) {
+    .case-study-page {
+      padding: 60px 20px 80px;
+    }
+  }
+</style>
