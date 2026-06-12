@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-06-11 by automated agent
+Last updated: 2026-06-12 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -26,6 +26,7 @@ Last updated: 2026-06-11 by automated agent
 | 2026-06-09 | SkillTree React island (static data, interactive) — src/components/SkillTree.tsx | 7c871a0 |
 | 2026-06-10 | Integrate SkillTree into domain pages — all 4 domain pages | 9b9272f |
 | 2026-06-11 | Case study 1: Backend API Redesign — src/pages/case-studies/backend-api-redesign.astro | e2ad54b |
+| 2026-06-12 | Case study 2: Data Pipeline Migration — src/pages/case-studies/data-pipeline-migration.astro | 3c5bf5e |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
@@ -49,7 +50,7 @@ Last updated: 2026-06-11 by automated agent
 19. [x] SkillTree React island (static data, interactive) — src/components/SkillTree.tsx
 20. [x] Integrate SkillTree into domain pages — all 4 domain pages
 21. [x] Case study 1: Backend (Mermaid diagram) — src/pages/case-studies/backend-api-redesign.astro
-22. [ ] Case study 2: Data Pipeline — src/pages/case-studies/data-pipeline-migration.astro
+22. [x] Case study 2: Data Pipeline — src/pages/case-studies/data-pipeline-migration.astro
 23. [ ] Content cross-linking pass — all 10 existing MDX patterns
 24. [ ] Playwright smoke tests for new pages — tests/pages.spec.ts
 25. [ ] Sandpack live code playground for one pattern — one backend MDX file
