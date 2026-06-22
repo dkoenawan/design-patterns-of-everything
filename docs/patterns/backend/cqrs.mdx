@@ -92,3 +92,5 @@ class OrderSummaryQuery {
 - [Hexagonal Architecture](./hexagonal-architecture.mdx) — CQRS fits naturally as ports for the command and query sides
 - [Dependency Injection](./dependency-injection.mdx) — Used to wire command/query handlers to their respective stores
 - [Strategy Pattern](./strategy-pattern.mdx) — Command handlers can use strategies for pluggable business rules
+- [Medallion Architecture](../data-pipeline/medallion-architecture.mdx) — the write/read separation in CQRS mirrors Bronze-to-Gold promotion: raw commands produce normalized writes; projections produce query-optimized read models
+- [Batch vs Streaming](../data-pipeline/batch-vs-streaming.mdx) — streaming pipelines naturally feed CQRS projections: domain events are the stream, read models are the derived output

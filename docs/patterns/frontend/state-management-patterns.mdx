@@ -152,3 +152,5 @@ Store / Context
 - [Component Composition](./component-composition.mdx) — composition trees often need state shared between siblings; this pattern shows where to hoist it
 - [Micro-Frontend Architecture](./micro-frontend-architecture.mdx) — cross-micro-frontend state sharing requires event buses or shared stores with strict ownership contracts
 - [Hexagonal Architecture](../backend/hexagonal-architecture.mdx) — the same separation-of-concerns principle applied server-side; domain state should not leak into infrastructure
+- [CQRS](../backend/cqrs.mdx) — client-side state management echoes CQRS: mutations go through actions/commands while reads use selectors/queries against a cached model
+- [Single Responsibility](../cross-domain/single-responsibility.mdx) — separating server state, global UI state, and local component state is SRP applied to the state layer

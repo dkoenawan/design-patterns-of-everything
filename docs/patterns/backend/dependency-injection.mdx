@@ -67,4 +67,7 @@ DI containers (e.g., tsyringe, Spring, .NET's built-in DI) automate the wiring b
 
 - [Hexagonal Architecture](./hexagonal-architecture.mdx) — DI is how adapters are wired into ports
 - [Strategy Pattern](./strategy-pattern.mdx) — Injecting different strategies is a common DI use case
+- [CQRS](./cqrs.mdx) — command and query handlers are typically wired to their stores via DI
+- [Composition Over Inheritance](../cross-domain/composition-over-inheritance.mdx) — DI is the delivery mechanism for composed behaviors; composition without injection is just hardcoded coupling
 - [Single Responsibility](../cross-domain/single-responsibility.mdx) — DI makes it easier to keep classes focused by externalizing infrastructure concerns
+- [Multi-Database Orchestration](../infrastructure/multi-database-orchestration.mdx) — connection strings and database clients are injected per-environment rather than hardcoded

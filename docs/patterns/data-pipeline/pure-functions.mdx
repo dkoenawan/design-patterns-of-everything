@@ -66,4 +66,5 @@ The transformation `filter_high_value` is trivially unit-testable, composable, a
 
 - [Schema-Driven Validation](./schema-driven-validation.mdx) — Validation is a pure transformation: data in, valid/invalid out
 - [Medallion Architecture](./medallion-architecture.mdx) — Silver and Gold transformations should be pure functions over Bronze data
+- [Batch vs Streaming](./batch-vs-streaming.mdx) — pure transformation logic is execution-model agnostic: the same functions run in batch Spark jobs and streaming Flink operators
 - [Single Responsibility](../cross-domain/single-responsibility.mdx) — Pure functions are the function-level expression of single responsibility

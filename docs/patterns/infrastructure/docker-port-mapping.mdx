@@ -94,3 +94,5 @@ Document your port assignments to avoid collisions as the fleet grows:
 ## Related Patterns
 
 - [Multi-Database Orchestration](./multi-database-orchestration.mdx) — builds on port mapping to manage a full fleet of database containers with health checks, resource limits, and production readiness
+- [Infrastructure as Code](./infrastructure-as-code.mdx) — port assignments should be declared in IaC configuration rather than managed ad-hoc, so networking is reproducible and reviewable
+- [Hexagonal Architecture](../backend/hexagonal-architecture.mdx) — container port mapping is a deployment concern that stays outside the application core; the database is accessed through a port abstraction regardless of where it is bound

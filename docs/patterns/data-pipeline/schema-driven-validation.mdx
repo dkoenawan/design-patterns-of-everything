@@ -64,4 +64,6 @@ Schemas serve as living documentation of data contracts. They can be versioned, 
 
 - [Pure Functions](./pure-functions.mdx) — Validation logic should be a pure function: data in, result out
 - [Medallion Architecture](./medallion-architecture.mdx) — Schema validation is the quality gate at the Bronze-to-Silver boundary
+- [Batch vs Streaming](./batch-vs-streaming.mdx) — schema validation applies at ingestion regardless of execution model; streaming pipelines validate per-event, batch pipelines validate per-partition
 - [Dependency Injection](../backend/dependency-injection.mdx) — Schema objects can be injected to allow environment-specific validation rules
+- [CQRS](../backend/cqrs.mdx) — command objects on the write side are validated against a schema before being accepted by command handlers

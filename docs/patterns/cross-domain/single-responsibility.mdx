@@ -65,5 +65,8 @@ Each service can now evolve, be tested, and be deployed independently.
 ## Related Patterns
 
 - [Hexagonal Architecture](../backend/hexagonal-architecture.mdx) — Architectural application of SRP: domain, ports, adapters each have one concern
+- [CQRS](../backend/cqrs.mdx) — SRP at the model level: the command model and read model each have exactly one reason to change
+- [Dependency Injection](../backend/dependency-injection.mdx) — DI enforces SRP by externalizing infrastructure concerns from the class that uses them
 - [Pure Functions](../data-pipeline/pure-functions.mdx) — Function-level SRP: transform only, no I/O
 - [Composition Over Inheritance](./composition-over-inheritance.mdx) — Composing single-responsibility units is preferable to inheriting mixed concerns
+- [Micro-Frontend Architecture](../frontend/micro-frontend-architecture.mdx) — SRP applied at the deployment boundary: each remote team owns exactly one business domain

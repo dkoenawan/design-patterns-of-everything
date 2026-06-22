@@ -110,3 +110,5 @@ terraform {
 
 - [Multi-Database Orchestration](./multi-database-orchestration.mdx) — IaC manages the cloud-layer orchestration; database orchestration handles the runtime configuration within that infrastructure
 - [Docker Port Mapping](./docker-port-mapping.mdx) — container port assignments should be codified in IaC service definitions to keep networking declarations in one place
+- [Dependency Injection](../backend/dependency-injection.mdx) — IaC is the outermost expression of DI: infrastructure is provisioned and injected into applications as environment variables and config rather than hardcoded at runtime
+- [Hexagonal Architecture](../backend/hexagonal-architecture.mdx) — IaC defines the deployment adapters; swapping cloud providers is an IaC adapter swap that does not touch application core logic

@@ -145,3 +145,5 @@ Each remote publishes a `remoteEntry.js` at a stable URL. The shell resolves rem
 - [State Management Patterns](./state-management-patterns.mdx) — cross-micro-frontend state sharing requires event buses or shared store modules with strict ownership contracts
 - [Hexagonal Architecture](../backend/hexagonal-architecture.mdx) — port-and-adapter thinking maps to the shell/remote contract: remotes are adapters plugged into shell ports
 - [Single Responsibility](../cross-domain/single-responsibility.mdx) — each remote owns exactly one bounded domain; SRP applied at the deployment unit level
+- [Dependency Injection](../backend/dependency-injection.mdx) — the shell injects shared services (auth, router, analytics) into remotes rather than having each remote import them directly
+- [Infrastructure as Code](../infrastructure/infrastructure-as-code.mdx) — each micro-frontend is an independently deployable artifact; IaC manages the CDN origins, routing rules, and feature-flag config that compose them at runtime

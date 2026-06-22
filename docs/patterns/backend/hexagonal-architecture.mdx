@@ -62,4 +62,6 @@ The core contains use cases and domain logic. It never imports adapters. Adapter
 
 - [Dependency Injection](./dependency-injection.mdx) — The mechanism used to wire adapters into ports at runtime
 - [Strategy Pattern](./strategy-pattern.mdx) — Ports are essentially named strategy interfaces
-- [Clean Architecture](../_template.mdx) — Hexagonal is one concrete expression of clean architecture principles
+- [CQRS](./cqrs.mdx) — the command and query ports are a natural expression of hexagonal thinking; each is an inbound port with a dedicated adapter
+- [Single Responsibility](../cross-domain/single-responsibility.mdx) — hexagonal architecture is SRP applied at the architectural boundary: domain, ports, and adapters each own exactly one concern
+- [Multi-Database Orchestration](../infrastructure/multi-database-orchestration.mdx) — each database container is an adapter behind a port; swapping between local containers and managed services is a pure adapter swap
