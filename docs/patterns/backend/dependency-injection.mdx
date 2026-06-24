@@ -7,6 +7,8 @@ summary: "Provide dependencies to a component from the outside rather than const
 draft: true
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 Dependency Injection (DI) is a technique where a component receives its dependencies as constructor arguments, method parameters, or via a container — rather than instantiating them itself. It is the practical implementation of the Dependency Inversion Principle and a core enabler of testable, loosely coupled code.
@@ -62,6 +64,86 @@ DI containers (e.g., tsyringe, Spring, .NET's built-in DI) automate the wiring b
 | Dependencies are explicit and visible at the call site | DI containers have learning curves and can hide complexity |
 | Implementations are swappable without changing consumers | Over-abstraction risk: not every collaborator needs an interface |
 | Enforces Dependency Inversion Principle by default | Magic DI containers can make debugging harder |
+
+## Live Playground
+
+Experiment with the pattern below. The two tabs show a tightly-coupled service (`before.ts`) and the DI-refactored equivalent (`after.ts`). Edit either file and the preview updates in real time.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · Dependency Injection"
+  entry="/after.ts"
+  files={{
+    "/before.ts": `// ── Before: tightly coupled ─────────────────────────────────
+// OrderService hard-codes its database dependency.
+// Swapping implementations or writing isolated tests requires
+// modifying production code.
+
+class PostgresDatabase {
+  query(sql: string): string {
+    return \`[Postgres] \${sql}\`;
+  }
+}
+
+class OrderService {
+  private db = new PostgresDatabase(); // concrete — not swappable
+
+  getOrder(id: string): string {
+    return this.db.query(\`SELECT * FROM orders WHERE id = '\${id}'\`);
+  }
+}
+
+const svc = new OrderService();
+console.log(svc.getOrder("ORD-001"));
+`,
+    "/after.ts": `// ── After: Dependency Injection ─────────────────────────────
+// OrderService depends on an interface (Database), not a class.
+// The concrete implementation is injected by the caller.
+
+interface Database {
+  query(sql: string): string;
+}
+
+// Production implementation
+class PostgresDatabase implements Database {
+  query(sql: string): string {
+    return \`[Postgres] \${sql}\`;
+  }
+}
+
+// Test / stub implementation — no real DB needed
+class InMemoryDatabase implements Database {
+  private store: Record<string, string> = {
+    "ORD-001": "Widget × 2",
+    "ORD-002": "Gadget × 1",
+  };
+
+  query(sql: string): string {
+    const match = sql.match(/'([^']+)'/);
+    const id = match?.[1] ?? "";
+    return \`[InMemory] \${this.store[id] ?? "not found"}\`;
+  }
+}
+
+class OrderService {
+  constructor(private db: Database) {} // depends on abstraction
+
+  getOrder(id: string): string {
+    return this.db.query(\`SELECT * FROM orders WHERE id = '\${id}'\`);
+  }
+}
+
+// Wired with production DB:
+const prodSvc = new OrderService(new PostgresDatabase());
+console.log(prodSvc.getOrder("ORD-001"));
+
+// Wired with in-memory stub — no infrastructure required:
+const testSvc = new OrderService(new InMemoryDatabase());
+console.log(testSvc.getOrder("ORD-001"));
+console.log(testSvc.getOrder("ORD-002"));
+`,
+  }}
+/>
 
 ## Related Patterns
 
