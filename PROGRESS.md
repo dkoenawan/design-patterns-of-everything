@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-06-24 by automated agent
+Last updated: 2026-06-25 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -30,6 +30,15 @@ Last updated: 2026-06-24 by automated agent
 | 2026-06-22 | Content cross-linking pass — 25 new cross-links across all 14 MDX patterns | 12797a6 |
 | 2026-06-23 | Playwright smoke tests for all 9 site pages — tests/pages.spec.ts | 694667b |
 | 2026-06-24 | Sandpack live code playground for Dependency Injection pattern — src/components/SandpackPlayground.tsx + docs/patterns/backend/dependency-injection.mdx | fd5573f |
+| 2026-06-25 | SEO maintenance — Open Graph, Twitter Card, and canonical URL meta tags in BaseLayout.astro | f8bb5e4 |
+
+## Maintenance Mode
+All 25 queue items complete. Running SEO, cross-linking, and content enrichment improvements.
+
+## Maintenance Log
+| Date | Improvement |
+|------|-------------|
+| 2026-06-25 | Open Graph + Twitter Card + canonical URL meta tags in BaseLayout.astro |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
