@@ -6,12 +6,21 @@ import SiteFooter from '../components/SiteFooter.astro';
 interface Props {
   title?: string;
   description?: string;
+  ogImage?: string;
 }
 
 const {
   title = 'Solution Architect Portfolio',
-  description = 'Design patterns, architecture experience, and real-world case studies from a career in software architecture.'
+  description = 'Design patterns, architecture experience, and real-world case studies from a career in software architecture.',
+  ogImage,
 } = Astro.props;
+
+const siteOrigin = 'https://su-sentinel.github.io';
+const base = '/design-patterns-of-everything';
+const canonicalURL = new URL(Astro.url.pathname, siteOrigin).href;
+const ogImageURL = ogImage
+  ? new URL(ogImage, siteOrigin).href
+  : `${siteOrigin}${base}/og-default.png`;
 ---
 
 <!DOCTYPE html>
@@ -22,6 +31,23 @@ const {
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
     <meta name="color-scheme" content="dark" />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageURL} />
+    <meta property="og:site_name" content="Celestial Atlas" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageURL} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
