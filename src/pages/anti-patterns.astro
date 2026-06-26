@@ -60,6 +60,34 @@ const antiPatterns: AntiPattern[] = [
       'Design backpressure into every fan-out: bounded queues with blocking or drop-with-alert semantics. Monitor queue depth as a first-class SLI. Apply schema-driven validation at ingest to reduce downstream volume early.',
     tint: 'var(--tint-data)',
   },
+  {
+    id: 'snowflake-server',
+    name: 'Snowflake Server',
+    domain: 'INFRA',
+    domainLabel: 'Infrastructure',
+    severity: 4,
+    symptom:
+      'A production host has been patched, configured, and adjusted by hand over months or years. No two instances are identical. Nobody can reproduce the environment from source, and the runbook is tribal knowledge held by one engineer.',
+    consequence:
+      'Incident recovery is guesswork. Scaling horizontally creates invisible inconsistency. Rotating that engineer out means a production black box. Audits fail because the desired state is undocumented.',
+    mitigation:
+      'Treat infrastructure as code from day one. Encode every configuration change in IaC (Terraform, Pulumi, or equivalent). Use immutable image builds — provision, never patch in place. Enforce drift detection in CI so any manual change surfaces as a diff.',
+    tint: 'var(--tint-infra)',
+  },
+  {
+    id: 'prop-drilling',
+    name: 'Prop Drilling',
+    domain: 'FE',
+    domainLabel: 'Frontend',
+    severity: 3,
+    symptom:
+      'Data that is consumed deep in a component tree is threaded through every intermediate layer as props — components that neither use nor care about the value become unwilling carriers of it.',
+    consequence:
+      'Refactoring is expensive: renaming or removing a prop requires touching every layer in the chain. Intermediate components become tightly coupled to their children\'s data needs, eroding reusability and making the component contract impossible to reason about at a glance.',
+    mitigation:
+      'Push state down to the lowest component that owns it; lift it only when genuinely shared. For cross-cutting state, use context or a dedicated state atom — but prefer co-location first. Compound component patterns can eliminate drilling within a bounded family of components without reaching for global state.',
+    tint: 'var(--tint-frontend)',
+  },
 ];
 
 const severityLabel = ['', 'Minor', 'Low', 'Moderate', 'High', 'Critical'] as const;
@@ -69,7 +97,7 @@ const severityDots = (s: number) =>
 
 <BaseLayout
   title="Anti-Pattern Catalog — Celestial Atlas"
-  description="Common architectural anti-patterns — what they look like, why they persist, and how to eliminate them."
+  description="Common architectural anti-patterns across Backend, Data Pipeline, Infrastructure, and Frontend — what they look like, why they persist, and how to eliminate them."
 >
   <AtlasBackdrop client:only="react" />
 
