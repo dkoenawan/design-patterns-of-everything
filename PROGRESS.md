@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-06-25 by automated agent
+Last updated: 2026-06-26 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -39,6 +39,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | Date | Improvement |
 |------|-------------|
 | 2026-06-25 | Open Graph + Twitter Card + canonical URL meta tags in BaseLayout.astro |
+| 2026-06-26 | Add Snowflake Server (Infra, sev 4) and Prop Drilling (Frontend, sev 3) anti-patterns — completes all 4 domain coverage | 2a60ae6 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
