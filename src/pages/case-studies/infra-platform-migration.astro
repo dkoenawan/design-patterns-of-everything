@@ -1,0 +1,958 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AtlasBackdrop from '../../components/AtlasBackdrop';
+import Cartouche from '../../components/Cartouche.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<BaseLayout
+  title="Case Study: Infrastructure Platform Migration"
+  description="How Infrastructure as Code and container orchestration eliminated snowflake servers and reduced deployment lead time from days to minutes across 14 production services."
+>
+  <AtlasBackdrop client:only="react" />
+
+  <main class="case-study-page">
+
+    <!-- ── Breadcrumb & header ─────────────────────────────────── -->
+    <header class="cs-header">
+      <div class="breadcrumb">
+        <a href={base + '/'}>Atlas</a>
+        <span aria-hidden="true"> › </span>
+        <a href={base + '/infra'}>Infrastructure</a>
+        <span aria-hidden="true"> › </span>
+        <span>Case Study</span>
+      </div>
+
+      <Cartouche label="Case study · Plate v-A · Infrastructure Architecture">
+        <div class="cs-title-block">
+          <p class="cs-catalogue">Study ref. INFRA-01</p>
+          <h1 class="cs-title">Infrastructure Platform Migration</h1>
+          <p class="cs-subtitle">Infrastructure as Code &amp; Container Orchestration at Scale</p>
+        </div>
+
+        <div class="cs-meta-row">
+          <div class="cs-meta-item">
+            <span class="meta-label">Context</span>
+            <span class="meta-value">E-commerce platform, 14 production services</span>
+          </div>
+          <div class="cs-meta-divider" aria-hidden="true"></div>
+          <div class="cs-meta-item">
+            <span class="meta-label">Scale</span>
+            <span class="meta-value">~3M daily active users, peak 8× baseline</span>
+          </div>
+          <div class="cs-meta-divider" aria-hidden="true"></div>
+          <div class="cs-meta-item">
+            <span class="meta-label">Duration</span>
+            <span class="meta-value">16 weeks (rolling cutover)</span>
+          </div>
+          <div class="cs-meta-divider" aria-hidden="true"></div>
+          <div class="cs-meta-item">
+            <span class="meta-label">Role</span>
+            <span class="meta-value">Lead Solution Architect</span>
+          </div>
+        </div>
+      </Cartouche>
+    </header>
+
+    <!-- ── Context ──────────────────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="I — Context &amp; Problem Statement">
+        <div class="prose-grid">
+          <div class="prose-main">
+            <h2 class="section-heading">The Situation</h2>
+            <p>
+              A mid-size e-commerce platform had grown from a single on-premises host into
+              a sprawl of fourteen virtual machines across two cloud providers. Each server
+              had been provisioned manually, patched ad hoc, and configured over time through
+              SSH sessions that left no audit trail. No two hosts were identical. The
+              deployment process was a bespoke shell script — different for every service —
+              that a single senior engineer maintained and understood.
+            </p>
+            <p>
+              The consequence was chronic: a production incident in Q4 peak season revealed
+              that three services were running different versions of the same shared library.
+              Recovery required four hours of manual reconciliation. Horizontal scaling
+              during peak load was impossible because new instances would diverge from
+              production state within hours. The platform was entirely dependent on one
+              person's institutional knowledge to recover from failure.
+            </p>
+
+            <h2 class="section-heading">Constraints</h2>
+            <ul class="prose-list">
+              <li>Zero-downtime migration — e-commerce cannot afford planned outages</li>
+              <li>Multi-cloud: AWS for compute, GCP for data services — must work across both</li>
+              <li>Team of six: one infrastructure specialist, five application engineers</li>
+              <li>No Kubernetes experience on the team — tooling choice must be learnable</li>
+              <li>Peak season (Q4) in 20 weeks — full migration must complete before then</li>
+            </ul>
+          </div>
+
+          <aside class="prose-sidebar">
+            <Cartouche label="Patterns applied">
+              <ul class="sidebar-list">
+                <li>
+                  <span class="pattern-bullet" aria-hidden="true">◈</span>
+                  <a href={base + '/infra#infrastructure-as-code'} class="pattern-link">
+                    Infrastructure as Code
+                  </a>
+                </li>
+                <li>
+                  <span class="pattern-bullet" aria-hidden="true">◈</span>
+                  <a href={base + '/infra#docker-port-mapping'} class="pattern-link">
+                    Container Isolation
+                  </a>
+                </li>
+                <li>
+                  <span class="pattern-bullet" aria-hidden="true">◈</span>
+                  <a href={base + '/infra#multi-database-orchestration'} class="pattern-link">
+                    Multi-Database Orchestration
+                  </a>
+                </li>
+                <li>
+                  <span class="pattern-bullet" aria-hidden="true">◈</span>
+                  <a href={base + '/anti-patterns#snowflake-server'} class="pattern-link">
+                    Anti: Snowflake Server
+                  </a>
+                </li>
+              </ul>
+            </Cartouche>
+
+            <Cartouche label="Outcome metrics">
+              <ul class="sidebar-metrics">
+                <li>
+                  <span class="metric-num">96%</span>
+                  <span class="metric-label">reduction in deployment lead time</span>
+                </li>
+                <li>
+                  <span class="metric-num">0</span>
+                  <span class="metric-label">snowflake servers remaining</span>
+                </li>
+                <li>
+                  <span class="metric-num">4 min</span>
+                  <span class="metric-label">mean recovery time (down from 4 hrs)</span>
+                </li>
+                <li>
+                  <span class="metric-num">8×</span>
+                  <span class="metric-label">peak traffic handled without manual scaling</span>
+                </li>
+              </ul>
+            </Cartouche>
+          </aside>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Architecture diagram ──────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="II — Architecture Diagram · Before &amp; After">
+        <div class="diagram-header">
+          <h2 class="section-heading">Platform Evolution</h2>
+          <p class="diagram-caption">
+            Left: original state — heterogeneous VMs, no declared configuration, manual
+            deployments. Right: target state — immutable images built from source, Terraform
+            managing all cloud resources, Kubernetes orchestrating workloads declaratively.
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <!-- ── Before ───────────────── -->
+          <figure class="diagram-figure">
+            <figcaption class="diagram-label">Before — Snowflake VM Estate</figcaption>
+            <svg
+              class="arch-diagram"
+              viewBox="0 0 340 380"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="Before: three unique VMs each manually configured, pointed to shared database, deployed via SSH"
+            >
+              <rect width="340" height="380" fill="rgba(10,14,26,0.0)" />
+
+              <!-- Outer boundary: manual estate -->
+              <rect x="20" y="20" width="300" height="280" rx="0"
+                fill="rgba(212,177,94,0.02)" stroke="rgba(196,106,85,0.18)" stroke-width="0.5"
+                stroke-dasharray="4 3" />
+              <text x="170" y="38" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="2"
+                fill="rgba(196,106,85,0.35)">MANUAL VM ESTATE</text>
+
+              <!-- VM A (unique) -->
+              <rect x="30" y="50" width="80" height="48" rx="0"
+                fill="rgba(196,106,85,0.1)" stroke="rgba(196,106,85,0.4)" stroke-width="0.5" />
+              <text x="70" y="70" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="rgba(196,106,85,0.9)">VM-A</text>
+              <text x="70" y="83" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(196,106,85,0.5)">node 14.8 · custom</text>
+              <text x="70" y="93" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(196,106,85,0.4)">nginx 1.18</text>
+
+              <!-- VM B (different) -->
+              <rect x="130" y="50" width="80" height="48" rx="0"
+                fill="rgba(196,106,85,0.1)" stroke="rgba(196,106,85,0.4)" stroke-width="0.5" />
+              <text x="170" y="70" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="rgba(196,106,85,0.9)">VM-B</text>
+              <text x="170" y="83" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(196,106,85,0.5)">node 16.2 · patched</text>
+              <text x="170" y="93" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(196,106,85,0.4)">nginx 1.22</text>
+
+              <!-- VM C (different again) -->
+              <rect x="230" y="50" width="80" height="48" rx="0"
+                fill="rgba(196,106,85,0.1)" stroke="rgba(196,106,85,0.4)" stroke-width="0.5" />
+              <text x="270" y="70" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="rgba(196,106,85,0.9)">VM-C</text>
+              <text x="270" y="83" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(196,106,85,0.5)">node 14.15 · drift</text>
+              <text x="270" y="93" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(196,106,85,0.4)">apache 2.4</text>
+
+              <!-- SSH deploy lines -->
+              <text x="170" y="118" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="2"
+                fill="rgba(196,106,85,0.5)">↓ SSH DEPLOY (MANUAL) ↓</text>
+
+              <!-- Shared DB -->
+              <rect x="95" y="132" width="150" height="44" rx="0"
+                fill="rgba(90,79,51,0.2)" stroke="rgba(212,177,94,0.25)" stroke-width="0.5" />
+              <text x="170" y="152" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1.5"
+                fill="rgba(212,177,94,0.6)">SHARED DATABASE</text>
+              <text x="170" y="167" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(212,177,94,0.35)">single host, no replica</text>
+
+              <!-- Lines from VMs to DB -->
+              <line x1="70" y1="98" x2="120" y2="132"
+                stroke="rgba(196,106,85,0.3)" stroke-width="0.5" />
+              <line x1="170" y1="98" x2="170" y2="132"
+                stroke="rgba(196,106,85,0.3)" stroke-width="0.5" />
+              <line x1="270" y1="98" x2="220" y2="132"
+                stroke="rgba(196,106,85,0.3)" stroke-width="0.5" />
+
+              <!-- Problem annotation -->
+              <text x="170" y="210" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(196,106,85,0.7)">NO TWO VMs IDENTICAL</text>
+              <text x="170" y="228" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(196,106,85,0.5)">UNDOCUMENTED CONFIGURATION</text>
+              <text x="170" y="246" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(196,106,85,0.4)">SINGLE POINT OF FAILURE</text>
+
+              <defs>
+                <marker id="arrowRed" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(196,106,85,0.6)" />
+                </marker>
+              </defs>
+            </svg>
+          </figure>
+
+          <!-- ── Divider ──────────────── -->
+          <div class="diagram-divider" aria-hidden="true">
+            <span class="divider-glyph">→</span>
+          </div>
+
+          <!-- ── After ────────────────── -->
+          <figure class="diagram-figure">
+            <figcaption class="diagram-label">After — Declarative Platform</figcaption>
+            <svg
+              class="arch-diagram"
+              viewBox="0 0 340 380"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="After: Terraform declares cloud resources, CI builds immutable images, Kubernetes runs identical pods from those images"
+            >
+              <rect width="340" height="380" fill="rgba(10,14,26,0.0)" />
+
+              <!-- Terraform layer -->
+              <rect x="20" y="20" width="300" height="44" rx="0"
+                fill="rgba(200,164,212,0.08)" stroke="rgba(200,164,212,0.35)" stroke-width="0.5" />
+              <text x="170" y="38" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="2"
+                fill="#c8a4d4">TERRAFORM</text>
+              <text x="170" y="54" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(200,164,212,0.5)">cloud resources declared in source</text>
+
+              <!-- Arrow down -->
+              <line x1="170" y1="64" x2="170" y2="84"
+                stroke="rgba(200,164,212,0.4)" stroke-width="0.5" marker-end="url(#arrowPurple)" />
+
+              <!-- CI / image build -->
+              <rect x="90" y="84" width="160" height="44" rx="0"
+                fill="rgba(158,196,138,0.08)" stroke="rgba(158,196,138,0.35)" stroke-width="0.5" />
+              <text x="170" y="104" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="2"
+                fill="#9ec48a">CI PIPELINE</text>
+              <text x="170" y="118" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(158,196,138,0.5)">immutable image build + push</text>
+
+              <!-- Arrow down -->
+              <line x1="170" y1="128" x2="170" y2="148"
+                stroke="rgba(158,196,138,0.4)" stroke-width="0.5" marker-end="url(#arrowGreen2)" />
+
+              <!-- Kubernetes cluster -->
+              <rect x="20" y="148" width="300" height="120" rx="0"
+                fill="rgba(212,177,94,0.04)" stroke="rgba(212,177,94,0.3)" stroke-width="0.5" />
+              <text x="170" y="164" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="2"
+                fill="rgba(212,177,94,0.6)">KUBERNETES CLUSTER</text>
+
+              <!-- Pod A -->
+              <rect x="34" y="172" width="72" height="36" rx="0"
+                fill="rgba(200,164,212,0.1)" stroke="rgba(200,164,212,0.35)" stroke-width="0.5" />
+              <text x="70" y="188" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="#c8a4d4">POD</text>
+              <text x="70" y="201" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="1"
+                fill="rgba(200,164,212,0.5)">image:v2.4.1</text>
+
+              <!-- Pod B -->
+              <rect x="134" y="172" width="72" height="36" rx="0"
+                fill="rgba(200,164,212,0.1)" stroke="rgba(200,164,212,0.35)" stroke-width="0.5" />
+              <text x="170" y="188" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="#c8a4d4">POD</text>
+              <text x="170" y="201" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="1"
+                fill="rgba(200,164,212,0.5)">image:v2.4.1</text>
+
+              <!-- Pod C -->
+              <rect x="234" y="172" width="72" height="36" rx="0"
+                fill="rgba(200,164,212,0.1)" stroke="rgba(200,164,212,0.35)" stroke-width="0.5" />
+              <text x="270" y="188" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="#c8a4d4">POD</text>
+              <text x="270" y="201" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="1"
+                fill="rgba(200,164,212,0.5)">image:v2.4.1</text>
+
+              <!-- Identical label -->
+              <text x="170" y="232" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="2"
+                fill="rgba(158,196,138,0.6)">IDENTICAL · IMMUTABLE · REPRODUCIBLE</text>
+
+              <!-- Arrow to DB -->
+              <line x1="170" y1="268" x2="170" y2="290"
+                stroke="rgba(212,177,94,0.4)" stroke-width="0.5" marker-end="url(#arrowGold2)" />
+
+              <!-- Managed DB -->
+              <rect x="95" y="290" width="150" height="44" rx="0"
+                fill="rgba(90,79,51,0.2)" stroke="rgba(212,177,94,0.35)" stroke-width="0.5" />
+              <text x="170" y="310" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1.5"
+                fill="rgba(212,177,94,0.7)">MANAGED DB</text>
+              <text x="170" y="325" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(212,177,94,0.4)">RDS · declared in Terraform</text>
+
+              <defs>
+                <marker id="arrowPurple" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(200,164,212,0.6)" />
+                </marker>
+                <marker id="arrowGreen2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(158,196,138,0.6)" />
+                </marker>
+                <marker id="arrowGold2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(212,177,94,0.6)" />
+                </marker>
+              </defs>
+            </svg>
+          </figure>
+        </div>
+
+        <p class="diagram-note">
+          The critical shift: infrastructure state lives in version control, not on
+          individual hosts. Every pod runs from the same immutable image. Desired state
+          is declared once; the platform converges to it — continuously.
+        </p>
+      </Cartouche>
+    </section>
+
+    <!-- ── Approach ─────────────────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="III — Approach &amp; Key Decisions">
+        <div class="approach-grid">
+          <div class="approach-col">
+            <h2 class="section-heading">Phase 1: Terraform Foundation (Weeks 1–4)</h2>
+            <p>
+              Before touching a single container, all existing cloud resources were imported
+              into Terraform state. This exposed configuration drift immediately — eighteen
+              security group rules that existed in production but not in any documentation.
+              The import process itself served as a configuration audit.
+            </p>
+            <p>
+              Every subsequent cloud resource change was gated behind a <code>terraform plan</code>
+              review in CI. No engineer could modify a security group, subnet, or IAM role
+              outside source control. Drift detection ran nightly and opened a ticket on
+              any discrepancy.
+            </p>
+
+            <h2 class="section-heading">Phase 2: Containerisation (Weeks 5–10)</h2>
+            <p>
+              Services were containerised in order of risk: stateless services first,
+              stateful workers last. Each Dockerfile was written to produce deterministic
+              images — pinned base images, no package manager operations at runtime,
+              non-root user, read-only filesystem where possible.
+            </p>
+            <p>
+              A key decision was to avoid custom Helm charts initially. Plain Kubernetes
+              manifests in a <code>k8s/</code> directory per service kept the learning
+              curve manageable. Complexity was deferred until the team had operational
+              experience with the platform.
+            </p>
+          </div>
+
+          <div class="approach-col">
+            <h2 class="section-heading">Phase 3: Progressive Traffic Cutover (Weeks 11–16)</h2>
+            <p>
+              Traffic was shifted to Kubernetes pods using weighted DNS — 5% initially,
+              increasing to 100% over four weeks per service. Rollback required only a
+              DNS weight change, executable in under 90 seconds. No service required
+              a maintenance window.
+            </p>
+            <p>
+              Kubernetes liveness and readiness probes replaced the previous monitoring
+              approach, which had been manual health checks every 15 minutes. The platform
+              now self-healed: a crashed pod was replaced within 30 seconds, automatically,
+              without paging anyone.
+            </p>
+
+            <h2 class="section-heading">Horizontal Pod Autoscaling</h2>
+            <p>
+              HPA was configured for each stateless service with CPU-based scaling and a
+              minimum replica count of 2. Q4 peak — the original forcing function for
+              this project — arrived eight weeks after the migration completed.
+              Traffic peaked at 8× baseline. The platform scaled automatically; no engineer
+              intervention was required. The incident that had taken four hours to resolve
+              the prior year did not recur.
+            </p>
+          </div>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Results ───────────────────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="IV — Results &amp; Reflection">
+        <div class="results-grid">
+          <div class="result-card">
+            <span class="result-num">96%</span>
+            <p class="result-label">Deployment lead time reduction</p>
+            <p class="result-detail">Days of manual coordination → 4-minute CI pipeline</p>
+          </div>
+          <div class="result-card">
+            <span class="result-num">0</span>
+            <p class="result-label">Snowflake servers remaining</p>
+            <p class="result-detail">All 14 services running from declared, versioned configuration</p>
+          </div>
+          <div class="result-card">
+            <span class="result-num">4 min</span>
+            <p class="result-label">Mean time to recovery</p>
+            <p class="result-detail">Down from 4 hours — Kubernetes self-heals without manual intervention</p>
+          </div>
+          <div class="result-card">
+            <span class="result-num">8×</span>
+            <p class="result-label">Peak traffic handled</p>
+            <p class="result-detail">HPA scaled automatically through Q4 — no incidents, no pages</p>
+          </div>
+        </div>
+
+        <div class="reflection">
+          <h2 class="section-heading">What I Would Do Differently</h2>
+          <p>
+            The Terraform import phase surfaced 18 undocumented security group rules —
+            each required a decision about whether it was intentional or legacy drift.
+            That review consumed two full weeks that were not in the original estimate.
+            In future migrations I would schedule a dedicated configuration audit sprint
+            before committing to an IaC import timeline.
+          </p>
+          <p>
+            Plain Kubernetes manifests worked well for the initial migration but became
+            difficult to maintain across 14 services as each accumulated environment-specific
+            patches. Adopting Kustomize overlays at week 10 — rather than week 14 —
+            would have avoided the duplication that accumulated in the final push.
+            The lesson: keep the tooling simple to start, but identify the abstraction
+            threshold before you hit it, not after.
+          </p>
+          <p>
+            The most underestimated factor was cultural: engineers accustomed to SSH
+            access felt a loss of control when direct host modification was prohibited.
+            Investing in runbook documentation and a clear escalation path for "I need
+            to change something and CI is broken" would have reduced friction in the
+            first month of the new workflow.
+          </p>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Navigation ───────────────────────────────────────────── -->
+    <section class="cs-footer">
+      <div class="footer-nav">
+        <a href={base + '/infra'} class="nav-link">← Infrastructure Domain</a>
+        <a href={base + '/case-studies/backend-api-redesign'} class="nav-link">
+          Case Study: Backend API Redesign →
+        </a>
+      </div>
+      <p class="footer-coord">Plate v-A · Case Study INFRA-01 · RA +120° Dec −560°</p>
+    </section>
+
+  </main>
+</BaseLayout>
+
+<style>
+  .case-study-page {
+    position: relative;
+    z-index: 1;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 80px 32px 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  /* ── Breadcrumb ── */
+  .breadcrumb {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 24px;
+  }
+
+  .breadcrumb a {
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--gold);
+  }
+
+  /* ── Header ── */
+  .cs-title-block {
+    margin-bottom: 32px;
+  }
+
+  .cs-catalogue {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 12px;
+  }
+
+  .cs-title {
+    font-size: clamp(36px, 5vw, 58px);
+    color: var(--tint-infra);
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+
+  .cs-subtitle {
+    font-size: 20px;
+    color: var(--ink-dim);
+    font-style: italic;
+  }
+
+  .cs-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+    padding-top: 24px;
+    border-top: 0.5px solid var(--line-faint);
+  }
+
+  .cs-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .meta-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .meta-value {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-dim);
+  }
+
+  .cs-meta-divider {
+    width: 0.5px;
+    height: 28px;
+    background: var(--paper-border);
+    flex-shrink: 0;
+  }
+
+  /* ── Section ── */
+  .cs-section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section-heading {
+    font-size: 22px;
+    color: var(--ink);
+    margin-bottom: 14px;
+    margin-top: 28px;
+  }
+
+  .section-heading:first-child {
+    margin-top: 0;
+  }
+
+  /* ── Prose grid ── */
+  .prose-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 40px;
+    align-items: start;
+  }
+
+  @media (max-width: 800px) {
+    .prose-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .prose-main p {
+    font-size: 16px;
+    color: var(--ink-dim);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  .prose-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .prose-list li {
+    font-size: 15px;
+    color: var(--ink-dim);
+    padding-left: 18px;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .prose-list li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+    font-style: normal;
+  }
+
+  /* ── Sidebar ── */
+  .prose-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .sidebar-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sidebar-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pattern-bullet {
+    color: var(--tint-infra);
+    font-style: normal;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .pattern-link {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-dim);
+    text-decoration: none;
+    transition: color 150ms;
+  }
+
+  .pattern-link:hover {
+    color: var(--gold);
+  }
+
+  .sidebar-metrics {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .sidebar-metrics li {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .metric-num {
+    font-size: 28px;
+    font-style: italic;
+    color: var(--tint-infra);
+    line-height: 1;
+  }
+
+  .metric-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* ── Diagram ── */
+  .diagram-header {
+    margin-bottom: 28px;
+  }
+
+  .diagram-caption {
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.55;
+    max-width: 640px;
+    margin-top: 10px;
+  }
+
+  .diagram-container {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px;
+    align-items: center;
+  }
+
+  @media (max-width: 700px) {
+    .diagram-container {
+      grid-template-columns: 1fr;
+    }
+
+    .diagram-divider {
+      display: none;
+    }
+  }
+
+  .diagram-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .diagram-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    text-align: center;
+  }
+
+  .arch-diagram {
+    width: 100%;
+    height: auto;
+    border: 0.5px solid var(--line-faint);
+    background: rgba(10, 14, 26, 0.4);
+  }
+
+  .diagram-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: var(--gold);
+    font-style: normal;
+    opacity: 0.5;
+  }
+
+  .divider-glyph {
+    font-style: normal;
+  }
+
+  .diagram-note {
+    margin-top: 24px;
+    padding: 16px;
+    border-left: 0.5px solid var(--tint-infra);
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-dim);
+    line-height: 1.6;
+  }
+
+  /* ── Approach grid ── */
+  .approach-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+
+  @media (max-width: 768px) {
+    .approach-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .approach-col p {
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+
+  .approach-col code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--tint-infra);
+    background: rgba(200, 164, 212, 0.08);
+    padding: 1px 5px;
+    border: 0.5px solid rgba(200, 164, 212, 0.2);
+  }
+
+  /* ── Results ── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+
+  @media (max-width: 900px) {
+    .results-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .results-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .result-card {
+    padding: 20px 16px;
+    border: 0.5px solid var(--paper-border);
+    background: rgba(200, 164, 212, 0.04);
+  }
+
+  .result-num {
+    display: block;
+    font-size: 42px;
+    font-style: italic;
+    color: var(--tint-infra);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .result-label {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink);
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+
+  .result-detail {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--ink-faint);
+    line-height: 1.5;
+  }
+
+  .reflection p {
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+
+  /* ── Footer ── */
+  .cs-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 32px;
+    border-top: 0.5px solid var(--line-faint);
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .footer-nav {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .nav-link {
+    font-size: 15px;
+    color: var(--gold);
+    text-decoration: none;
+    font-style: italic;
+  }
+
+  .nav-link:hover {
+    color: var(--gold-bright);
+  }
+
+  .footer-coord {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 640px) {
+    .case-study-page {
+      padding: 60px 20px 80px;
+    }
+  }
+
+  /* ── Skill tree row (inherited from domain page) ── */
+  .catalogue-row {
+    display: flex;
+    flex-direction: column;
+  }
+</style>
