@@ -41,7 +41,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-06-25 | Open Graph + Twitter Card + canonical URL meta tags in BaseLayout.astro |
 | 2026-06-26 | Add Snowflake Server (Infra, sev 4) and Prop Drilling (Frontend, sev 3) anti-patterns — completes all 4 domain coverage | 2a60ae6 |
 | 2026-06-29 | Case study 3: Infrastructure Platform Migration (INFRA-01) — Kubernetes + IaC, before/after SVG diagram, cross-links from infra domain page and data pipeline case study | d1ac8f2 |
-| 2026-06-30 | Case study 4: Frontend Micro-Frontend Migration (FE-01) — Module Federation + Component Composition, before/after SVG diagram, cross-links from frontend domain page and infra case study chain | TBD |
+| 2026-06-30 | Case study 4: Frontend Micro-Frontend Migration (FE-01) — Module Federation + Component Composition, before/after SVG diagram, cross-links from frontend domain page and infra case study chain | f664c86 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
