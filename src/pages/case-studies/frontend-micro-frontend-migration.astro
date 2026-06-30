@@ -1,0 +1,1007 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AtlasBackdrop from '../../components/AtlasBackdrop';
+import Cartouche from '../../components/Cartouche.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<BaseLayout
+  title="Case Study: Micro-Frontend Migration"
+  description="How component composition and micro-frontend architecture decoupled a monolithic React application into independently deployable UI domains — reducing release cycle time from fortnightly to on-demand."
+>
+  <AtlasBackdrop client:only="react" />
+
+  <main class="case-study-page">
+
+    <!-- ── Breadcrumb & header ─────────────────────────────────── -->
+    <header class="cs-header">
+      <div class="breadcrumb">
+        <a href={base + '/'}>Atlas</a>
+        <span aria-hidden="true"> › </span>
+        <a href={base + '/frontend'}>Frontend</a>
+        <span aria-hidden="true"> › </span>
+        <span>Case Study</span>
+      </div>
+
+      <Cartouche label="Case study · Plate ii-A · Frontend Architecture">
+        <div class="cs-title-block">
+          <p class="cs-catalogue">Study ref. FE-01</p>
+          <h1 class="cs-title">Micro-Frontend Migration</h1>
+          <p class="cs-subtitle">Component Composition &amp; Module Federation at Scale</p>
+        </div>
+
+        <div class="cs-meta-row">
+          <div class="cs-meta-item">
+            <span class="meta-label">Context</span>
+            <span class="meta-value">SaaS platform, 6 product teams</span>
+          </div>
+          <div class="cs-meta-divider" aria-hidden="true"></div>
+          <div class="cs-meta-item">
+            <span class="meta-label">Scale</span>
+            <span class="meta-value">~180k lines of JSX, 340 components</span>
+          </div>
+          <div class="cs-meta-divider" aria-hidden="true"></div>
+          <div class="cs-meta-item">
+            <span class="meta-label">Duration</span>
+            <span class="meta-value">12 weeks (rolling extraction)</span>
+          </div>
+          <div class="cs-meta-divider" aria-hidden="true"></div>
+          <div class="cs-meta-item">
+            <span class="meta-label">Role</span>
+            <span class="meta-value">Lead Solution Architect</span>
+          </div>
+        </div>
+      </Cartouche>
+    </header>
+
+    <!-- ── Context ──────────────────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="I — Context &amp; Problem Statement">
+        <div class="prose-grid">
+          <div class="prose-main">
+            <h2 class="section-heading">The Situation</h2>
+            <p>
+              A B2B SaaS platform had grown from a single-team startup into a six-team
+              product organisation — analytics, payments, settings, notifications,
+              marketplace, and a shared design system — all shipping from one monolithic
+              React application. Every release required a full-suite regression pass and
+              coordination across all six teams to merge a shared release branch.
+            </p>
+            <p>
+              The consequence was a two-week release cycle that served no team well.
+              A critical payments bug fix sat blocked for nine days waiting for an analytics
+              feature freeze. The notification team's bundle changes broke marketplace
+              routing twice in a quarter. Prop drilling was endemic: user session data
+              threaded through eleven component layers to reach a deeply nested billing
+              widget that needed only the account tier.
+            </p>
+
+            <h2 class="section-heading">Constraints</h2>
+            <ul class="prose-list">
+              <li>No user-visible downtime during migration — feature development continues in parallel</li>
+              <li>Shared design system must remain the single source of truth across all micro-frontends</li>
+              <li>Teams own their deployment pipelines; no central release coordinator</li>
+              <li>Existing React Router v5 routing layer must be preserved until all MFEs are extracted</li>
+            </ul>
+          </div>
+
+          <aside class="prose-sidebar">
+            <Cartouche label="Patterns applied">
+              <ul class="sidebar-list">
+                <li>
+                  <span class="pattern-bullet" aria-hidden="true">◈</span>
+                  <a href={base + '/frontend#micro-frontend-architecture'} class="pattern-link">
+                    Micro-Frontend Architecture
+                  </a>
+                </li>
+                <li>
+                  <span class="pattern-bullet" aria-hidden="true">◈</span>
+                  <a href={base + '/frontend#component-composition'} class="pattern-link">
+                    Component Composition
+                  </a>
+                </li>
+                <li>
+                  <span class="pattern-bullet" aria-hidden="true">◈</span>
+                  <a href={base + '/frontend#state-management-patterns'} class="pattern-link">
+                    State Management Patterns
+                  </a>
+                </li>
+              </ul>
+            </Cartouche>
+
+            <Cartouche label="Outcome metrics">
+              <ul class="sidebar-metrics">
+                <li>
+                  <span class="metric-num">on-demand</span>
+                  <span class="metric-label">release cadence (was fortnightly)</span>
+                </li>
+                <li>
+                  <span class="metric-num">74%</span>
+                  <span class="metric-label">reduction in cross-team merge conflicts</span>
+                </li>
+                <li>
+                  <span class="metric-num">3×</span>
+                  <span class="metric-label">faster local dev startup (per MFE)</span>
+                </li>
+                <li>
+                  <span class="metric-num">0</span>
+                  <span class="metric-label">user-visible regressions during migration</span>
+                </li>
+              </ul>
+            </Cartouche>
+          </aside>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Architecture diagram ──────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="II — Architecture Diagram · Before &amp; After">
+        <div class="diagram-header">
+          <h2 class="section-heading">System Evolution</h2>
+          <p class="diagram-caption">
+            Left: monolithic React application where all six domains share one build,
+            one router, and one deployment pipeline. Right: module federation target
+            state where each domain MFE deploys independently and the shell
+            orchestrates routing and shared context.
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <!-- ── Before ───────────────── -->
+          <figure class="diagram-figure">
+            <figcaption class="diagram-label">Before — Monolithic React App</figcaption>
+            <svg
+              class="arch-diagram"
+              viewBox="0 0 340 400"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="Before: single React monolith containing Analytics, Payments, Settings, Notifications, Marketplace, and DesignSystem all in one build"
+            >
+              <rect width="340" height="400" fill="rgba(10,14,26,0.0)" />
+
+              <!-- Outer monolith boundary -->
+              <rect x="14" y="14" width="312" height="372" rx="0"
+                fill="rgba(122,163,212,0.03)" stroke="rgba(122,163,212,0.22)" stroke-width="0.5"
+                stroke-dasharray="4 3" />
+              <text x="170" y="32" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="2"
+                fill="rgba(122,163,212,0.4)">REACT MONOLITH · ONE BUILD · ONE DEPLOY</text>
+
+              <!-- Router -->
+              <rect x="100" y="42" width="140" height="34" rx="0"
+                fill="rgba(196,106,85,0.1)" stroke="rgba(196,106,85,0.4)" stroke-width="0.5" />
+              <text x="170" y="57" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="#c46a55">SHARED ROUTER</text>
+              <text x="170" y="70" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(196,106,85,0.5)">React Router v5 (global)</text>
+
+              <!-- Arrows down from router -->
+              <line x1="170" y1="76" x2="170" y2="94"
+                stroke="rgba(196,106,85,0.4)" stroke-width="0.5" marker-end="url(#arrowRed2)" />
+
+              <!-- Domain boxes — two columns of 3 -->
+              <!-- Row 1 -->
+              <rect x="26" y="94" width="126" height="40" rx="0"
+                fill="rgba(122,163,212,0.08)" stroke="rgba(122,163,212,0.3)" stroke-width="0.5" />
+              <text x="89" y="111" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="#7aa3d4">ANALYTICS</text>
+              <text x="89" y="127" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(122,163,212,0.45)">62 components</text>
+
+              <rect x="188" y="94" width="126" height="40" rx="0"
+                fill="rgba(212,154,122,0.08)" stroke="rgba(212,154,122,0.3)" stroke-width="0.5" />
+              <text x="251" y="111" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="#d49a7a">PAYMENTS</text>
+              <text x="251" y="127" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(212,154,122,0.45)">48 components</text>
+
+              <!-- Row 2 -->
+              <rect x="26" y="150" width="126" height="40" rx="0"
+                fill="rgba(200,164,212,0.08)" stroke="rgba(200,164,212,0.3)" stroke-width="0.5" />
+              <text x="89" y="167" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="#c8a4d4">SETTINGS</text>
+              <text x="89" y="183" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(200,164,212,0.45)">35 components</text>
+
+              <rect x="188" y="150" width="126" height="40" rx="0"
+                fill="rgba(158,196,138,0.08)" stroke="rgba(158,196,138,0.3)" stroke-width="0.5" />
+              <text x="251" y="167" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="#9ec48a">NOTIFICATIONS</text>
+              <text x="251" y="183" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(158,196,138,0.45)">29 components</text>
+
+              <!-- Row 3 -->
+              <rect x="26" y="206" width="126" height="40" rx="0"
+                fill="rgba(212,177,94,0.08)" stroke="rgba(212,177,94,0.3)" stroke-width="0.5" />
+              <text x="89" y="223" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="var(--gold)">MARKETPLACE</text>
+              <text x="89" y="239" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(212,177,94,0.45)">54 components</text>
+
+              <rect x="188" y="206" width="126" height="40" rx="0"
+                fill="rgba(232,220,184,0.06)" stroke="rgba(232,220,184,0.25)" stroke-width="0.5" />
+              <text x="251" y="223" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="rgba(232,220,184,0.7)">DESIGN SYS</text>
+              <text x="251" y="239" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(232,220,184,0.4)">shared (duplicated)</text>
+
+              <!-- Prop-drilling annotation -->
+              <line x1="170" y1="260" x2="170" y2="300"
+                stroke="rgba(196,106,85,0.35)" stroke-width="0.5" stroke-dasharray="3 2" />
+              <text x="170" y="318" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(196,106,85,0.7)">PROP DRILLING · 11 LAYERS DEEP</text>
+              <text x="170" y="335" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(196,106,85,0.5)">SESSION DATA PASSED EVERYWHERE</text>
+              <text x="170" y="360" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(196,106,85,0.4)">ONE BUILD · 14-DAY RELEASE CYCLE</text>
+
+              <defs>
+                <marker id="arrowRed2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(196,106,85,0.6)" />
+                </marker>
+              </defs>
+            </svg>
+          </figure>
+
+          <!-- ── Divider ──────────────── -->
+          <div class="diagram-divider" aria-hidden="true">
+            <span class="divider-glyph">→</span>
+          </div>
+
+          <!-- ── After ────────────────── -->
+          <figure class="diagram-figure">
+            <figcaption class="diagram-label">After — Module Federation + Shell</figcaption>
+            <svg
+              class="arch-diagram"
+              viewBox="0 0 340 400"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="After: Shell app orchestrates independently deployed MFEs via module federation; shared design system and auth context provided once"
+            >
+              <rect width="340" height="400" fill="rgba(10,14,26,0.0)" />
+
+              <!-- Shell -->
+              <rect x="80" y="14" width="180" height="42" rx="0"
+                fill="rgba(122,163,212,0.1)" stroke="rgba(122,163,212,0.5)" stroke-width="0.5" />
+              <text x="170" y="32" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="#7aa3d4">SHELL APP</text>
+              <text x="170" y="48" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(122,163,212,0.5)">router · auth context · layout</text>
+
+              <!-- Shared design system (below shell, central) -->
+              <rect x="100" y="72" width="140" height="32" rx="0"
+                fill="rgba(232,220,184,0.08)" stroke="rgba(232,220,184,0.4)" stroke-width="0.5" />
+              <text x="170" y="86" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5"
+                fill="rgba(232,220,184,0.85)">DESIGN SYSTEM</text>
+              <text x="170" y="98" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="rgba(232,220,184,0.4)">singleton · npm package</text>
+
+              <!-- Arrows from shell to MFEs -->
+              <line x1="120" y1="56" x2="70" y2="130"
+                stroke="rgba(122,163,212,0.3)" stroke-width="0.5" marker-end="url(#arrowBlue2)" />
+              <line x1="145" y1="56" x2="130" y2="130"
+                stroke="rgba(212,154,122,0.3)" stroke-width="0.5" marker-end="url(#arrowOrange2)" />
+              <line x1="170" y1="56" x2="170" y2="130"
+                stroke="rgba(200,164,212,0.3)" stroke-width="0.5" marker-end="url(#arrowPurple2)" />
+              <line x1="195" y1="56" x2="210" y2="130"
+                stroke="rgba(158,196,138,0.3)" stroke-width="0.5" marker-end="url(#arrowGreen2)" />
+              <line x1="220" y1="56" x2="275" y2="130"
+                stroke="rgba(212,177,94,0.3)" stroke-width="0.5" marker-end="url(#arrowGold2)" />
+
+              <!-- MFE boxes — row of 5 -->
+              <rect x="14" y="130" width="52" height="60" rx="0"
+                fill="rgba(122,163,212,0.08)" stroke="rgba(122,163,212,0.35)" stroke-width="0.5" />
+              <text x="40" y="153" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="#7aa3d4">ANALYTICS</text>
+              <text x="40" y="166" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="0.5"
+                fill="rgba(122,163,212,0.45)">MFE</text>
+              <text x="40" y="180" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="0.5"
+                fill="rgba(122,163,212,0.35)">own CI/CD</text>
+
+              <rect x="80" y="130" width="52" height="60" rx="0"
+                fill="rgba(212,154,122,0.08)" stroke="rgba(212,154,122,0.35)" stroke-width="0.5" />
+              <text x="106" y="153" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="#d49a7a">PAYMENTS</text>
+              <text x="106" y="166" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="0.5"
+                fill="rgba(212,154,122,0.45)">MFE</text>
+              <text x="106" y="180" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="0.5"
+                fill="rgba(212,154,122,0.35)">own CI/CD</text>
+
+              <rect x="146" y="130" width="52" height="60" rx="0"
+                fill="rgba(200,164,212,0.08)" stroke="rgba(200,164,212,0.35)" stroke-width="0.5" />
+              <text x="172" y="153" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="#c8a4d4">SETTINGS</text>
+              <text x="172" y="166" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="0.5"
+                fill="rgba(200,164,212,0.45)">MFE</text>
+              <text x="172" y="180" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="0.5"
+                fill="rgba(200,164,212,0.35)">own CI/CD</text>
+
+              <rect x="212" y="130" width="52" height="60" rx="0"
+                fill="rgba(158,196,138,0.08)" stroke="rgba(158,196,138,0.35)" stroke-width="0.5" />
+              <text x="238" y="148" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="#9ec48a">NOTIFS</text>
+              <text x="238" y="161" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="0.5"
+                fill="rgba(158,196,138,0.45)">MFE</text>
+              <text x="238" y="174" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="0.5"
+                fill="rgba(158,196,138,0.35)">own CI/CD</text>
+
+              <rect x="274" y="130" width="52" height="60" rx="0"
+                fill="rgba(212,177,94,0.08)" stroke="rgba(212,177,94,0.35)" stroke-width="0.5" />
+              <text x="300" y="148" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1"
+                fill="var(--gold)">MARKET</text>
+              <text x="300" y="161" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="0.5"
+                fill="rgba(212,177,94,0.45)">MFE</text>
+              <text x="300" y="174" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="0.5"
+                fill="rgba(212,177,94,0.35)">own CI/CD</text>
+
+              <!-- Shared design system consumed by all MFEs (arrows) -->
+              <line x1="40" y1="190" x2="130" y2="104"
+                stroke="rgba(232,220,184,0.15)" stroke-width="0.5" stroke-dasharray="2 2" />
+              <line x1="106" y1="190" x2="148" y2="104"
+                stroke="rgba(232,220,184,0.15)" stroke-width="0.5" stroke-dasharray="2 2" />
+              <line x1="172" y1="190" x2="170" y2="104"
+                stroke="rgba(232,220,184,0.15)" stroke-width="0.5" stroke-dasharray="2 2" />
+              <line x1="238" y1="190" x2="192" y2="104"
+                stroke="rgba(232,220,184,0.15)" stroke-width="0.5" stroke-dasharray="2 2" />
+              <line x1="300" y1="190" x2="210" y2="104"
+                stroke="rgba(232,220,184,0.15)" stroke-width="0.5" stroke-dasharray="2 2" />
+
+              <!-- Auth context annotation -->
+              <rect x="14" y="216" width="312" height="28" rx="0"
+                fill="rgba(122,163,212,0.04)" stroke="rgba(122,163,212,0.2)" stroke-width="0.5"
+                stroke-dasharray="3 2" />
+              <text x="170" y="228" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(122,163,212,0.5)">AUTH CONTEXT · SHARED ONCE VIA SHELL</text>
+              <text x="170" y="239" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="6" letter-spacing="1"
+                fill="rgba(122,163,212,0.3)">no prop drilling — context injected at shell boundary</text>
+
+              <!-- Annotation -->
+              <text x="170" y="280" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(158,196,138,0.7)">INDEPENDENT DEPLOYS · NO SHARED BRANCH</text>
+              <text x="170" y="298" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(158,196,138,0.5)">DESIGN SYSTEM IS SINGLETON · NOT DUPLICATED</text>
+              <text x="170" y="316" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="7" letter-spacing="1.5"
+                fill="rgba(158,196,138,0.4)">WEBPACK MODULE FEDERATION · RUNTIME SHARING</text>
+
+              <defs>
+                <marker id="arrowBlue2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(122,163,212,0.5)" />
+                </marker>
+                <marker id="arrowOrange2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(212,154,122,0.5)" />
+                </marker>
+                <marker id="arrowPurple2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(200,164,212,0.5)" />
+                </marker>
+                <marker id="arrowGreen2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(158,196,138,0.5)" />
+                </marker>
+                <marker id="arrowGold2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="rgba(212,177,94,0.5)" />
+                </marker>
+              </defs>
+            </svg>
+          </figure>
+        </div>
+
+        <p class="diagram-note">
+          The critical insight: the shell owns routing and authentication context.
+          Each MFE receives what it needs through a typed contract at the module
+          boundary — not through eleven layers of prop threading. The design system
+          is loaded once at the shell level and shared via Webpack Module Federation's
+          singleton scope, eliminating duplicate React instances entirely.
+        </p>
+      </Cartouche>
+    </section>
+
+    <!-- ── Approach ─────────────────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="III — Approach &amp; Key Decisions">
+        <div class="approach-grid">
+          <div class="approach-col">
+            <h2 class="section-heading">Migration Strategy: Strangler Fig per Domain</h2>
+            <p>
+              Extraction followed domain ownership — the payments team migrated first
+              because they had the clearest bounded context and the highest pain from
+              the shared release cycle. Each domain was extracted as a standalone Webpack
+              5 build, exposed via Module Federation's <code>exposes</code> configuration,
+              and consumed by the shell via a remote entry point.
+            </p>
+            <p>
+              During the twelve-week migration, the monolith and MFEs coexisted behind
+              a feature flag at the shell routing layer. Payments could deploy on Tuesday;
+              the monolith's remaining domains deployed on the old fortnightly cycle.
+              Zero coordination required for independent domains.
+            </p>
+
+            <h2 class="section-heading">Eliminating Prop Drilling</h2>
+            <p>
+              The session object had been threaded through eleven component layers
+              because the monolith had no clean boundary at which to inject it. The
+              shell introduced a typed <code>AuthContext</code> published once at the
+              root. Each MFE consumed it directly with <code>useAuth()</code> — the
+              eleven intermediate layers simply stopped carrying the prop.
+            </p>
+            <p>
+              Where state needed to cross MFE boundaries (e.g. a payments event
+              visible to the notifications MFE), a lightweight event bus was introduced
+              at the shell level. No shared global store — only typed, versioned events
+              flowing in one direction.
+            </p>
+          </div>
+
+          <div class="approach-col">
+            <h2 class="section-heading">Design System Contract</h2>
+            <p>
+              The existing shared component library was promoted to a versioned npm
+              package. Module Federation's <code>singleton: true</code> flag ensured
+              only one React instance ran in the browser regardless of how many MFEs
+              loaded. Breaking changes required a semver major bump and a shell-level
+              compatibility matrix review — enforced in CI.
+            </p>
+            <p>
+              Each MFE declared the design system as a peer dependency, not a bundled
+              dependency. The shell owned the resolved version. This eliminated the
+              "double React" problem that had caused hook invariant failures in early
+              proof-of-concept work.
+            </p>
+
+            <h2 class="section-heading">Team Enablement</h2>
+            <p>
+              A <em>contract-first</em> rule governed cross-MFE integration: a team
+              could change anything inside their MFE boundary freely, but changes to
+              the shell contract or shared event schema required an RFC reviewed by
+              all affected teams. This kept teams autonomous without creating invisible
+              coupling — the same principle that hexagonal architecture applies at the
+              backend boundary.
+            </p>
+          </div>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Results ───────────────────────────────────────────────── -->
+    <section class="cs-section">
+      <Cartouche label="IV — Results &amp; Reflection">
+        <div class="results-grid">
+          <div class="result-card">
+            <span class="result-num">on-demand</span>
+            <p class="result-label">Release cadence per MFE</p>
+            <p class="result-detail">Down from a mandatory 14-day shared release cycle</p>
+          </div>
+          <div class="result-card">
+            <span class="result-num">74%</span>
+            <p class="result-label">Fewer cross-team merge conflicts</p>
+            <p class="result-detail">Each team owns its own repository and branch strategy</p>
+          </div>
+          <div class="result-card">
+            <span class="result-num">3×</span>
+            <p class="result-label">Faster local dev startup</p>
+            <p class="result-detail">Engineers run only their MFE against a stubbed shell</p>
+          </div>
+          <div class="result-card">
+            <span class="result-num">0</span>
+            <p class="result-label">User-visible regressions</p>
+            <p class="result-detail">Feature flags and shadow routing prevented any downtime</p>
+          </div>
+        </div>
+
+        <div class="reflection">
+          <h2 class="section-heading">What I Would Do Differently</h2>
+          <p>
+            The event bus — introduced late as an afterthought for cross-MFE communication
+            — became a source of invisible coupling within three months. Teams added
+            event types without a schema registry, and by month four, the payments MFE
+            was listening to events from six other teams with no versioning contract.
+            A typed event schema registry, enforced in CI from day one, would have
+            prevented this.
+          </p>
+          <p>
+            The extraction order followed team willingness rather than dependency topology.
+            Analytics, which many other MFEs linked into for instrumentation, was
+            extracted last — meaning for ten weeks, the analytics package was imported
+            from the monolith into newly extracted MFEs via a re-export shim. The shim
+            worked but added complexity that could have been avoided by extracting
+            shared infrastructure MFEs first.
+          </p>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Navigation ───────────────────────────────────────────── -->
+    <section class="cs-footer">
+      <div class="footer-nav">
+        <a href={base + '/frontend'} class="nav-link">← Frontend Domain</a>
+        <a href={base + '/case-studies/infra-platform-migration'} class="nav-link">
+          Case Study: Infrastructure Migration →
+        </a>
+      </div>
+      <p class="footer-coord">Plate ii-A · Case Study FE-01 · RA −780° Dec −200°</p>
+    </section>
+
+  </main>
+</BaseLayout>
+
+<style>
+  .case-study-page {
+    position: relative;
+    z-index: 1;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 80px 32px 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  /* ── Breadcrumb ── */
+  .breadcrumb {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 24px;
+  }
+
+  .breadcrumb a {
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--gold);
+  }
+
+  /* ── Header ── */
+  .cs-title-block {
+    margin-bottom: 32px;
+  }
+
+  .cs-catalogue {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 12px;
+  }
+
+  .cs-title {
+    font-size: clamp(42px, 6vw, 64px);
+    color: var(--tint-frontend);
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+
+  .cs-subtitle {
+    font-size: 20px;
+    color: var(--ink-dim);
+    font-style: italic;
+  }
+
+  .cs-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+    padding-top: 24px;
+    border-top: 0.5px solid var(--line-faint);
+  }
+
+  .cs-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .meta-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .meta-value {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-dim);
+  }
+
+  .cs-meta-divider {
+    width: 0.5px;
+    height: 28px;
+    background: var(--paper-border);
+    flex-shrink: 0;
+  }
+
+  /* ── Section ── */
+  .cs-section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section-heading {
+    font-size: 22px;
+    color: var(--ink);
+    margin-bottom: 14px;
+    margin-top: 28px;
+  }
+
+  .section-heading:first-child {
+    margin-top: 0;
+  }
+
+  /* ── Prose grid ── */
+  .prose-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 40px;
+    align-items: start;
+  }
+
+  @media (max-width: 800px) {
+    .prose-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .prose-main p {
+    font-size: 16px;
+    color: var(--ink-dim);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  .prose-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .prose-list li {
+    font-size: 15px;
+    color: var(--ink-dim);
+    padding-left: 18px;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .prose-list li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+    font-style: normal;
+  }
+
+  /* ── Sidebar ── */
+  .prose-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .sidebar-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sidebar-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pattern-bullet {
+    color: var(--tint-frontend);
+    font-style: normal;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .pattern-link {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-dim);
+    text-decoration: none;
+    transition: color 150ms;
+  }
+
+  .pattern-link:hover {
+    color: var(--gold);
+  }
+
+  .sidebar-metrics {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .sidebar-metrics li {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .metric-num {
+    font-size: 22px;
+    font-style: italic;
+    color: var(--tint-frontend);
+    line-height: 1;
+  }
+
+  .metric-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* ── Diagram ── */
+  .diagram-header {
+    margin-bottom: 28px;
+  }
+
+  .diagram-caption {
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.55;
+    max-width: 640px;
+    margin-top: 10px;
+  }
+
+  .diagram-container {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px;
+    align-items: center;
+  }
+
+  @media (max-width: 700px) {
+    .diagram-container {
+      grid-template-columns: 1fr;
+    }
+
+    .diagram-divider {
+      display: none;
+    }
+  }
+
+  .diagram-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .diagram-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    text-align: center;
+  }
+
+  .arch-diagram {
+    width: 100%;
+    height: auto;
+    border: 0.5px solid var(--line-faint);
+    background: rgba(10, 14, 26, 0.4);
+  }
+
+  .diagram-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: var(--gold);
+    font-style: normal;
+    opacity: 0.5;
+  }
+
+  .diagram-note {
+    margin-top: 24px;
+    padding: 16px;
+    border-left: 0.5px solid var(--gold);
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-dim);
+    line-height: 1.6;
+  }
+
+  /* ── Code ── */
+  code {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 12px;
+    background: rgba(122,163,212,0.08);
+    padding: 1px 5px;
+    border: 0.5px solid rgba(122,163,212,0.2);
+    color: var(--tint-frontend);
+  }
+
+  /* ── Approach grid ── */
+  .approach-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+
+  @media (max-width: 768px) {
+    .approach-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .approach-col p {
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+
+  .approach-col em {
+    color: var(--ink);
+  }
+
+  /* ── Results ── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+
+  @media (max-width: 900px) {
+    .results-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .results-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .result-card {
+    padding: 20px 16px;
+    border: 0.5px solid var(--paper-border);
+    background: rgba(122, 163, 212, 0.04);
+  }
+
+  .result-num {
+    display: block;
+    font-size: 32px;
+    font-style: italic;
+    color: var(--tint-frontend);
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+
+  .result-label {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink);
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+
+  .result-detail {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--ink-faint);
+    line-height: 1.5;
+  }
+
+  .reflection p {
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+
+  /* ── Footer ── */
+  .cs-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 32px;
+    border-top: 0.5px solid var(--line-faint);
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .footer-nav {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .nav-link {
+    font-size: 15px;
+    color: var(--gold);
+    text-decoration: none;
+    font-style: italic;
+  }
+
+  .nav-link:hover {
+    color: var(--gold-bright);
+  }
+
+  .footer-coord {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 640px) {
+    .case-study-page {
+      padding: 60px 20px 80px;
+    }
+  }
+</style>
