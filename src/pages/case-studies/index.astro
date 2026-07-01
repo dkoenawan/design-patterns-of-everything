@@ -1,0 +1,516 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AtlasBackdrop from '../../components/AtlasBackdrop';
+import Cartouche from '../../components/Cartouche.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+interface CaseStudy {
+  ref: string;
+  title: string;
+  subtitle: string;
+  domain: string;
+  domainLabel: string;
+  domainHref: string;
+  href: string;
+  context: string;
+  outcome: string;
+  tint: string;
+  plate: string;
+}
+
+const studies: CaseStudy[] = [
+  {
+    ref: 'BE-01',
+    title: 'Backend API Redesign',
+    subtitle: 'Hexagonal Architecture & CQRS at Scale',
+    domain: 'BE',
+    domainLabel: 'Backend',
+    domainHref: `${base}/backend`,
+    href: `${base}/case-studies/backend-api-redesign`,
+    context: 'FinTech platform · 1.2M active users · 10× traffic growth',
+    outcome: 'Monolithic REST API → maintainable hexagonal service without rewrite',
+    tint: 'var(--tint-backend)',
+    plate: 'Plate iii-A',
+  },
+  {
+    ref: 'DP-01',
+    title: 'Data Pipeline Migration',
+    subtitle: 'Medallion Architecture & Schema-Driven Validation',
+    domain: 'DP',
+    domainLabel: 'Data Pipeline',
+    domainHref: `${base}/data`,
+    href: `${base}/case-studies/data-pipeline-migration`,
+    context: 'E-commerce analytics · 40M events/day · 3 downstream consumers',
+    outcome: 'ETL monolith → observable contract-tested platform · 94% failure reduction',
+    tint: 'var(--tint-data)',
+    plate: 'Plate iv-B',
+  },
+  {
+    ref: 'INFRA-01',
+    title: 'Infrastructure Platform Migration',
+    subtitle: 'Infrastructure as Code & Container Orchestration',
+    domain: 'INFRA',
+    domainLabel: 'Infrastructure',
+    domainHref: `${base}/infra`,
+    href: `${base}/case-studies/infra-platform-migration`,
+    context: '14 production services · snowflake servers · days-long deploy cycles',
+    outcome: 'Hand-patched hosts → immutable IaC pipeline · deploy lead time: days → minutes',
+    tint: 'var(--tint-infra)',
+    plate: 'Plate v-A',
+  },
+  {
+    ref: 'FE-01',
+    title: 'Micro-Frontend Migration',
+    subtitle: 'Component Composition & Module Federation',
+    domain: 'FE',
+    domainLabel: 'Frontend',
+    domainHref: `${base}/frontend`,
+    href: `${base}/case-studies/frontend-micro-frontend-migration`,
+    context: 'SaaS platform · 6 product teams · fortnightly release cadence',
+    outcome: 'Monolithic React app → independently deployable UI domains · on-demand releases',
+    tint: 'var(--tint-frontend)',
+    plate: 'Plate ii-A',
+  },
+];
+---
+
+<BaseLayout
+  title="Case Studies — Celestial Atlas"
+  description="Four architecture case studies spanning Backend, Data Pipeline, Infrastructure, and Frontend domains — real problems, chosen patterns, and measured outcomes."
+>
+  <AtlasBackdrop client:only="react" />
+
+  <main class="index-page">
+
+    <!-- ── Page header ──────────────────────────────────────────── -->
+    <section class="page-header">
+      <div class="breadcrumb">
+        <a href={`${base}/`}>Atlas</a>
+        <span aria-hidden="true"> › </span>
+        <span>Case Studies</span>
+      </div>
+
+      <Cartouche label="Observations in the field — architecture decisions under real constraints">
+        <div class="header-inner">
+          <div class="header-glyph" aria-hidden="true">◈</div>
+          <div class="header-text">
+            <h1 class="page-title">Case Studies</h1>
+            <p class="page-subtitle">
+              Architecture decisions are only legible in context. Each study presents the system
+              as found, the constraints that shaped the approach, the patterns applied, and
+              the outcomes measured.
+            </p>
+            <div class="header-stats">
+              <div class="stat-item">
+                <span class="stat-num">{studies.length}</span>
+                <span class="stat-label">Studies</span>
+              </div>
+              <div class="stat-divider" aria-hidden="true"></div>
+              <div class="stat-item">
+                <span class="stat-num">4</span>
+                <span class="stat-label">Domains</span>
+              </div>
+              <div class="stat-divider" aria-hidden="true"></div>
+              <div class="stat-item">
+                <span class="stat-num">Lead SA</span>
+                <span class="stat-label">Role</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Study entries ─────────────────────────────────────────── -->
+    <section class="entries">
+      <Cartouche label="Field observations — four studies across all domains">
+        {studies.map((s, i) => (
+          <article class="entry">
+            <div class="entry-rail">
+              <span class="entry-domain" style={`color: ${s.tint}`}>{s.domainLabel}</span>
+              <span class="entry-ref">{s.ref}</span>
+              <span class="entry-plate">{s.plate}</span>
+              <span class="entry-num">{`CS.${String(i + 1).padStart(3, '0')}`}</span>
+            </div>
+
+            <div class="entry-body">
+              <h2 class="entry-title" style={`color: ${s.tint}`}>
+                <span class="entry-glyph" aria-hidden="true">◈</span>
+                <a href={s.href} class="entry-link">{s.title}</a>
+              </h2>
+              <p class="entry-subtitle">{s.subtitle}</p>
+
+              <div class="entry-rows">
+                <div class="entry-row">
+                  <span class="row-label">Context</span>
+                  <span class="row-value">{s.context}</span>
+                </div>
+                <div class="entry-row">
+                  <span class="row-label">Outcome</span>
+                  <span class="row-value row-value--outcome">{s.outcome}</span>
+                </div>
+              </div>
+
+              <div class="entry-footer">
+                <a href={s.href} class="read-link">Read study →</a>
+                <a href={s.domainHref} class="domain-link">{s.domainLabel} domain</a>
+              </div>
+            </div>
+          </article>
+        ))}
+      </Cartouche>
+    </section>
+
+    <!-- ── Footer ────────────────────────────────────────────────── -->
+    <section class="footer-row">
+      <div class="footer-nav">
+        <a href={`${base}/`} class="nav-link">← Atlas home</a>
+        <a href={`${base}/anti-patterns`} class="nav-link">Anti-patterns →</a>
+      </div>
+      <p class="footer-coord">Field observations · Volume I</p>
+    </section>
+
+  </main>
+</BaseLayout>
+
+<style>
+  .index-page {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 80px 32px 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  /* ── Breadcrumb ── */
+  .breadcrumb {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 24px;
+  }
+
+  .breadcrumb a {
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--gold);
+  }
+
+  /* ── Header ── */
+  .header-inner {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+  }
+
+  .header-glyph {
+    font-size: 44px;
+    color: var(--gold);
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+
+  .page-title {
+    font-size: 52px;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+
+  .page-subtitle {
+    font-size: 17px;
+    color: var(--ink-dim);
+    line-height: 1.6;
+    max-width: 580px;
+    margin-bottom: 24px;
+  }
+
+  .header-stats {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-num {
+    font-size: 28px;
+    font-style: italic;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .stat-divider {
+    width: 0.5px;
+    height: 28px;
+    background: var(--paper-border);
+  }
+
+  @media (max-width: 600px) {
+    .header-inner {
+      flex-direction: column;
+      gap: 16px;
+    }
+    .header-glyph { font-size: 32px; }
+    .page-title { font-size: 38px; }
+  }
+
+  /* ── Entry ── */
+  .entry {
+    display: flex;
+    gap: 0;
+    border-top: 0.5px solid var(--line-faint);
+    padding: 36px 0;
+  }
+
+  .entry:last-child {
+    border-bottom: 0.5px solid var(--line-faint);
+  }
+
+  /* Rail */
+  .entry-rail {
+    width: 140px;
+    flex-shrink: 0;
+    padding-right: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .entry-domain {
+    font-size: 12px;
+    font-family: var(--font-display);
+    font-style: italic;
+  }
+
+  .entry-ref {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--gold);
+  }
+
+  .entry-plate {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .entry-num {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--ink-faint);
+    margin-top: 4px;
+  }
+
+  /* Body */
+  .entry-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .entry-title {
+    font-size: 38px;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    line-height: 1.05;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .entry-glyph {
+    font-size: 18px;
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+
+  .entry-link {
+    color: inherit;
+    text-decoration: none;
+    transition: color 150ms;
+  }
+
+  .entry-link:hover {
+    color: var(--gold-bright);
+  }
+
+  .entry-subtitle {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 15px;
+    color: var(--ink-dim);
+    margin-bottom: 24px;
+    padding-left: calc(18px + 12px);
+  }
+
+  .entry-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .entry-row {
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+  }
+
+  .row-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    flex-shrink: 0;
+    width: 64px;
+  }
+
+  .row-value {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.5;
+  }
+
+  .row-value--outcome {
+    color: var(--ink);
+  }
+
+  .entry-footer {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .read-link {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 15px;
+    color: var(--gold);
+    text-decoration: none;
+    transition: color 150ms;
+  }
+
+  .read-link:hover {
+    color: var(--gold-bright);
+  }
+
+  .domain-link {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-decoration: none;
+    transition: color 150ms;
+  }
+
+  .domain-link:hover {
+    color: var(--ink-dim);
+  }
+
+  @media (max-width: 560px) {
+    .entry {
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .entry-rail {
+      width: auto;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding-right: 0;
+    }
+
+    .entry-num { margin-top: 0; }
+
+    .entry-title { font-size: 28px; }
+
+    .entry-subtitle { padding-left: 0; }
+  }
+
+  /* ── Footer ── */
+  .footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 32px;
+    border-top: 0.5px solid var(--line-faint);
+  }
+
+  .footer-nav {
+    display: flex;
+    gap: 32px;
+  }
+
+  .nav-link {
+    font-size: 15px;
+    color: var(--gold);
+    text-decoration: none;
+    font-style: italic;
+  }
+
+  .nav-link:hover {
+    color: var(--gold-bright);
+  }
+
+  .footer-coord {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 640px) {
+    .index-page {
+      padding: 60px 20px 80px;
+    }
+
+    .footer-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+  }
+</style>
