@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-07-01 by automated agent
+Last updated: 2026-07-02 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -43,6 +43,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-06-29 | Case study 3: Infrastructure Platform Migration (INFRA-01) — Kubernetes + IaC, before/after SVG diagram, cross-links from infra domain page and data pipeline case study | d1ac8f2 |
 | 2026-06-30 | Case study 4: Frontend Micro-Frontend Migration (FE-01) — Module Federation + Component Composition, before/after SVG diagram, cross-links from frontend domain page and infra case study chain | f664c86 |
 | 2026-07-01 | Case Studies index page — /case-studies/ listing all 4 studies with cartouche register layout + "Case Studies" nav link in SiteNav | 332afa8 |
+| 2026-07-02 | Backend domain hexagonal architecture SVG diagram — replaces viz placeholder with three-layer concentric hexagon (Core/Ports/Adapters), six adapter labels, dependency arrows, legend | d926aa0 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
