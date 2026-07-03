@@ -64,23 +64,175 @@ const domainPatterns = patterns.filter((p) => p.domain === 'infra');
       </div>
     </section>
 
-    <!-- ── Featured visualisation (placeholder) ────────────────── -->
+    <!-- ── Featured visualisation — Kubernetes cluster topology ─── -->
     <section class="viz-row">
-      <Cartouche label="Featured visualisation — orchestration topology">
+      <Cartouche label="Featured visualisation — kubernetes orchestration topology">
         <div class="viz-header">
           <h2 class="viz-title">Declarative Platform</h2>
           <p class="viz-caption">
-            Infrastructure described as code, provisioned reproducibly. Services
-            orchestrated across containers, each isolated yet reachable. State
-            converges toward the declared shape — not toward manual drift.
+            The Control Plane declares desired state; worker nodes converge to it.
+            API Server is the single authority — every other component subscribes.
+            Pods are ephemeral; the scheduler places them; etcd stores ground truth.
           </p>
         </div>
         <div class="viz-canvas">
-          <div class="viz-placeholder">
-            <span class="placeholder-glyph" aria-hidden="true">⬡</span>
-            <p class="placeholder-text">Interactive chart in preparation</p>
-            <p class="placeholder-coord">Plate iv · viz forthcoming</p>
-          </div>
+          <svg
+            class="k8s-diagram"
+            viewBox="0 0 700 420"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Kubernetes cluster diagram showing Control Plane with API Server, Scheduler, Controller Manager, and etcd connected to two Worker Nodes each containing multiple Pods"
+          >
+            <defs>
+              <marker id="k8s-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L8,3 z" fill="#c8a4d4" opacity="0.7" />
+              </marker>
+              <marker id="k8s-arrow-bi" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto">
+                <path d="M8,0 L8,6 L0,3 z" fill="#c8a4d4" opacity="0.7" />
+              </marker>
+            </defs>
+
+            <!-- ── Plate reference ── -->
+            <text x="350" y="14" text-anchor="middle" class="plate-ref" fill="#e8dcb8" opacity="0.25">Plate iv · Kubernetes Orchestration · Infrastructure Domain</text>
+
+            <!-- ══ Control Plane box ══ -->
+            <rect x="40" y="30" width="260" height="200" rx="1"
+              fill="rgba(14,20,42,0.7)" stroke="rgba(200,164,212,0.4)" stroke-width="0.5" />
+            <text x="170" y="50" text-anchor="middle" class="zone-label" fill="#c8a4d4">Control Plane</text>
+
+            <!-- API Server (centre of control plane) -->
+            <rect x="100" y="62" width="140" height="36" rx="1"
+              fill="rgba(200,164,212,0.12)" stroke="rgba(200,164,212,0.6)" stroke-width="0.8" />
+            <text x="170" y="84" text-anchor="middle" class="component-label" fill="#c8a4d4">API Server</text>
+
+            <!-- Scheduler -->
+            <rect x="60" y="120" width="100" height="32" rx="1"
+              fill="rgba(10,14,26,0.9)" stroke="rgba(200,164,212,0.3)" stroke-width="0.5" />
+            <text x="110" y="140" text-anchor="middle" class="component-label" fill="#e8dcb8">Scheduler</text>
+
+            <!-- Controller Manager -->
+            <rect x="180" y="120" width="100" height="32" rx="1"
+              fill="rgba(10,14,26,0.9)" stroke="rgba(200,164,212,0.3)" stroke-width="0.5" />
+            <text x="230" y="140" text-anchor="middle" class="component-label" fill="#e8dcb8">Controller Mgr</text>
+
+            <!-- etcd -->
+            <rect x="100" y="178" width="140" height="36" rx="1"
+              fill="rgba(10,14,26,0.9)" stroke="rgba(212,177,94,0.35)" stroke-width="0.5" />
+            <text x="170" y="192" text-anchor="middle" class="component-label" fill="#d4b15e">etcd</text>
+            <text x="170" y="207" text-anchor="middle" class="component-sublabel" fill="#d4b15e" opacity="0.6">cluster state store</text>
+
+            <!-- API → Scheduler -->
+            <line x1="130" y1="98" x2="110" y2="120" stroke="#c8a4d4" stroke-width="0.6" opacity="0.5" marker-end="url(#k8s-arrow)" />
+            <!-- API → Controller -->
+            <line x1="210" y1="98" x2="230" y2="120" stroke="#c8a4d4" stroke-width="0.6" opacity="0.5" marker-end="url(#k8s-arrow)" />
+            <!-- API → etcd (bidirectional) -->
+            <line x1="170" y1="98" x2="170" y2="178" stroke="#d4b15e" stroke-width="0.6" opacity="0.4" stroke-dasharray="4 3" />
+
+            <!-- ══ kubectl / external access ══ -->
+            <rect x="40" y="258" width="80" height="30" rx="1"
+              fill="rgba(10,14,26,0.9)" stroke="rgba(232,220,184,0.25)" stroke-width="0.5" />
+            <text x="80" y="277" text-anchor="middle" class="component-label" fill="#e8dcb8" opacity="0.7">kubectl</text>
+            <!-- kubectl → API Server -->
+            <line x1="120" y1="273" x2="170" y2="230" stroke="#e8dcb8" stroke-width="0.6" opacity="0.3" stroke-dasharray="3 3" marker-end="url(#k8s-arrow)" />
+
+            <!-- ══ Worker Node A ══ -->
+            <rect x="340" y="30" width="160" height="200" rx="1"
+              fill="rgba(14,20,42,0.7)" stroke="rgba(158,196,138,0.4)" stroke-width="0.5" />
+            <text x="420" y="50" text-anchor="middle" class="zone-label" fill="#9ec48a">Worker Node A</text>
+
+            <!-- kubelet A -->
+            <rect x="360" y="60" width="120" height="28" rx="1"
+              fill="rgba(10,14,26,0.9)" stroke="rgba(158,196,138,0.3)" stroke-width="0.5" />
+            <text x="420" y="78" text-anchor="middle" class="component-label" fill="#9ec48a">kubelet</text>
+
+            <!-- Pods in Node A -->
+            <rect x="360" y="102" width="50" height="50" rx="1"
+              fill="rgba(158,196,138,0.08)" stroke="rgba(158,196,138,0.4)" stroke-width="0.5" />
+            <text x="385" y="122" text-anchor="middle" class="pod-label" fill="#9ec48a">Pod</text>
+            <text x="385" y="137" text-anchor="middle" class="pod-sublabel" fill="#9ec48a" opacity="0.6">app:v2</text>
+            <rect x="360" y="162" width="50" height="50" rx="1"
+              fill="rgba(158,196,138,0.08)" stroke="rgba(158,196,138,0.4)" stroke-width="0.5" />
+            <text x="385" y="182" text-anchor="middle" class="pod-label" fill="#9ec48a">Pod</text>
+            <text x="385" y="197" text-anchor="middle" class="pod-sublabel" fill="#9ec48a" opacity="0.6">sidecar</text>
+
+            <rect x="430" y="102" width="50" height="50" rx="1"
+              fill="rgba(158,196,138,0.08)" stroke="rgba(158,196,138,0.4)" stroke-width="0.5" />
+            <text x="455" y="122" text-anchor="middle" class="pod-label" fill="#9ec48a">Pod</text>
+            <text x="455" y="137" text-anchor="middle" class="pod-sublabel" fill="#9ec48a" opacity="0.6">app:v2</text>
+            <rect x="430" y="162" width="50" height="50" rx="1"
+              fill="rgba(158,196,138,0.08)" stroke="rgba(158,196,138,0.4)" stroke-width="0.5" />
+            <text x="455" y="182" text-anchor="middle" class="pod-label" fill="#9ec48a">Pod</text>
+            <text x="455" y="197" text-anchor="middle" class="pod-sublabel" fill="#9ec48a" opacity="0.6">metrics</text>
+
+            <!-- ══ Worker Node B ══ -->
+            <rect x="530" y="30" width="150" height="200" rx="1"
+              fill="rgba(14,20,42,0.7)" stroke="rgba(158,196,138,0.4)" stroke-width="0.5" />
+            <text x="605" y="50" text-anchor="middle" class="zone-label" fill="#9ec48a">Worker Node B</text>
+
+            <!-- kubelet B -->
+            <rect x="550" y="60" width="110" height="28" rx="1"
+              fill="rgba(10,14,26,0.9)" stroke="rgba(158,196,138,0.3)" stroke-width="0.5" />
+            <text x="605" y="78" text-anchor="middle" class="component-label" fill="#9ec48a">kubelet</text>
+
+            <!-- Pods in Node B -->
+            <rect x="550" y="102" width="50" height="50" rx="1"
+              fill="rgba(158,196,138,0.08)" stroke="rgba(158,196,138,0.4)" stroke-width="0.5" />
+            <text x="575" y="122" text-anchor="middle" class="pod-label" fill="#9ec48a">Pod</text>
+            <text x="575" y="137" text-anchor="middle" class="pod-sublabel" fill="#9ec48a" opacity="0.6">app:v1</text>
+            <rect x="610" y="102" width="50" height="50" rx="1"
+              fill="rgba(158,196,138,0.08)" stroke="rgba(158,196,138,0.4)" stroke-width="0.5" />
+            <text x="635" y="122" text-anchor="middle" class="pod-label" fill="#9ec48a">Pod</text>
+            <text x="635" y="137" text-anchor="middle" class="pod-sublabel" fill="#9ec48a" opacity="0.6">cache</text>
+            <rect x="580" y="162" width="50" height="50" rx="1"
+              fill="rgba(158,196,138,0.08)" stroke="rgba(158,196,138,0.4)" stroke-width="0.5" />
+            <text x="605" y="182" text-anchor="middle" class="pod-label" fill="#9ec48a">Pod</text>
+            <text x="605" y="197" text-anchor="middle" class="pod-sublabel" fill="#9ec48a" opacity="0.6">worker</text>
+
+            <!-- ══ API Server → kubelets (control channel) ══ -->
+            <line x1="300" y1="80" x2="340" y2="74" stroke="#c8a4d4" stroke-width="0.8" opacity="0.6" marker-end="url(#k8s-arrow)" />
+            <line x1="300" y1="80" x2="530" y2="74" stroke="#c8a4d4" stroke-width="0.8" opacity="0.6" marker-end="url(#k8s-arrow)" />
+
+            <!-- ══ Service / Ingress layer ══ -->
+            <rect x="340" y="254" width="340" height="34" rx="1"
+              fill="rgba(10,14,26,0.9)" stroke="rgba(212,177,94,0.35)" stroke-width="0.5" />
+            <text x="510" y="268" text-anchor="middle" class="component-label" fill="#d4b15e">Service</text>
+            <text x="510" y="281" text-anchor="middle" class="component-sublabel" fill="#d4b15e" opacity="0.6">ClusterIP · load-balances across pods</text>
+
+            <!-- Service → Node A pods -->
+            <line x1="420" y1="254" x2="420" y2="230" stroke="#d4b15e" stroke-width="0.6" opacity="0.35" stroke-dasharray="3 3" marker-end="url(#k8s-arrow)" />
+            <!-- Service → Node B pods -->
+            <line x1="600" y1="254" x2="605" y2="230" stroke="#d4b15e" stroke-width="0.6" opacity="0.35" stroke-dasharray="3 3" marker-end="url(#k8s-arrow)" />
+
+            <!-- ══ Ingress ══ -->
+            <rect x="400" y="308" width="220" height="30" rx="1"
+              fill="rgba(10,14,26,0.9)" stroke="rgba(232,220,184,0.2)" stroke-width="0.5" />
+            <text x="510" y="327" text-anchor="middle" class="component-label" fill="#e8dcb8" opacity="0.65">Ingress · external traffic</text>
+            <line x1="510" y1="308" x2="510" y2="288" stroke="#e8dcb8" stroke-width="0.6" opacity="0.25" marker-end="url(#k8s-arrow)" />
+
+            <!-- ══ IaC annotation ══ -->
+            <rect x="40" y="305" width="130" height="52" rx="1"
+              fill="rgba(10,14,26,0.9)" stroke="rgba(212,177,94,0.2)" stroke-width="0.5" stroke-dasharray="4 3" />
+            <text x="105" y="323" text-anchor="middle" class="component-label" fill="#d4b15e" opacity="0.8">Terraform / Helm</text>
+            <text x="105" y="337" text-anchor="middle" class="component-sublabel" fill="#e8dcb8" opacity="0.45">declares desired state</text>
+            <text x="105" y="350" text-anchor="middle" class="component-sublabel" fill="#e8dcb8" opacity="0.45">converge → apply</text>
+            <line x1="170" y1="325" x2="220" y2="273" stroke="#d4b15e" stroke-width="0.6" opacity="0.25" stroke-dasharray="3 3" marker-end="url(#k8s-arrow)" />
+
+            <!-- ══ Reconciliation loop annotation ══ -->
+            <text x="350" y="400" text-anchor="middle" class="plate-ref" fill="#c8a4d4" opacity="0.4">Controller Manager reconciles observed → desired state on every watch event</text>
+          </svg>
+        </div>
+        <div class="viz-legend">
+          {[
+            { color: '#c8a4d4', label: 'control plane — api server, scheduler, controller manager' },
+            { color: '#d4b15e', label: 'etcd — authoritative cluster state store' },
+            { color: '#9ec48a', label: 'worker nodes — kubelet + pods' },
+            { color: 'rgba(212,177,94,0.5)', label: 'service / ingress — load-balancing & routing' },
+          ].map(({ color, label }) => (
+            <div class="legend-item">
+              <span class="legend-dot" style={`background:${color}`}></span>
+              <span class="legend-text">{label}</span>
+            </div>
+          ))}
         </div>
       </Cartouche>
     </section>
@@ -261,38 +413,83 @@ const domainPatterns = patterns.filter((p) => p.domain === 'infra');
     width: 100%;
   }
 
-  /* Static placeholder — viz forthcoming */
-  .viz-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    min-height: 280px;
-    border: 0.5px dashed var(--paper-border);
-    text-align: center;
+  /* ── Kubernetes diagram ── */
+  .k8s-diagram {
+    width: 100%;
+    max-width: 700px;
+    display: block;
+    margin: 0 auto;
   }
 
-  .placeholder-glyph {
-    font-size: 48px;
-    color: var(--tint-infra);
-    opacity: 0.5;
-    line-height: 1;
+  .k8s-diagram .zone-label {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
   }
 
-  .placeholder-text {
-    font-size: 16px;
+  .k8s-diagram .component-label {
+    font-family: var(--font-display);
     font-style: italic;
-    color: var(--ink-dim);
+    font-size: 11px;
   }
 
-  .placeholder-coord {
+  .k8s-diagram .component-sublabel {
+    font-family: var(--font-mono);
+    font-size: 7px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .k8s-diagram .pod-label {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 10px;
+  }
+
+  .k8s-diagram .pod-sublabel {
+    font-family: var(--font-mono);
+    font-size: 7px;
+    letter-spacing: 1px;
+  }
+
+  .k8s-diagram .plate-ref {
+    font-family: var(--font-mono);
+    font-size: 7px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  /* ── Legend ── */
+  .viz-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 28px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 0.5px solid var(--line-faint);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-text {
     font-family: var(--font-mono);
     font-style: normal;
     font-size: 9px;
-    letter-spacing: 2px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: var(--ink-faint);
+    color: var(--ink-dim);
   }
 
   /* ── Footer row ── */
