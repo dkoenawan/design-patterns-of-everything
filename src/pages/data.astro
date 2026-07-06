@@ -4,6 +4,7 @@ import AtlasBackdrop from '../components/AtlasBackdrop';
 import Cartouche from '../components/Cartouche.astro';
 import DomainMiniMap from '../components/DomainMiniMap';
 import MedallionViz from '../components/MedallionViz';
+import BatchStreamViz from '../components/BatchStreamViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
@@ -85,6 +86,35 @@ const domainPatterns = patterns.filter((p) => p.domain === 'data');
             { color: '#b8c4cf', label: 'silver · validated' },
             { color: '#e8c870', label: 'gold · curated' },
             { color: '#c46a55', label: '× · rejected' },
+          ].map(({ color, label }) => (
+            <div class="legend-item">
+              <span class="legend-dot" style={`background:${color}`}></span>
+              <span class="legend-text">{label}</span>
+            </div>
+          ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Batch vs Streaming viz ────────────────────────────── -->
+    <section class="viz-row">
+      <Cartouche label="Featured visualisation — batch vs streaming processing">
+        <div class="viz-header">
+          <h2 class="viz-title">Batch vs Streaming</h2>
+          <p class="viz-caption">
+            The top lane accumulates records into a bounded buffer then flushes the entire
+            window in one pass — high throughput, higher latency. The bottom lane emits
+            each event to a processor the moment it arrives — low latency, continuous.
+            Choose based on your tolerance for staleness vs. per-event cost.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <BatchStreamViz client:load />
+        </div>
+        <div class="viz-legend">
+          {[
+            { color: '#9ec48a', label: 'batch · windowed accumulation' },
+            { color: '#d4b15e', label: 'stream · per-event flow' },
           ].map(({ color, label }) => (
             <div class="legend-item">
               <span class="legend-dot" style={`background:${color}`}></span>
