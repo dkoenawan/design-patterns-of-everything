@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-07-06 by automated agent
+Last updated: 2026-07-07 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -46,6 +46,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-07-02 | Backend domain hexagonal architecture SVG diagram — replaces viz placeholder with three-layer concentric hexagon (Core/Ports/Adapters), six adapter labels, dependency arrows, legend | d926aa0 |
 | 2026-07-03 | Infrastructure domain Kubernetes orchestration SVG diagram — replaces viz placeholder with Control Plane, two Worker Nodes, Pod grids, Service/Ingress layer, and Terraform/Helm IaC annotation | 05d048e |
 | 2026-07-06 | BatchStreamViz animated canvas on data pipeline page — two-lane canvas: batch lane accumulates and flushes fixed windows; stream lane emits continuous glowing motes per-event. Illustrates the Batch vs Streaming trade-off. | 3a595bf |
+| 2026-07-07 | CQRSFlowViz animated canvas on backend domain page — two-lane canvas: command motes flow Client → Handler → Write Store with projection pulses syncing to Read DB; query motes flow Client → Handler → Read DB. Illustrates CQRS command/query split. | b58c3f2 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
