@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../components/AtlasBackdrop';
 import Cartouche from '../components/Cartouche.astro';
 import DomainMiniMap from '../components/DomainMiniMap';
+import CQRSFlowViz from '../components/CQRSFlowViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
@@ -180,6 +181,36 @@ const domainPatterns = patterns.filter((p) => p.domain === 'backend');
             { color: '#d4b15e', label: 'domain core — business logic & entities' },
             { color: 'rgba(212,177,94,0.5)', label: 'ports — technology-agnostic contracts' },
             { color: '#7aa3d4', label: 'adapters — infrastructure implementations' },
+          ].map(({ color, label }) => (
+            <div class="legend-item">
+              <span class="legend-dot" style={`background:${color}`}></span>
+              <span class="legend-text">{label}</span>
+            </div>
+          ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── CQRS flow visualisation ───────────────────────────── -->
+    <section class="viz-row">
+      <Cartouche label="Featured visualisation — cqrs command &amp; query separation">
+        <div class="viz-header">
+          <h2 class="viz-title">Command / Query Split</h2>
+          <p class="viz-caption">
+            Commands mutate state through a handler into the write store, then
+            a projection syncs a denormalized read model. Queries bypass the
+            domain model entirely — reading directly from the read store.
+            Each path is optimized independently.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <CQRSFlowViz client:load />
+        </div>
+        <div class="viz-legend">
+          {[
+            { color: '#d49a7a', label: 'command path — write & mutate' },
+            { color: '#7aa3d4', label: 'query path — read & project' },
+            { color: 'rgba(212,177,94,0.55)', label: 'projection sync — write→read propagation' },
           ].map(({ color, label }) => (
             <div class="legend-item">
               <span class="legend-dot" style={`background:${color}`}></span>
