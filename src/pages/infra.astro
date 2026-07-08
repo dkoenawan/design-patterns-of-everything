@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../components/AtlasBackdrop';
 import Cartouche from '../components/Cartouche.astro';
 import DomainMiniMap from '../components/DomainMiniMap';
+import IaCPipelineViz from '../components/IaCPipelineViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
@@ -227,6 +228,37 @@ const domainPatterns = patterns.filter((p) => p.domain === 'infra');
             { color: '#d4b15e', label: 'etcd — authoritative cluster state store' },
             { color: '#9ec48a', label: 'worker nodes — kubelet + pods' },
             { color: 'rgba(212,177,94,0.5)', label: 'service / ingress — load-balancing & routing' },
+          ].map(({ color, label }) => (
+            <div class="legend-item">
+              <span class="legend-dot" style={`background:${color}`}></span>
+              <span class="legend-text">{label}</span>
+            </div>
+          ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── GitOps pipeline animated visualisation ────────────────── -->
+    <section class="viz-row">
+      <Cartouche label="Featured visualisation — gitops deploy &amp; drift reconciliation">
+        <div class="viz-header">
+          <h2 class="viz-title">GitOps Pipeline Flow</h2>
+          <p class="viz-caption">
+            A commit triggers CI build, image push to the registry, and a
+            declarative K8s apply — each mote represents an artifact propagating
+            through the pipeline. A second lane traces drift detection: when
+            actual state diverges, the reconciler pulls desired state back to
+            convergence.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <IaCPipelineViz client:load />
+        </div>
+        <div class="viz-legend">
+          {[
+            { color: '#c8a4d4', label: 'deploy pipeline — git → ci → registry → k8s apply' },
+            { color: '#9ec48a', label: 'health check — readiness probe passes' },
+            { color: '#d49a7a', label: 'drift detection — actual→desired reconciliation' },
           ].map(({ color, label }) => (
             <div class="legend-item">
               <span class="legend-dot" style={`background:${color}`}></span>
