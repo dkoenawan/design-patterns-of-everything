@@ -4,6 +4,7 @@ import AtlasBackdrop from '../components/AtlasBackdrop';
 import Cartouche from '../components/Cartouche.astro';
 import DomainMiniMap from '../components/DomainMiniMap';
 import ComponentTreeViz from '../components/ComponentTreeViz';
+import StateFlowViz from '../components/StateFlowViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
@@ -86,6 +87,35 @@ const domainPatterns = patterns.filter((p) => p.domain === 'frontend');
             { color: '#9ec48a', label: 'sidebar → panel → badge' },
             { color: '#c8a4d4', label: 'header → logo → icon' },
             { color: '#f1d98a', label: 'main → toolbar → button' },
+          ].map(({ color, label }) => (
+            <div class="legend-item">
+              <span class="legend-dot" style={`background:${color}`}></span>
+              <span class="legend-text">{label}</span>
+            </div>
+          ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── State flow viz ────────────────────────────────────── -->
+    <section class="viz-row">
+      <Cartouche label="Featured visualisation — unidirectional state flow">
+        <div class="viz-header">
+          <h2 class="viz-title">Unidirectional State Flow</h2>
+          <p class="viz-caption">
+            Actions carry intent, the Store holds a single source of truth, and
+            the View reacts to selections. User events dispatch new Actions —
+            the cycle completes without side-channel mutations. Each mote
+            traces one state token around the loop.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <StateFlowViz client:load />
+        </div>
+        <div class="viz-legend">
+          {[
+            { color: '#d4b15e', label: 'action · intent token' },
+            { color: '#7aa3d4', label: 'state · select / event / create' },
           ].map(({ color, label }) => (
             <div class="legend-item">
               <span class="legend-dot" style={`background:${color}`}></span>
