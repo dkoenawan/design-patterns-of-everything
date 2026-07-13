@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../components/AtlasBackdrop';
 import Cartouche from '../components/Cartouche.astro';
 import ProfileSheet from '../components/ProfileSheet';
+import CareerTimelineViz from '../components/CareerTimelineViz';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -95,6 +96,22 @@ const principles = [
               <span class="cert-issued">{c.issued}</span>
             </div>
           ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Career trajectory ─────────────────────────────────── -->
+    <section class="timeline-row">
+      <Cartouche label="Career trajectory — observed path">
+        <div class="viz-header">
+          <h2 class="viz-title">Trajectory</h2>
+          <p class="viz-caption">
+            A decade of architecture work, charted as a star trail. Each node marks
+            a career inflection — role changes, certifications, and domain expansions.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <CareerTimelineViz client:visible />
         </div>
       </Cartouche>
     </section>
@@ -261,6 +278,31 @@ const principles = [
     letter-spacing: 1.5px;
     color: var(--ink-faint);
     margin-top: 4px;
+  }
+
+  /* ── Timeline viz ── */
+  .viz-header {
+    margin-bottom: 20px;
+  }
+
+  .viz-title {
+    font-size: 20px;
+    color: var(--ink-dim);
+    margin-bottom: 8px;
+  }
+
+  .viz-caption {
+    font-size: 14px;
+    color: var(--ink-dim);
+    line-height: 1.5;
+    max-width: 520px;
+    opacity: 0.75;
+  }
+
+  .viz-canvas {
+    width: 100%;
+    background: rgba(10, 14, 26, 0.45);
+    border: 0.5px solid var(--paper-border);
   }
 
   /* ── Footer row ── */
