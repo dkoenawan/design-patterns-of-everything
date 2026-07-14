@@ -51,6 +51,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-07-09 | StateFlowViz animated canvas on frontend domain page — four-node unidirectional state cycle (Action → Store → View → Dispatch → Action); gold motes for action tokens, blue motes for state flow. | c84ff3d |
 | 2026-07-10 | MicroservicesMeshViz animated canvas on infrastructure domain page — seven-node service mesh (API Gateway → Auth/Orders/Catalog → Notify/Payments → Data Store); Payments service in degraded state with circuit-breaker pulse, motes trace inter-service calls. | 79415f5 |
 | 2026-07-13 | CareerTimelineViz animated canvas on about page — horizontal 2015–2025 rail with six career milestone star-nodes (role changes + certifications); scanning comet triggers expanding ring pulses on each node as it passes; labels alternate above/below axis. | 7e6e4ca |
+| 2026-07-14 | SchemaValidationFlowViz animated canvas on data pipeline page — records approach a Schema Validator node, pause for a gold-ring pulse (validation event), then pass as green motes or deflect down to a reject bin tagged with the violation type (null ref, type mismatch, missing field). | 4de63fd |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
