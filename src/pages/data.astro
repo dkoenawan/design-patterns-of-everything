@@ -5,6 +5,7 @@ import Cartouche from '../components/Cartouche.astro';
 import DomainMiniMap from '../components/DomainMiniMap';
 import MedallionViz from '../components/MedallionViz';
 import BatchStreamViz from '../components/BatchStreamViz';
+import SchemaValidationFlowViz from '../components/SchemaValidationFlowViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
@@ -115,6 +116,37 @@ const domainPatterns = patterns.filter((p) => p.domain === 'data');
           {[
             { color: '#9ec48a', label: 'batch · windowed accumulation' },
             { color: '#d4b15e', label: 'stream · per-event flow' },
+          ].map(({ color, label }) => (
+            <div class="legend-item">
+              <span class="legend-dot" style={`background:${color}`}></span>
+              <span class="legend-text">{label}</span>
+            </div>
+          ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Schema Validation viz ────────────────────────────── -->
+    <section class="viz-row">
+      <Cartouche label="Featured visualisation — schema-driven validation flow">
+        <div class="viz-header">
+          <h2 class="viz-title">Schema-Driven Validation</h2>
+          <p class="viz-caption">
+            Each record passes through a schema validator before entering the
+            curated layer. Conforming records advance to the output; non-conforming
+            records are deflected and tagged with the violation — null reference,
+            type mismatch, missing field. The validator is the contract boundary.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <SchemaValidationFlowViz client:load />
+        </div>
+        <div class="viz-legend">
+          {[
+            { color: '#e8dcb8', label: 'record · approaching validator' },
+            { color: '#d4b15e', label: 'schema pulse · validation event' },
+            { color: '#9ec48a', label: 'pass · conforms to schema' },
+            { color: '#c46a55', label: 'reject · constraint violation' },
           ].map(({ color, label }) => (
             <div class="legend-item">
               <span class="legend-dot" style={`background:${color}`}></span>
