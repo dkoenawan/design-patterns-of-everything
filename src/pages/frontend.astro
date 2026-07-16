@@ -5,6 +5,7 @@ import Cartouche from '../components/Cartouche.astro';
 import DomainMiniMap from '../components/DomainMiniMap';
 import ComponentTreeViz from '../components/ComponentTreeViz';
 import StateFlowViz from '../components/StateFlowViz';
+import MicroFrontendViz from '../components/MicroFrontendViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
@@ -116,6 +117,36 @@ const domainPatterns = patterns.filter((p) => p.domain === 'frontend');
           {[
             { color: '#d4b15e', label: 'action · intent token' },
             { color: '#7aa3d4', label: 'state · select / event / create' },
+          ].map(({ color, label }) => (
+            <div class="legend-item">
+              <span class="legend-dot" style={`background:${color}`}></span>
+              <span class="legend-text">{label}</span>
+            </div>
+          ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Micro-frontend viz ───────────────────────────────────── -->
+    <section class="viz-row">
+      <Cartouche label="Featured visualisation — module federation topology">
+        <div class="viz-header">
+          <h2 class="viz-title">Micro-Frontend Federation</h2>
+          <p class="viz-caption">
+            Independent remote modules expose() their bundles; the Shell Host
+            consume()s them at runtime via Module Federation. Each mote traces
+            a federation token — remote to shell and the mount acknowledgement
+            back. Five remotes compose into one coherent application.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <MicroFrontendViz client:load />
+        </div>
+        <div class="viz-legend">
+          {[
+            { color: '#d4b15e', label: 'federation token · expose()' },
+            { color: '#7aa3d4', label: 'mount ack · consume()' },
+            { color: '#c8a4d4', label: 'remote module boundary' },
           ].map(({ color, label }) => (
             <div class="legend-item">
               <span class="legend-dot" style={`background:${color}`}></span>

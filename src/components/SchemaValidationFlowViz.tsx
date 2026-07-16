@@ -236,7 +236,7 @@ export default function SchemaValidationFlowViz() {
           x: sx(X_SOURCE + 10),
           y: sy(Y_PASS),
           targetY: sy(Y_PASS),
-          color: 'rgba(232,220,184,0.70)',
+          color: '#e8dcb8',
           alpha: 0,
           speed: sx(72 + Math.random() * 24),
           phase: 'approach',
