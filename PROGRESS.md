@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-07-15 by automated agent
+Last updated: 2026-07-16 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -53,6 +53,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-07-13 | CareerTimelineViz animated canvas on about page — horizontal 2015–2025 rail with six career milestone star-nodes (role changes + certifications); scanning comet triggers expanding ring pulses on each node as it passes; labels alternate above/below axis. | 7e6e4ca |
 | 2026-07-14 | SchemaValidationFlowViz animated canvas on data pipeline page — records approach a Schema Validator node, pause for a gold-ring pulse (validation event), then pass as green motes or deflect down to a reject bin tagged with the violation type (null ref, type mismatch, missing field). | 4de63fd |
 | 2026-07-15 | DependencyInjectionViz animated canvas on backend page — IoC container resolves deps and injects into OrderService; gold resolution tokens and blue injection calls trace container→service→dep→service with ring pulses on node arrival. Third viz on backend.astro. | cd2b53f |
+| 2026-07-16 | MicroFrontendViz animated canvas on frontend page — five remote modules expose() federation tokens to Shell Host; gold motes travel remote→shell with blue ring pulses on arrival, blue ack motes return with purple remote rings. Also fixes SchemaValidationFlowViz canvas color bug (rgba+hex suffix). | c105e5c |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
