@@ -6,6 +6,7 @@ import DomainMiniMap from '../components/DomainMiniMap';
 import MedallionViz from '../components/MedallionViz';
 import BatchStreamViz from '../components/BatchStreamViz';
 import SchemaValidationFlowViz from '../components/SchemaValidationFlowViz';
+import PureFunctionPipelineViz from '../components/PureFunctionPipelineViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
@@ -147,6 +148,40 @@ const domainPatterns = patterns.filter((p) => p.domain === 'data');
             { color: '#d4b15e', label: 'schema pulse · validation event' },
             { color: '#9ec48a', label: 'pass · conforms to schema' },
             { color: '#c46a55', label: 'reject · constraint violation' },
+          ].map(({ color, label }) => (
+            <div class="legend-item">
+              <span class="legend-dot" style={`background:${color}`}></span>
+              <span class="legend-text">{label}</span>
+            </div>
+          ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Pure function pipeline viz ─────────────────────────── -->
+    <section class="viz-row">
+      <Cartouche label="Featured visualisation — pure function composition pipeline">
+        <div class="viz-header">
+          <h2 class="viz-title">Pure Function Pipeline</h2>
+          <p class="viz-caption">
+            Each stage is a pure function: same input always yields the same output,
+            no hidden state, no side effects. Records flow Parse → Validate →
+            Normalize → Enrich → Aggregate. Non-conforming records are rejected at
+            Validate and deflect to the error bin — all other stages are guaranteed safe.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <PureFunctionPipelineViz client:load />
+        </div>
+        <div class="viz-legend">
+          {[
+            { color: '#e8dcb8', label: 'raw record · pre-parse' },
+            { color: '#7aa3d4', label: 'parsed · structured tokens extracted' },
+            { color: '#9ec48a', label: 'validated · schema conformant' },
+            { color: '#c8a4d4', label: 'normalized · canonical form' },
+            { color: '#d49a7a', label: 'enriched · context appended' },
+            { color: '#d4b15e', label: 'aggregated · curated output' },
+            { color: '#c46a55', label: 'rejected · constraint violation' },
           ].map(({ color, label }) => (
             <div class="legend-item">
               <span class="legend-dot" style={`background:${color}`}></span>
