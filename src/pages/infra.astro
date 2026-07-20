@@ -5,6 +5,7 @@ import Cartouche from '../components/Cartouche.astro';
 import DomainMiniMap from '../components/DomainMiniMap';
 import IaCPipelineViz from '../components/IaCPipelineViz';
 import MicroservicesMeshViz from '../components/MicroservicesMeshViz';
+import CICDPipelineViz from '../components/CICDPipelineViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
@@ -291,6 +292,38 @@ const domainPatterns = patterns.filter((p) => p.domain === 'infra');
             { color: '#c8a4d4', label: 'healthy service — nominal traffic' },
             { color: '#9ec48a', label: 'data store — persistent state boundary' },
             { color: '#d49a7a', label: 'degraded service — circuit breaker active' },
+          ].map(({ color, label }) => (
+            <div class="legend-item">
+              <span class="legend-dot" style={`background:${color}`}></span>
+              <span class="legend-text">{label}</span>
+            </div>
+          ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── CI/CD pipeline animated visualisation ───────────────── -->
+    <section class="viz-row">
+      <Cartouche label="Featured visualisation — ci/cd delivery pipeline &amp; quality gates">
+        <div class="viz-header">
+          <h2 class="viz-title">CI/CD Delivery Pipeline</h2>
+          <p class="viz-caption">
+            Every commit flows through six quality gates: Source → Build → Test →
+            Security Scan → Deploy → Health Check. Approximately one in five
+            artifacts fails the Test gate — these bounce down to a retry lane,
+            returning to Build before attempting the gate again. A green pulse
+            marks each successful health check.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <CICDPipelineViz client:load />
+        </div>
+        <div class="viz-legend">
+          {[
+            { color: '#c8a4d4', label: 'artifact · moving through pipeline stages' },
+            { color: '#9ec48a', label: 'health check · successful deploy' },
+            { color: '#d49a7a', label: 'test gate failure · deflected to retry' },
+            { color: '#d4b15e', label: 'retry token · returns via build lane' },
           ].map(({ color, label }) => (
             <div class="legend-item">
               <span class="legend-dot" style={`background:${color}`}></span>
