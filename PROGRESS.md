@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-07-17 by automated agent
+Last updated: 2026-07-20 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -55,6 +55,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-07-15 | DependencyInjectionViz animated canvas on backend page — IoC container resolves deps and injects into OrderService; gold resolution tokens and blue injection calls trace container→service→dep→service with ring pulses on node arrival. Third viz on backend.astro. | cd2b53f |
 | 2026-07-16 | MicroFrontendViz animated canvas on frontend page — five remote modules expose() federation tokens to Shell Host; gold motes travel remote→shell with blue ring pulses on arrival, blue ack motes return with purple remote rings. Also fixes SchemaValidationFlowViz canvas color bug (rgba+hex suffix). | c105e5c |
 | 2026-07-17 | PureFunctionPipelineViz animated canvas on data pipeline page — five-stage pure function pipeline (Parse→Validate→Normalize→Enrich→Aggregate); motes change color at each stage, every 4th record rejected at Validate with deflection to error bin. Fourth viz on data.astro. | e9b36bd |
+| 2026-07-20 | CICDPipelineViz animated canvas on infrastructure page — six-stage CI/CD pipeline (Source→Build→Test→Scan→Deploy→Health); ~20% of artifacts fail Test gate and bounce to a retry lane back through Build before re-attempting; green ring pulse on successful Health check. Fourth viz on infra.astro. | 0886d29 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
