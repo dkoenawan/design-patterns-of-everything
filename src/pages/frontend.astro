@@ -6,6 +6,7 @@ import DomainMiniMap from '../components/DomainMiniMap';
 import ComponentTreeViz from '../components/ComponentTreeViz';
 import StateFlowViz from '../components/StateFlowViz';
 import MicroFrontendViz from '../components/MicroFrontendViz';
+import RenderCycleViz from '../components/RenderCycleViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
@@ -147,6 +148,38 @@ const domainPatterns = patterns.filter((p) => p.domain === 'frontend');
             { color: '#d4b15e', label: 'federation token · expose()' },
             { color: '#7aa3d4', label: 'mount ack · consume()' },
             { color: '#c8a4d4', label: 'remote module boundary' },
+          ].map(({ color, label }) => (
+            <div class="legend-item">
+              <span class="legend-dot" style={`background:${color}`}></span>
+              <span class="legend-text">{label}</span>
+            </div>
+          ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Render lifecycle viz ───────────────────────────────── -->
+    <section class="viz-row">
+      <Cartouche label="Featured visualisation — component render lifecycle">
+        <div class="viz-header">
+          <h2 class="viz-title">Component Render Lifecycle</h2>
+          <p class="viz-caption">
+            Every component traverses Render → Commit → Mount before entering
+            steady state. State changes trigger the Update diff and a new Render
+            pass — the loop arc. When removed from the tree, Unmount runs
+            teardown effects. Each mote traces one lifecycle token through the
+            pipeline; gold motes arc back through re-render cycles.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <RenderCycleViz client:load />
+        </div>
+        <div class="viz-legend">
+          {[
+            { color: '#7aa3d4', label: 'render · virtual dom diffing' },
+            { color: '#d4b15e', label: 'commit · dom patch + re-render arc' },
+            { color: '#9ec48a', label: 'mount · effects run' },
+            { color: '#d49a7a', label: 'unmount · teardown & cleanup' },
           ].map(({ color, label }) => (
             <div class="legend-item">
               <span class="legend-dot" style={`background:${color}`}></span>
