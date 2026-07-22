@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-07-21 by automated agent
+Last updated: 2026-07-22 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -57,6 +57,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-07-17 | PureFunctionPipelineViz animated canvas on data pipeline page — five-stage pure function pipeline (Parse→Validate→Normalize→Enrich→Aggregate); motes change color at each stage, every 4th record rejected at Validate with deflection to error bin. Fourth viz on data.astro. | e9b36bd |
 | 2026-07-20 | CICDPipelineViz animated canvas on infrastructure page — six-stage CI/CD pipeline (Source→Build→Test→Scan→Deploy→Health); ~20% of artifacts fail Test gate and bounce to a retry lane back through Build before re-attempting; green ring pulse on successful Health check. Fourth viz on infra.astro. | 0886d29 |
 | 2026-07-21 | RenderCycleViz animated canvas on frontend page — five-stage lifecycle pipeline (Render→Commit→Mount→Update→Unmount); gold motes arc back via quadratic bezier re-render loop on state change; ring pulses on node arrival, phase sub-labels (virtual DOM / DOM patch / effects / diff / teardown). Fourth viz on frontend.astro. | c969b12 |
+| 2026-07-22 | StrategyPatternViz animated canvas on backend page — four ShippingStrategy implementations (Standard/Express/Overnight/Economy) rotate as active injection every 3 s; gold motes flow Client→Context then redirect to active strategy with ring pulse on arrival and return as ack mote. Fifth viz on backend.astro. | 275459e |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
