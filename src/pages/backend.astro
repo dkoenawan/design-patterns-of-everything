@@ -5,6 +5,7 @@ import Cartouche from '../components/Cartouche.astro';
 import DomainMiniMap from '../components/DomainMiniMap';
 import CQRSFlowViz from '../components/CQRSFlowViz';
 import DependencyInjectionViz from '../components/DependencyInjectionViz';
+import StrategyPatternViz from '../components/StrategyPatternViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
@@ -242,6 +243,38 @@ const domainPatterns = patterns.filter((p) => p.domain === 'backend');
             { color: '#d49a7a', label: 'container → service · resolution token' },
             { color: '#7aa3d4', label: 'service → dependency · injection call' },
             { color: '#d4b15e', label: 'ring pulse · wiring confirmed' },
+          ].map(({ color, label }) => (
+            <div class="legend-item">
+              <span class="legend-dot" style={`background:${color}`}></span>
+              <span class="legend-text">{label}</span>
+            </div>
+          ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Strategy pattern viz ─────────────────────────────── -->
+    <section class="viz-row">
+      <Cartouche label="Featured visualisation — strategy pattern &amp; runtime delegation">
+        <div class="viz-header">
+          <h2 class="viz-title">Runtime Strategy Selection</h2>
+          <p class="viz-caption">
+            OrderService invokes Checkout with a request. The context delegates
+            to whichever ShippingStrategy is currently injected — Standard,
+            Express, Overnight, or Economy — then returns the result. The
+            strategy rotates every few seconds, showing how behaviour changes
+            without modifying the calling code.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <StrategyPatternViz client:load />
+        </div>
+        <div class="viz-legend">
+          {[
+            { color: '#d4b15e', label: 'request token — client → context' },
+            { color: '#7aa3d4', label: 'standard / economy strategy active' },
+            { color: '#d49a7a', label: 'express strategy active' },
+            { color: '#c8a4d4', label: 'overnight strategy active' },
           ].map(({ color, label }) => (
             <div class="legend-item">
               <span class="legend-dot" style={`background:${color}`}></span>
