@@ -6,6 +6,7 @@ import DomainMiniMap from '../components/DomainMiniMap';
 import IaCPipelineViz from '../components/IaCPipelineViz';
 import MicroservicesMeshViz from '../components/MicroservicesMeshViz';
 import CICDPipelineViz from '../components/CICDPipelineViz';
+import GitOpsReconciliationViz from '../components/GitOpsReconciliationViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
@@ -324,6 +325,38 @@ const domainPatterns = patterns.filter((p) => p.domain === 'infra');
             { color: '#9ec48a', label: 'health check · successful deploy' },
             { color: '#d49a7a', label: 'test gate failure · deflected to retry' },
             { color: '#d4b15e', label: 'retry token · returns via build lane' },
+          ].map(({ color, label }) => (
+            <div class="legend-item">
+              <span class="legend-dot" style={`background:${color}`}></span>
+              <span class="legend-text">{label}</span>
+            </div>
+          ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── GitOps reconciliation animated visualisation ─────────── -->
+    <section class="viz-row">
+      <Cartouche label="Featured visualisation — gitops reconciliation loop">
+        <div class="viz-header">
+          <h2 class="viz-title">GitOps Reconciliation</h2>
+          <p class="viz-caption">
+            The operator polls the Git repository as the single source of truth.
+            Commit tokens flow Git Repo → Operator → Apply → Cluster → Drift Check.
+            When drift is detected — actual state diverging from desired — the mote
+            deflects down the reconciliation lane back to the operator, which re-applies
+            until the cluster converges. Convergence emits a green pulse.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <GitOpsReconciliationViz client:load />
+        </div>
+        <div class="viz-legend">
+          {[
+            { color: '#d4b15e', label: 'commit token — desired state from git repo' },
+            { color: '#c8a4d4', label: 'apply — k8s manifest propagating to cluster' },
+            { color: '#9ec48a', label: 'converged — actual state matches desired' },
+            { color: '#d49a7a', label: 'drift detected — reconciliation loop triggered' },
           ].map(({ color, label }) => (
             <div class="legend-item">
               <span class="legend-dot" style={`background:${color}`}></span>
