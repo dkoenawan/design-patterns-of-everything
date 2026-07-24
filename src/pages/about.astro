@@ -4,6 +4,7 @@ import AtlasBackdrop from '../components/AtlasBackdrop';
 import Cartouche from '../components/Cartouche.astro';
 import ProfileSheet from '../components/ProfileSheet';
 import CareerTimelineViz from '../components/CareerTimelineViz';
+import DomainRadarViz from '../components/DomainRadarViz';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -66,6 +67,36 @@ const principles = [
           domains={domains}
           base={base}
         />
+      </Cartouche>
+    </section>
+
+    <!-- ── Domain radar visualisation ───────────────────────── -->
+    <section class="radar-row">
+      <Cartouche label="Domain proficiency — radar chart">
+        <div class="viz-header">
+          <h2 class="viz-title">Architecture Radar</h2>
+          <p class="viz-caption">
+            Relative depth across the four architecture domains, mapped as a
+            celestial radar. The scanner sweeps continuously; vertex nodes mark
+            measured proficiency. Each axis is anchored by years of hands-on work.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <DomainRadarViz client:visible />
+        </div>
+        <div class="viz-legend">
+          {[
+            { color: '#d49a7a', label: 'backend architecture · 8 years' },
+            { color: '#c8a4d4', label: 'infrastructure & platform · 7 years' },
+            { color: '#9ec48a', label: 'data pipeline architecture · 6 years' },
+            { color: '#7aa3d4', label: 'frontend architecture · 5 years' },
+          ].map(({ color, label }) => (
+            <div class="legend-item">
+              <span class="legend-dot" style={`background:${color}`}></span>
+              <span class="legend-text">{label}</span>
+            </div>
+          ))}
+        </div>
       </Cartouche>
     </section>
 
@@ -197,6 +228,62 @@ const principles = [
     font-size: 22px;
     color: var(--ink-dim);
     margin-bottom: 24px;
+  }
+
+  /* ── Radar viz ── */
+  .viz-header {
+    margin-bottom: 20px;
+  }
+
+  .viz-title {
+    font-size: 20px;
+    color: var(--ink-dim);
+    margin-bottom: 8px;
+  }
+
+  .viz-caption {
+    font-size: 14px;
+    color: var(--ink-dim);
+    line-height: 1.5;
+    max-width: 520px;
+    opacity: 0.75;
+  }
+
+  .viz-canvas {
+    width: 100%;
+    background: rgba(10, 14, 26, 0.45);
+    border: 0.5px solid var(--paper-border);
+  }
+
+  .viz-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 0.5px solid var(--line-faint);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .legend-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-text {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
   }
 
   /* ── Principles ── */
