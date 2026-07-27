@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-07-24 by automated agent
+Last updated: 2026-07-27 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -60,6 +60,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-07-22 | StrategyPatternViz animated canvas on backend page — four ShippingStrategy implementations (Standard/Express/Overnight/Economy) rotate as active injection every 3 s; gold motes flow Client→Context then redirect to active strategy with ring pulse on arrival and return as ack mote. Fifth viz on backend.astro. | 275459e |
 | 2026-07-23 | GitOpsReconciliationViz animated canvas on infrastructure page — five-node GitOps loop (Git Repo → Operator → Apply → Cluster → Drift Check); gold commit tokens advance through the cycle, drift motes deflect down a U-turn return lane back to the Operator for re-apply, converged motes emit a green ring pulse. Fourth animated viz on infra.astro. | 26c2833 |
 | 2026-07-24 | DomainRadarViz animated canvas on about page — four-axis radar chart (Backend/Infra/Data/Frontend); scanning gold sweep, animated fill draw-in from zero, pulsing domain vertex nodes in domain tints, 33%/66% ring grid, percentage labels that count up as the fill draws in. | 49cd7f9 |
+| 2026-07-27 | EventDrivenViz animated canvas on backend page — pub/sub event bus topology: three producers (OrderSvc/InventorySvc/PaymentSvc) emit domain events onto a vertical bus; motes route along the bus to matching subscribers (NotifySvc/WarehouseSvc/AuditSvc/BillingSvc) with ring pulses on delivery. Sixth viz on backend.astro. | 2b0eae5 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
