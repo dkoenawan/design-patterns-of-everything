@@ -6,6 +6,7 @@ import DomainMiniMap from '../components/DomainMiniMap';
 import CQRSFlowViz from '../components/CQRSFlowViz';
 import DependencyInjectionViz from '../components/DependencyInjectionViz';
 import StrategyPatternViz from '../components/StrategyPatternViz';
+import EventDrivenViz from '../components/EventDrivenViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
@@ -275,6 +276,38 @@ const domainPatterns = patterns.filter((p) => p.domain === 'backend');
             { color: '#7aa3d4', label: 'standard / economy strategy active' },
             { color: '#d49a7a', label: 'express strategy active' },
             { color: '#c8a4d4', label: 'overnight strategy active' },
+          ].map(({ color, label }) => (
+            <div class="legend-item">
+              <span class="legend-dot" style={`background:${color}`}></span>
+              <span class="legend-text">{label}</span>
+            </div>
+          ))}
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Event-driven architecture viz ───────────────────────── -->
+    <section class="viz-row">
+      <Cartouche label="Featured visualisation — event-driven architecture &amp; pub/sub topology">
+        <div class="viz-header">
+          <h2 class="viz-title">Event Bus Topology</h2>
+          <p class="viz-caption">
+            Producers emit domain events onto a shared bus; subscribers receive
+            only the events they declare interest in. OrderSvc, InventorySvc, and
+            PaymentSvc publish independently — the bus routes to AuditSvc (all),
+            WarehouseSvc (orders + stock), NotifySvc (orders), and BillingSvc (payments).
+            No producer knows its consumers.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <EventDrivenViz client:load />
+        </div>
+        <div class="viz-legend">
+          {[
+            { color: '#d49a7a', label: 'order.placed · OrderSvc → NotifySvc, WarehouseSvc, AuditSvc' },
+            { color: '#9ec48a', label: 'stock.updated · InventorySvc → WarehouseSvc, AuditSvc' },
+            { color: '#c8a4d4', label: 'payment.done · PaymentSvc → BillingSvc, AuditSvc' },
+            { color: '#d4b15e', label: 'event bus · pub/sub routing layer' },
           ].map(({ color, label }) => (
             <div class="legend-item">
               <span class="legend-dot" style={`background:${color}`}></span>
