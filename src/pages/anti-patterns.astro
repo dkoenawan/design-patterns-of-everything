@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../components/AtlasBackdrop';
 import Cartouche from '../components/Cartouche.astro';
+import BlastRadiusViz from '../components/BlastRadiusViz';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -140,6 +141,23 @@ const severityDots = (s: number) =>
               </div>
             </div>
           </div>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Blast radius visualisation ──────────────────────────── -->
+    <section class="radar-row">
+      <Cartouche label="Hazard field — severity by proximity">
+        <div class="viz-header">
+          <h2 class="viz-title">Blast Radius</h2>
+          <p class="viz-caption">
+            Each hazard plotted by severity: the closer to the core, the greater
+            the blast radius and recovery cost. A shockwave sweeps outward on a
+            continuous cycle as a reminder that these failure modes propagate.
+          </p>
+        </div>
+        <div class="viz-canvas">
+          <BlastRadiusViz client:visible />
         </div>
       </Cartouche>
     </section>
@@ -312,6 +330,31 @@ const severityDots = (s: number) =>
     .page-title {
       font-size: 38px;
     }
+  }
+
+  /* ── Blast radius viz ── */
+  .viz-header {
+    margin-bottom: 20px;
+  }
+
+  .viz-title {
+    font-size: 20px;
+    color: var(--ink-dim);
+    margin-bottom: 8px;
+  }
+
+  .viz-caption {
+    font-size: 14px;
+    color: var(--ink-dim);
+    line-height: 1.5;
+    max-width: 540px;
+    opacity: 0.75;
+  }
+
+  .viz-canvas {
+    width: 100%;
+    background: rgba(10, 14, 26, 0.45);
+    border: 0.5px solid var(--paper-border);
   }
 
   /* ── Entry ── */
