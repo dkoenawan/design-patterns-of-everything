@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../../components/AtlasBackdrop';
 import Cartouche from '../../components/Cartouche.astro';
+import TerraformConvergenceViz from '../../components/TerraformConvergenceViz';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
@@ -398,6 +399,15 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
               review in CI. No engineer could modify a security group, subnet, or IAM role
               outside source control. Drift detection ran nightly and opened a ticket on
               any discrepancy.
+            </p>
+
+            <div class="viz-frame">
+              <TerraformConvergenceViz client:only="react" />
+            </div>
+            <p class="diagram-caption viz-caption">
+              Declared state flows Git Repo → Terraform Plan → Cluster; the nightly drift
+              check evaluates each node and reconciles a fraction back to the repo boundary
+              for re-apply — convergence enforced continuously, not just at deploy time.
             </p>
 
             <h2 class="section-heading">Phase 2: Containerisation (Weeks 5–10)</h2>
@@ -846,6 +856,19 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     background: rgba(200, 164, 212, 0.08);
     padding: 1px 5px;
     border: 0.5px solid rgba(200, 164, 212, 0.2);
+  }
+
+  .viz-frame {
+    border: 0.5px solid var(--line-faint);
+    background: rgba(10, 14, 26, 0.4);
+    margin: 20px 0 10px;
+    padding: 8px;
+  }
+
+  .viz-caption {
+    margin-top: 0;
+    margin-bottom: 20px;
+    max-width: 100%;
   }
 
   /* ── Results ── */
