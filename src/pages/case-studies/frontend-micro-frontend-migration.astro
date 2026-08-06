@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../../components/AtlasBackdrop';
 import Cartouche from '../../components/Cartouche.astro';
+import TrafficCutoverViz from '../../components/TrafficCutoverViz';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
@@ -457,6 +458,16 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
               Zero coordination required for independent domains.
             </p>
 
+            <div class="viz-frame">
+              <TrafficCutoverViz client:only="react" />
+            </div>
+            <p class="diagram-caption viz-caption">
+              Client requests pass through a DNS weight gate at the shell boundary; the
+              MFE share climbs from 5% to 100% over each domain's rollout window while
+              the monolith continues serving the remainder — rollback is a single weight
+              change, not a redeploy.
+            </p>
+
             <h2 class="section-heading">Eliminating Prop Drilling</h2>
             <p>
               The session object had been threaded through eleven component layers
@@ -866,6 +877,19 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     font-style: italic;
     color: var(--ink-dim);
     line-height: 1.6;
+  }
+
+  .viz-frame {
+    border: 0.5px solid var(--line-faint);
+    background: rgba(10, 14, 26, 0.4);
+    margin: 20px 0 10px;
+    padding: 8px;
+  }
+
+  .viz-caption {
+    margin-top: 0;
+    margin-bottom: 20px;
+    max-width: 100%;
   }
 
   /* ── Code ── */
