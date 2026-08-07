@@ -4,7 +4,7 @@ domain: backend
 complexity: advanced
 tags: [ports-and-adapters, clean-architecture, testability, decoupling]
 summary: "Isolate application core logic from external dependencies using ports and adapters"
-draft: true
+draft: false
 ---
 
 ## Summary
@@ -36,6 +36,46 @@ Define the application core as a set of **ports** — interfaces that describe w
 ```
 
 The core contains use cases and domain logic. It never imports adapters. Adapters import the core and implement or call its ports.
+
+```typescript
+// Secondary port — defined by the core, implemented by an adapter
+interface OrderRepository {
+  save(order: Order): Promise<void>;
+  findById(id: string): Promise<Order | null>;
+}
+
+// Application core — depends only on the port interface
+class PlaceOrderUseCase {
+  constructor(private readonly orders: OrderRepository) {}
+
+  async execute(cmd: PlaceOrderCommand): Promise<void> {
+    const order = Order.create(cmd.items, cmd.customerId);
+    await this.orders.save(order);
+  }
+}
+
+// Adapter — implements the port, owns the infrastructure detail
+class PostgresOrderRepository implements OrderRepository {
+  constructor(private readonly db: Pool) {}
+
+  async save(order: Order): Promise<void> {
+    await this.db.query(
+      `INSERT INTO orders (id, customer_id, items) VALUES ($1, $2, $3)`,
+      [order.id, order.customerId, JSON.stringify(order.items)]
+    );
+  }
+
+  async findById(id: string): Promise<Order | null> {
+    const row = await this.db.query(`SELECT * FROM orders WHERE id = $1`, [id]);
+    return row ? Order.fromRow(row) : null;
+  }
+}
+
+// Wiring — swapping to an in-memory adapter for tests requires no core changes
+const useCase = new PlaceOrderUseCase(new InMemoryOrderRepository());
+```
+
+`PlaceOrderUseCase` never references Postgres. A test suite can inject `InMemoryOrderRepository` and exercise the same domain logic with zero infrastructure.
 
 ## When to Use
 
