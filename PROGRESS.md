@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-08-07 by automated agent
+Last updated: 2026-08-10 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -67,6 +67,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-08-05 | TerraformConvergenceViz animated canvas on Infrastructure Platform Migration case study — third visualization on a case study page; illustrates the GitOps convergence loop (Git Repo → Terraform Plan → Cluster) with a nightly drift-check gate, ~22% of nodes reconciled back to the repo boundary via a return loop, live converged-percentage readout. | 9ecb8c6 |
 | 2026-08-06 | TrafficCutoverViz animated canvas on Micro-Frontend Migration case study — fourth and final case study to get a visualization, completing coverage across all four case studies. Illustrates the progressive DNS-weighted traffic cutover between the legacy monolith and Payments MFE (5% → 100% share ramp), live weight readout and routing bar. | 093a84f |
 | 2026-08-07 | Added TypeScript code example to Hexagonal Architecture pattern (docs/patterns/backend/hexagonal-architecture.mdx) — brings it in line with CQRS/Dependency Injection depth; also flipped stale `draft: true` to `draft: false`. | 069b9f7 |
+| 2026-08-10 | Flipped stale `draft: true` → `draft: false` on the remaining 9 fully-written patterns (dependency-injection, strategy-pattern, composition-over-inheritance, single-responsibility, medallion-architecture, pure-functions, schema-driven-validation, docker-port-mapping, multi-database-orchestration) — all 16 patterns are now consistently marked non-draft. | PENDING |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
