@@ -40,6 +40,70 @@ Source Systems
 - **Silver**: Apply schema validation, deduplication, type casting, and referential joins. One record = one business entity.
 - **Gold**: Aggregate, denormalize, and shape data for specific analytical or operational consumers.
 
+```typescript
+// Bronze — raw ingestion, schema-on-read, no transformation
+interface BronzeOrderEvent {
+  raw: Record<string, unknown>;
+  ingestedAt: Date;
+  sourceFile: string;
+}
+
+async function ingestToBronze(events: unknown[], sourceFile: string): Promise<BronzeOrderEvent[]> {
+  return events.map((raw) => ({
+    raw: raw as Record<string, unknown>,
+    ingestedAt: new Date(),
+    sourceFile,
+  }));
+}
+
+// Silver — cleansed, typed, deduped. One record = one Order.
+interface SilverOrder {
+  orderId: string;
+  customerId: string;
+  total: number;
+  placedAt: Date;
+}
+
+function promoteToSilver(bronze: BronzeOrderEvent[]): SilverOrder[] {
+  const seen = new Set<string>();
+  return bronze
+    .filter((b) => typeof b.raw.order_id === "string" && typeof b.raw.total === "number")
+    .filter((b) => {
+      const id = b.raw.order_id as string;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    })
+    .map((b) => ({
+      orderId: b.raw.order_id as string,
+      customerId: b.raw.customer_id as string,
+      total: b.raw.total as number,
+      placedAt: new Date(b.raw.placed_at as string),
+    }));
+}
+
+// Gold — business aggregate, query-optimized for a specific consumer
+interface GoldDailyRevenue {
+  date: string;
+  orderCount: number;
+  totalRevenue: number;
+}
+
+function aggregateToGold(silver: SilverOrder[]): GoldDailyRevenue[] {
+  const byDate = new Map<string, GoldDailyRevenue>();
+  for (const order of silver) {
+    const date = order.placedAt.toISOString().slice(0, 10);
+    const bucket = byDate.get(date) ?? { date, orderCount: 0, totalRevenue: 0 };
+    bucket.orderCount += 1;
+    bucket.totalRevenue += order.total;
+    byDate.set(date, bucket);
+  }
+  return [...byDate.values()];
+}
+```
+
+Each function is pure and stage-specific: `promoteToSilver` never reaches into a database, and `aggregateToGold` never re-parses raw fields. A failure in `aggregateToGold` never corrupts Bronze — the run can be retried from the Silver snapshot without re-ingesting the source.
+
 ## When to Use
 
 - Data lakehouses built on Delta Lake, Apache Iceberg, or similar open table formats
