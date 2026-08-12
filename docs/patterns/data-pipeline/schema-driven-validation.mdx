@@ -39,6 +39,44 @@ validated_df = order_schema.validate(raw_df)  # raises SchemaError on failure
 
 Schemas serve as living documentation of data contracts. They can be versioned, shared with upstream teams, and used to generate synthetic test data.
 
+The same declarative approach applies in TypeScript pipelines, where a schema library like Zod replaces scattered `if` checks with a single parseable contract:
+
+```typescript
+import { z } from "zod";
+
+const OrderSchema = z.object({
+  orderId: z.string().uuid(),
+  total: z.number().positive(),
+  status: z.enum(["pending", "complete", "cancelled"]),
+  createdAt: z.coerce.date(),
+});
+
+type Order = z.infer<typeof OrderSchema>;
+
+interface ValidationResult {
+  valid: Order[];
+  rejected: { record: unknown; reason: string }[];
+}
+
+function validateBatch(records: unknown[]): ValidationResult {
+  const valid: Order[] = [];
+  const rejected: ValidationResult["rejected"] = [];
+
+  for (const record of records) {
+    const result = OrderSchema.safeParse(record);
+    if (result.success) {
+      valid.push(result.data);
+    } else {
+      rejected.push({ record, reason: result.error.issues[0]?.message ?? "invalid" });
+    }
+  }
+
+  return { valid, rejected };
+}
+```
+
+`OrderSchema` is the single source of truth: the type `Order` is inferred from it rather than kept in sync by hand, and `safeParse` turns validation into a data transformation — bad records are routed to `rejected` instead of throwing mid-pipeline.
+
 ## When to Use
 
 - Bronze-to-Silver transitions in a Medallion Architecture — validate before promoting data
