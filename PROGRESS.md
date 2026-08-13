@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-08-12 by automated agent
+Last updated: 2026-08-13 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -70,6 +70,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-08-10 | Flipped stale `draft: true` → `draft: false` on the remaining 9 fully-written patterns (dependency-injection, strategy-pattern, composition-over-inheritance, single-responsibility, medallion-architecture, pure-functions, schema-driven-validation, docker-port-mapping, multi-database-orchestration) — all 16 patterns are now consistently marked non-draft. | 7f19340 |
 | 2026-08-11 | Added TypeScript code example to Medallion Architecture pattern (docs/patterns/data-pipeline/medallion-architecture.mdx) — Bronze→Silver→Gold pipeline (ingestToBronze/promoteToSilver/aggregateToGold) illustrating pure, stage-isolated transforms; brings it in line with CQRS/Hexagonal/Batch-vs-Streaming code-example depth. | f1b208b |
 | 2026-08-12 | Added TypeScript code example to Schema-Driven Validation pattern (docs/patterns/data-pipeline/schema-driven-validation.mdx) — Zod-based OrderSchema with safeParse batch validation (valid/rejected split), complementing the existing Python/Pandera example. | 8d63bbe |
+| 2026-08-13 | Added Python code example to Strategy Pattern (docs/patterns/backend/strategy-pattern.mdx) — Protocol-based ShippingStrategy with structural typing, complementing the existing TypeScript interface example. | PENDING |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro

@@ -47,6 +47,36 @@ class OrderService {
 
 Strategies are swapped via constructor injection or a setter. The context code never changes when new strategies are added.
 
+The same shape holds in Python, using `Protocol` for the interface and constructor injection for the swap:
+
+```python
+from typing import Protocol
+
+class ShippingStrategy(Protocol):
+    def calculate_cost(self, order: "Order") -> float: ...
+
+class StandardShipping:
+    def calculate_cost(self, order: "Order") -> float:
+        return order.weight * 2.5
+
+class ExpressShipping:
+    def calculate_cost(self, order: "Order") -> float:
+        return order.weight * 5.0 + 10
+
+class OrderService:
+    def __init__(self, shipping: ShippingStrategy):
+        self._shipping = shipping
+
+    def get_total(self, order: "Order") -> float:
+        return order.subtotal + self._shipping.calculate_cost(order)
+
+# Swap strategies without touching OrderService
+standard_total = OrderService(StandardShipping()).get_total(order)
+express_total = OrderService(ExpressShipping()).get_total(order)
+```
+
+`Protocol` gives structural typing — any class with a matching `calculate_cost` method satisfies `ShippingStrategy`, with no explicit inheritance required.
+
 ## When to Use
 
 - Multiple variants of an algorithm that need to be selected at runtime or configuration time
