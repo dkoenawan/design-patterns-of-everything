@@ -50,6 +50,40 @@ class FlyingFish {
 
 Each capability is a focused, independently testable unit. `FlyingFish` can combine them without inheriting from either.
 
+The same shape holds in Python, using composition instead of a multiple-inheritance chain:
+
+```python
+# Inheritance — rigid, coupled
+class FlyingFishAnimal(SwimmingAnimal):
+    # forced to pick one base; flying behavior must be duplicated or hacked in
+    pass
+
+# Composition — flexible, explicit
+class Swimmer:
+    def swim(self) -> None:
+        print("swimming")
+
+class Flier:
+    def fly(self) -> None:
+        print("flying")
+
+class FlyingFish:
+    def __init__(self, swimmer: Swimmer, flier: Flier):
+        self._swimmer = swimmer
+        self._flier = flier
+
+    def swim(self) -> None:
+        self._swimmer.swim()
+
+    def fly(self) -> None:
+        self._flier.fly()
+
+# FlyingFish combines both capabilities without extending either class
+flying_fish = FlyingFish(Swimmer(), Flier())
+```
+
+Python's multiple inheritance can approximate composition via mixins, but it reintroduces the fragile base class problem the moment two mixins share a method name. Explicit composition avoids the ambiguity entirely — `FlyingFish` owns its collaborators rather than merging their namespaces.
+
 ## When to Use
 
 - When behavior needs to be reused across classes that don't share a meaningful "is-a" relationship
