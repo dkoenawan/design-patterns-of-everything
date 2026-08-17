@@ -72,7 +72,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-08-12 | Added TypeScript code example to Schema-Driven Validation pattern (docs/patterns/data-pipeline/schema-driven-validation.mdx) — Zod-based OrderSchema with safeParse batch validation (valid/rejected split), complementing the existing Python/Pandera example. | 8d63bbe |
 | 2026-08-13 | Added Python code example to Strategy Pattern (docs/patterns/backend/strategy-pattern.mdx) — Protocol-based ShippingStrategy with structural typing, complementing the existing TypeScript interface example. | bf4b84c |
 | 2026-08-14 | Added Python code example to Composition Over Inheritance (docs/patterns/cross-domain/composition-over-inheritance.mdx) — Swimmer/Flier composed collaborators contrasted with a Python multiple-inheritance mixin caveat, complementing the existing TypeScript example. | 6ce342c |
-| 2026-08-17 | Added Python code example to Single Responsibility Principle (docs/patterns/cross-domain/single-responsibility.mdx) — same UserService before/after split rendered in Python, complementing the existing TypeScript example. | PENDING |
+| 2026-08-17 | Added Python code example to Single Responsibility Principle (docs/patterns/cross-domain/single-responsibility.mdx) — same UserService before/after split rendered in Python, complementing the existing TypeScript example. | a51cbf2 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
