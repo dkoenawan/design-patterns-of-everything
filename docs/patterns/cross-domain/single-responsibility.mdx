@@ -41,6 +41,31 @@ class AuditService     { logEvent(user, action) { ... } }
 
 Each service can now evolve, be tested, and be deployed independently.
 
+The same split holds regardless of language — here it is in Python, where the "and" in a class name is just as reliable a smell:
+
+```python
+# Too many responsibilities
+class UserService:
+    def authenticate(self, credentials): ...
+    def update_profile(self, user, data): ...
+    def send_welcome_email(self, user): ...   # email concern
+    def log_audit_event(self, user, action): ...  # audit concern
+
+
+# Separated responsibilities
+class AuthService:
+    def authenticate(self, credentials): ...
+
+class UserProfileService:
+    def update_profile(self, user, data): ...
+
+class EmailService:
+    def send_welcome_email(self, user): ...
+
+class AuditService:
+    def log_event(self, user, action): ...
+```
+
 ## When to Use
 
 - Any class that is difficult to name without using "and" (e.g., `UserAuthAndNotificationService`)
