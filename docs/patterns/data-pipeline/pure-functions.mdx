@@ -42,6 +42,34 @@ write_orders(conn, high_value)
 
 The transformation `filter_high_value` is trivially unit-testable, composable, and deterministic.
 
+The same separation holds in TypeScript pipelines: the transformation takes plain data and returns plain data, with I/O pushed to the caller.
+
+```typescript
+interface Order {
+  id: string;
+  total: number;
+}
+
+// Impure — reads and writes mixed with logic
+async function processOrders(db: Database): Promise<void> {
+  const orders = await db.query<Order>("SELECT * FROM orders");
+  const result = orders.filter((o) => o.total > 100);
+  await db.execute("INSERT INTO high_value_orders VALUES ...", result);
+}
+
+// Pure — just the transformation
+function filterHighValue(orders: Order[], threshold: number): Order[] {
+  return orders.filter((o) => o.total > threshold);
+}
+
+// I/O happens at the boundary, separately
+const orders = await readOrders(db);
+const highValue = filterHighValue(orders, 100.0);
+await writeOrders(db, highValue);
+```
+
+`filterHighValue` takes no `db`, no `Date.now()`, no ambient state — every unit test supplies fixtures directly and asserts on the return value, with no mocks or fakes required.
+
 ## When to Use
 
 - Any data transformation logic: filtering, mapping, aggregating, joining, reshaping
