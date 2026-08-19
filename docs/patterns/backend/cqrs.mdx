@@ -64,6 +64,36 @@ class OrderSummaryQuery {
 }
 ```
 
+The same split holds in Python, with the command handler enforcing invariants and the query handler reading straight from a denormalized store:
+
+```python
+# Command side — enforces invariants
+class PlaceOrderHandler:
+    def __init__(self, cart_repo, order_repo, event_bus):
+        self._cart_repo = cart_repo
+        self._order_repo = order_repo
+        self._event_bus = event_bus
+
+    async def handle(self, cmd: PlaceOrderCommand) -> None:
+        cart = await self._cart_repo.find_by_id(cmd.cart_id)
+        order = cart.checkout(cmd.payment_method)  # domain logic
+        await self._order_repo.save(order)
+        await self._event_bus.publish(order.pull_domain_events())
+
+# Query side — returns exactly what the UI needs
+class OrderSummaryQuery:
+    def __init__(self, db):
+        self._db = db
+
+    async def execute(self, user_id: str) -> list[OrderSummaryDTO]:
+        return await self._db.query(
+            """SELECT o.id, o.total, o.status, p.name AS product
+               FROM order_summaries o JOIN products p ON o.product_id = p.id
+               WHERE o.user_id = $1""",
+            [user_id],
+        )
+```
+
 ## When to Use
 
 - Systems with high read/write asymmetry — queries vastly outnumber writes, or vice versa
