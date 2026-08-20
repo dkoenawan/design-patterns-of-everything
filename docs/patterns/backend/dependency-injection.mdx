@@ -44,6 +44,41 @@ const service = new OrderService(new InMemoryDatabase());
 
 DI containers (e.g., tsyringe, Spring, .NET's built-in DI) automate the wiring based on type metadata or configuration.
 
+The same shape in Python — dependencies typed to an abstract base and passed through the constructor:
+
+```python
+from abc import ABC, abstractmethod
+
+class Database(ABC):
+    @abstractmethod
+    def query(self, sql: str) -> str: ...
+
+# Without DI — tightly coupled
+class OrderService:
+    def __init__(self):
+        self.db = PostgresDatabase()  # concrete, not swappable
+
+# With DI — depends on abstraction
+class PostgresDatabase(Database):
+    def query(self, sql: str) -> str:
+        return f"[Postgres] {sql}"
+
+class InMemoryDatabase(Database):
+    def query(self, sql: str) -> str:
+        return f"[InMemory] {sql}"
+
+class OrderService:
+    def __init__(self, db: Database):
+        self.db = db  # interface, injectable
+
+# Wired externally
+service = OrderService(PostgresDatabase())
+# or in tests:
+service = OrderService(InMemoryDatabase())
+```
+
+Frameworks like `dependency-injector` or FastAPI's `Depends` automate this wiring, but the constructor-injection shape works with no framework at all.
+
 ## When to Use
 
 - Any class that interacts with infrastructure (databases, HTTP clients, message brokers)
