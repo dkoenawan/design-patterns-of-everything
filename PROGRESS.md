@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-08-20 by automated agent
+Last updated: 2026-08-21 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -76,6 +76,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-08-18 | Added TypeScript code example to Pure Functions pattern (docs/patterns/data-pipeline/pure-functions.mdx) — same impure/pure order-filtering split rendered in TypeScript, complementing the existing Python example; brings it in line with Medallion/Schema-Validation/Batch-vs-Streaming code-example depth. | 0cd7e4b |
 | 2026-08-19 | Added Python code example to CQRS pattern (docs/patterns/backend/cqrs.mdx) — command/query handler split rendered in Python, complementing the existing TypeScript example; brings it in line with Strategy Pattern/Composition Over Inheritance/Single Responsibility dual-language depth. | 4685e18 |
 | 2026-08-20 | Added Python code example to Dependency Injection pattern (docs/patterns/backend/dependency-injection.mdx) — ABC-based Database interface with constructor injection, complementing the existing TypeScript example and Sandpack playground; brings it in line with CQRS/Strategy Pattern/Pure Functions dual-language depth. | 5763c8e |
+| 2026-08-21 | Added Python code example to Hexagonal Architecture pattern (docs/patterns/backend/hexagonal-architecture.mdx) — Protocol-based OrderRepository port with Postgres/in-memory adapters, complementing the existing TypeScript interface example; brings it in line with CQRS/DI/Strategy Pattern dual-language depth. | 05dc098 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
