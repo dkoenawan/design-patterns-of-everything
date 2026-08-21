@@ -77,6 +77,49 @@ const useCase = new PlaceOrderUseCase(new InMemoryOrderRepository());
 
 `PlaceOrderUseCase` never references Postgres. A test suite can inject `InMemoryOrderRepository` and exercise the same domain logic with zero infrastructure.
 
+The same shape holds in Python, using `Protocol` for the port and structural typing for the adapters:
+
+```python
+from typing import Protocol, Optional
+
+# Secondary port — defined by the core, implemented by an adapter
+class OrderRepository(Protocol):
+    async def save(self, order: "Order") -> None: ...
+    async def find_by_id(self, order_id: str) -> Optional["Order"]: ...
+
+
+# Application core — depends only on the port protocol
+class PlaceOrderUseCase:
+    def __init__(self, orders: OrderRepository) -> None:
+        self._orders = orders
+
+    async def execute(self, cmd: "PlaceOrderCommand") -> None:
+        order = Order.create(cmd.items, cmd.customer_id)
+        await self._orders.save(order)
+
+
+# Adapter — implements the port, owns the infrastructure detail
+class PostgresOrderRepository:
+    def __init__(self, pool: "Pool") -> None:
+        self._pool = pool
+
+    async def save(self, order: "Order") -> None:
+        await self._pool.execute(
+            "INSERT INTO orders (id, customer_id, items) VALUES ($1, $2, $3)",
+            order.id, order.customer_id, order.items,
+        )
+
+    async def find_by_id(self, order_id: str) -> Optional["Order"]:
+        row = await self._pool.fetchrow("SELECT * FROM orders WHERE id = $1", order_id)
+        return Order.from_row(row) if row else None
+
+
+# Wiring — swapping to an in-memory adapter for tests requires no core changes
+use_case = PlaceOrderUseCase(InMemoryOrderRepository())
+```
+
+Because `OrderRepository` is a `Protocol`, `PostgresOrderRepository` and `InMemoryOrderRepository` never need to declare the interface explicitly — the core depends on shape, not inheritance, keeping adapters free to evolve independently.
+
 ## When to Use
 
 - Applications with complex business logic that must be unit-tested in isolation
