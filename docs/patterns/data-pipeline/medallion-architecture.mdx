@@ -104,6 +104,75 @@ function aggregateToGold(silver: SilverOrder[]): GoldDailyRevenue[] {
 
 Each function is pure and stage-specific: `promoteToSilver` never reaches into a database, and `aggregateToGold` never re-parses raw fields. A failure in `aggregateToGold` never corrupts Bronze — the run can be retried from the Silver snapshot without re-ingesting the source.
 
+```python
+from dataclasses import dataclass
+from datetime import datetime, date
+from typing import Any
+
+# Bronze — raw ingestion, schema-on-read, no transformation
+@dataclass(frozen=True)
+class BronzeOrderEvent:
+    raw: dict[str, Any]
+    ingested_at: datetime
+    source_file: str
+
+
+def ingest_to_bronze(events: list[dict[str, Any]], source_file: str) -> list[BronzeOrderEvent]:
+    return [
+        BronzeOrderEvent(raw=raw, ingested_at=datetime.utcnow(), source_file=source_file)
+        for raw in events
+    ]
+
+
+# Silver — cleansed, typed, deduped. One record = one Order.
+@dataclass(frozen=True)
+class SilverOrder:
+    order_id: str
+    customer_id: str
+    total: float
+    placed_at: datetime
+
+
+def promote_to_silver(bronze: list[BronzeOrderEvent]) -> list[SilverOrder]:
+    seen: set[str] = set()
+    silver: list[SilverOrder] = []
+    for b in bronze:
+        order_id = b.raw.get("order_id")
+        total = b.raw.get("total")
+        if not isinstance(order_id, str) or not isinstance(total, (int, float)):
+            continue
+        if order_id in seen:
+            continue
+        seen.add(order_id)
+        silver.append(
+            SilverOrder(
+                order_id=order_id,
+                customer_id=b.raw["customer_id"],
+                total=total,
+                placed_at=datetime.fromisoformat(b.raw["placed_at"]),
+            )
+        )
+    return silver
+
+
+# Gold — business aggregate, query-optimized for a specific consumer
+@dataclass
+class GoldDailyRevenue:
+    date: date
+    order_count: int
+    total_revenue: float
+
+
+def aggregate_to_gold(silver: list[SilverOrder]) -> list[GoldDailyRevenue]:
+    by_date: dict[date, GoldDailyRevenue] = {}
+    for order in silver:
+        d = order.placed_at.date()
+        bucket = by_date.setdefault(d, GoldDailyRevenue(date=d, order_count=0, total_revenue=0.0))
+        bucket.order_count += 1
+        bucket.total_revenue += order.total
+    return list(by_date.values())
+```
+
 ## When to Use
 
 - Data lakehouses built on Delta Lake, Apache Iceberg, or similar open table formats
