@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-08-24 by automated agent
+Last updated: 2026-08-25 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -78,6 +78,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-08-20 | Added Python code example to Dependency Injection pattern (docs/patterns/backend/dependency-injection.mdx) — ABC-based Database interface with constructor injection, complementing the existing TypeScript example and Sandpack playground; brings it in line with CQRS/Strategy Pattern/Pure Functions dual-language depth. | 5763c8e |
 | 2026-08-21 | Added Python code example to Hexagonal Architecture pattern (docs/patterns/backend/hexagonal-architecture.mdx) — Protocol-based OrderRepository port with Postgres/in-memory adapters, complementing the existing TypeScript interface example; brings it in line with CQRS/DI/Strategy Pattern dual-language depth. | 05dc098 |
 | 2026-08-24 | Added Python code example to Medallion Architecture pattern (docs/patterns/data-pipeline/medallion-architecture.mdx) — dataclass-based Bronze/Silver/Gold ingest_to_bronze/promote_to_silver/aggregate_to_gold pipeline, complementing the existing TypeScript example; brings it in line with CQRS/DI/Strategy/Hexagonal dual-language depth. | 296c894 |
+| 2026-08-25 | Added a bash pre-flight port-conflict check script (check-port-conflicts.sh) to Docker Port Mapping pattern (docs/patterns/infrastructure/docker-port-mapping.mdx) — scans a compose file's declared host ports against ports already bound on the machine via lsof, catching collisions before `docker compose up` fails partway through. First code example added to any of the three infrastructure patterns (all previously had zero). | a4faab1 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
