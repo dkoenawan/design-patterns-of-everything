@@ -71,6 +71,37 @@ Document your port assignments to avoid collisions as the fleet grows:
 | Project B | 5433      | 5432          | postgres:15   |
 | Project C | 5434      | 5432          | postgres:16   |
 
+As the fleet grows, a manually-maintained table drifts. A pre-flight check script catches collisions before `docker compose up` fails halfway through starting a stack:
+
+```bash
+#!/usr/bin/env bash
+# check-port-conflicts.sh — scan a compose file's declared host ports
+# against ports already bound on this machine.
+set -euo pipefail
+
+compose_file="${1:-docker-compose.yml}"
+
+# Extract host-side ports from "host:container" mappings
+host_ports=$(grep -oP '"\K[0-9]+(?=:[0-9]+")' "$compose_file" | sort -u)
+
+conflicts=0
+for port in $host_ports; do
+  if lsof -iTCP:"$port" -sTCP:LISTEN -t >/dev/null 2>&1; then
+    echo "CONFLICT: host port $port is already in use"
+    conflicts=$((conflicts + 1))
+  fi
+done
+
+if [ "$conflicts" -gt 0 ]; then
+  echo "Found $conflicts port conflict(s) — resolve before starting the stack."
+  exit 1
+fi
+
+echo "No port conflicts detected across $(echo "$host_ports" | wc -l) mapped port(s)."
+```
+
+Run it as a pre-flight gate: `./check-port-conflicts.sh docker-compose.yml && docker compose up -d`. This turns a runtime failure (a container that silently fails to bind) into a fast, explicit pre-flight error.
+
 ## When to Use
 
 - Running multiple instances of the same service on a single host
