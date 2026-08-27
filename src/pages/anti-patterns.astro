@@ -89,6 +89,20 @@ const antiPatterns: AntiPattern[] = [
       'Push state down to the lowest component that owns it; lift it only when genuinely shared. For cross-cutting state, use context or a dedicated state atom — but prefer co-location first. Compound component patterns can eliminate drilling within a bounded family of components without reaching for global state.',
     tint: 'var(--tint-frontend)',
   },
+  {
+    id: 'anemic-domain-model',
+    name: 'Anemic Domain Model',
+    domain: 'BE',
+    domainLabel: 'Backend',
+    severity: 3,
+    symptom:
+      'Domain objects are reduced to plain data bags — getters and setters with no behaviour. All business logic lives in separate "service" classes that pull data out, mutate it, and push it back.',
+    consequence:
+      'Invariants are enforced nowhere in particular, so they are enforced inconsistently everywhere. The same validation gets duplicated across services, or worse, skipped. The domain model stops communicating the rules of the domain — reading the code no longer tells you what is and isn\'t a valid state.',
+    mitigation:
+      'Move behaviour onto the objects that own the data it operates on. An order should know how to check itself out; a cart should know whether it can accept another item. Reserve services for orchestration across multiple aggregates, not for logic that belongs to a single one.',
+    tint: 'var(--tint-backend)',
+  },
 ];
 
 const severityLabel = ['', 'Minor', 'Low', 'Moderate', 'High', 'Critical'] as const;

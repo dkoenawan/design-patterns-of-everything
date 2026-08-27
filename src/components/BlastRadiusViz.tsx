@@ -21,6 +21,7 @@ const HAZARDS: Hazard[] = [
   { label: 'Snowflake Server',      domainLabel: 'Infrastructure', tint: '#c8a4d4', severity: 4 },
   { label: 'Premature Generalisation', domainLabel: 'Cross-Domain', tint: '#d4b15e', severity: 3 },
   { label: 'Prop Drilling',         domainLabel: 'Frontend',      tint: '#7aa3d4', severity: 3 },
+  { label: 'Anemic Domain Model',   domainLabel: 'Backend',       tint: '#d49a7a', severity: 3 },
 ];
 
 const N = HAZARDS.length;
