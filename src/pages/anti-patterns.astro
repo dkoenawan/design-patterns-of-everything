@@ -103,6 +103,20 @@ const antiPatterns: AntiPattern[] = [
       'Move behaviour onto the objects that own the data it operates on. An order should know how to check itself out; a cart should know whether it can accept another item. Reserve services for orchestration across multiple aggregates, not for logic that belongs to a single one.',
     tint: 'var(--tint-backend)',
   },
+  {
+    id: 'unmemoized-rerender-cascade',
+    name: 'Unmemoized Re-render Cascade',
+    domain: 'FE',
+    domainLabel: 'Frontend',
+    severity: 2,
+    symptom:
+      'A component high in the tree holds state that changes frequently, and every descendant re-renders on each change because props are new object or function literals created inline on every render, defeating shallow-equality checks.',
+    consequence:
+      'The tree re-renders far more than the visible output requires. Interactions feel sluggish under load, profiling shows wide re-render fan-out from a single state update, and the fix is usually invisible until a profiler is attached — by then it is load-bearing behaviour nobody wants to touch.',
+    mitigation:
+      'Memoize expensive subtrees with the framework\'s memo primitive, and stabilise the props passed into them — hoist literals, memoize callbacks and derived objects. Push state down to the narrowest owner (pairs with Prop Drilling\'s fix) so updates only invalidate the subtree that actually needs them.',
+    tint: 'var(--tint-frontend)',
+  },
 ];
 
 const severityLabel = ['', 'Minor', 'Low', 'Moderate', 'High', 'Critical'] as const;

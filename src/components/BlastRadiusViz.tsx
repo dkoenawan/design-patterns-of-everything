@@ -22,6 +22,7 @@ const HAZARDS: Hazard[] = [
   { label: 'Premature Generalisation', domainLabel: 'Cross-Domain', tint: '#d4b15e', severity: 3 },
   { label: 'Prop Drilling',         domainLabel: 'Frontend',      tint: '#7aa3d4', severity: 3 },
   { label: 'Anemic Domain Model',   domainLabel: 'Backend',       tint: '#d49a7a', severity: 3 },
+  { label: 'Unmemoized Re-render Cascade', domainLabel: 'Frontend', tint: '#7aa3d4', severity: 2 },
 ];
 
 const N = HAZARDS.length;
