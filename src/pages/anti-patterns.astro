@@ -117,6 +117,20 @@ const antiPatterns: AntiPattern[] = [
       'Memoize expensive subtrees with the framework\'s memo primitive, and stabilise the props passed into them — hoist literals, memoize callbacks and derived objects. Push state down to the narrowest owner (pairs with Prop Drilling\'s fix) so updates only invalidate the subtree that actually needs them.',
     tint: 'var(--tint-frontend)',
   },
+  {
+    id: 'silent-schema-drift',
+    name: 'Silent Schema Drift',
+    domain: 'DP',
+    domainLabel: 'Data Pipeline',
+    severity: 4,
+    symptom:
+      'An upstream producer adds, renames, or retypes a field without coordinating downstream. The pipeline has no schema contract enforced at the boundary, so the new shape is accepted, coerced, or silently dropped rather than rejected.',
+    consequence:
+      'Bad values propagate through every downstream stage before anyone notices — often surfacing weeks later as a subtly wrong aggregate or a dashboard nobody trusts anymore. Root-causing requires replaying history to find the exact commit where the shape changed, because no failure was ever raised at the point of ingest.',
+    mitigation:
+      'Enforce a schema contract at every trust boundary and fail closed on violation rather than coercing silently. Version schemas explicitly and require producers to bump the version on breaking changes. Pairs with Schema-Driven Validation: validate at ingest, not several stages downstream where the origin of a bad record is already lost.',
+    tint: 'var(--tint-data)',
+  },
 ];
 
 const severityLabel = ['', 'Minor', 'Low', 'Moderate', 'High', 'Critical'] as const;
