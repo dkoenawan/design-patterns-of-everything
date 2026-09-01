@@ -131,6 +131,20 @@ const antiPatterns: AntiPattern[] = [
       'Enforce a schema contract at every trust boundary and fail closed on violation rather than coercing silently. Version schemas explicitly and require producers to bump the version on breaking changes. Pairs with Schema-Driven Validation: validate at ingest, not several stages downstream where the origin of a bad record is already lost.',
     tint: 'var(--tint-data)',
   },
+  {
+    id: 'tightly-coupled-service-dependencies',
+    name: 'Tightly-Coupled Service Dependencies',
+    domain: 'INFRA',
+    domainLabel: 'Infrastructure',
+    severity: 4,
+    symptom:
+      'Services are tightly woven together: direct internal client libraries passed between teams, synchronous chains of HTTP calls, shared internal schema changes that cascade through a dozen callers, or no clear API boundary between components.',
+    consequence:
+      'A patch to one service breaks callers with no warning. Deployments become globally coordinated bottlenecks. Scaling one service requires knowing which three others will melt. Incidents in a dependency pull down the entire stack. Teams cannot move independently.',
+    mitigation:
+      'Design explicit service boundaries with versioned APIs; clients pin versions and decouple deployment timing. Prefer asynchronous messaging over direct calls where the dependency can tolerate latency. Publish interface contracts as code and validate them in CI. Track service dependencies as a first-class asset for blast-radius analysis.',
+    tint: 'var(--tint-infra)',
+  },
 ];
 
 const severityLabel = ['', 'Minor', 'Low', 'Moderate', 'High', 'Critical'] as const;
