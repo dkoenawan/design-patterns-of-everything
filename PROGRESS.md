@@ -84,6 +84,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-08-28 | Added "Unmemoized Re-render Cascade" anti-pattern (Frontend, severity 2) to src/pages/anti-patterns.astro and its hazard node to BlastRadiusViz.tsx — Frontend and Data Pipeline/Infrastructure/Cross-Domain previously had only one entry each vs Backend's two; this narrows the domain-coverage gap in the catalog. | ae75818 |
 | 2026-08-31 | Added "Silent Schema Drift" anti-pattern (Data Pipeline, severity 4) to src/pages/anti-patterns.astro and its hazard node to BlastRadiusViz.tsx — Data Pipeline, Infrastructure, and Cross-Domain each still had only one entry vs Backend's and Frontend's two; catalog is now 8 entries (BE 2, FE 2, DP 2, INFRA 1, XD 1). | d3c1e7e |
 | 2026-09-01 | Added "Tightly-Coupled Service Dependencies" anti-pattern (Infrastructure, severity 4) to src/pages/anti-patterns.astro and its hazard node to BlastRadiusViz.tsx — Infrastructure now has 2 entries (Snowflake Server sev4, Tightly-Coupled sev4); catalog is now 9 entries (BE 2, FE 2, DP 2, INFRA 2, XD 1), continues domain balance improvements. | 7d10a97 |
+| 2026-09-02 | Added "Shotgun Surgery" anti-pattern (Cross-Domain, severity 3) to src/pages/anti-patterns.astro and its hazard node to BlastRadiusViz.tsx — Cross-Domain previously had only Premature Generalisation; catalog is now 10 entries (BE 2, FE 2, DP 2, INFRA 2, XD 2), achieving full 2-per-domain balance. | 2b48ade |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
