@@ -145,6 +145,20 @@ const antiPatterns: AntiPattern[] = [
       'Design explicit service boundaries with versioned APIs; clients pin versions and decouple deployment timing. Prefer asynchronous messaging over direct calls where the dependency can tolerate latency. Publish interface contracts as code and validate them in CI. Track service dependencies as a first-class asset for blast-radius analysis.',
     tint: 'var(--tint-infra)',
   },
+  {
+    id: 'shotgun-surgery',
+    name: 'Shotgun Surgery',
+    domain: 'XD',
+    domainLabel: 'Cross-Domain',
+    severity: 3,
+    symptom:
+      'A single logical change requires edits scattered across dozens of files — each client has its own copy of validation logic, each adapter re-implements the same translation, or a data shape change echoes through the entire codebase.',
+    consequence:
+      'The cost of a change becomes impossible to estimate. Edits are easily missed, leaving the system in an inconsistent state. The real dependencies and impact radius become invisible in the scatter. Regression tests miss cases because the coupling is implicit.',
+    mitigation:
+      'Extract the piece of knowledge that ought to be singular into one place: a shared validation library, a codec, a schema definition. Move related behaviour together to eliminate the scatter. Apply Composition Over Inheritance and Single Responsibility to reduce the surface area that a single change touches.',
+    tint: 'var(--gold)',
+  },
 ];
 
 const severityLabel = ['', 'Minor', 'Low', 'Moderate', 'High', 'Critical'] as const;

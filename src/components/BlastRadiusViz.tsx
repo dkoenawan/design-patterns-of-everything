@@ -25,6 +25,7 @@ const HAZARDS: Hazard[] = [
   { label: 'Unmemoized Re-render Cascade', domainLabel: 'Frontend', tint: '#7aa3d4', severity: 2 },
   { label: 'Silent Schema Drift',   domainLabel: 'Data Pipeline', tint: '#9ec48a', severity: 4 },
   { label: 'Tightly-Coupled Service Dependencies', domainLabel: 'Infrastructure', tint: '#c8a4d4', severity: 4 },
+  { label: 'Shotgun Surgery',       domainLabel: 'Cross-Domain',  tint: '#d4b15e', severity: 3 },
 ];
 
 const N = HAZARDS.length;
