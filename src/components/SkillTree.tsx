@@ -393,10 +393,9 @@ export default function SkillTree({ domain }: SkillTreeProps) {
         ) : (
           <p
             style={{
-              fontSize: '13px',
+              fontSize: '9px',
               fontFamily: 'var(--font-mono)',
               fontStyle: 'normal',
-              fontSize: '9px',
               letterSpacing: '1.5px',
               textTransform: 'uppercase',
               color: 'rgba(212,177,94,0.2)',
