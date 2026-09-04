@@ -126,6 +126,80 @@ DATABASE_URL=postgresql://admin:password@host:5433/project_b
 DATABASE_URL=postgresql://admin:password@host:5434/project_c
 ```
 
+### Application-layer orchestration
+
+While Docker Compose defines the infrastructure, applications need to connect, verify readiness, and manage lifecycle. Python's Docker SDK allows programmatic container management and health checks:
+
+```python
+import docker
+import psycopg2
+import time
+from typing import Optional
+
+class DatabaseCluster:
+    """Manages multiple database containers and their connections."""
+    
+    def __init__(self, compose_file: str = "docker-compose.yml"):
+        self.client = docker.from_env()
+        self.compose_file = compose_file
+        self.databases = {
+            "project_a": ("project_a_db", "5432", "project_a"),
+            "project_b": ("project_b_db", "5433", "project_b"),
+            "project_c": ("project_c_db", "5434", "project_c"),
+        }
+    
+    def wait_for_readiness(self, project: str, timeout: int = 30) -> bool:
+        """Poll until a database is accepting connections."""
+        container_name, port, db_name = self.databases[project]
+        container = self.client.containers.get(container_name)
+        
+        start = time.time()
+        while time.time() - start < timeout:
+            health = container.attrs["State"]["Health"]["Status"]
+            if health == "healthy":
+                return True
+            time.sleep(1)
+        return False
+    
+    def connect(self, project: str) -> Optional[psycopg2.connection]:
+        """Establish a connection to an orchestrated database."""
+        container_name, port, db_name = self.databases[project]
+        
+        if not self.wait_for_readiness(project):
+            raise RuntimeError(f"{project} failed health check")
+        
+        return psycopg2.connect(
+            host="localhost",
+            port=int(port),
+            user="admin",
+            password="password",  # load from env
+            database=db_name,
+        )
+    
+    def resource_usage(self, project: str) -> dict:
+        """Inspect CPU and memory usage for a database container."""
+        container_name, _, _ = self.databases[project]
+        container = self.client.containers.get(container_name)
+        stats = container.stats(stream=False)
+        
+        memory_usage = stats["memory_stats"]["usage"] / (1024 ** 2)  # MB
+        cpu_percent = (
+            stats["cpu_stats"]["cpu_usage"]["total_usage"] /
+            stats["cpu_stats"]["system_cpu_usage"] * 100
+        )
+        
+        return {"memory_mb": memory_usage, "cpu_percent": cpu_percent}
+
+# Usage: connect to each database, verify health, and monitor resource isolation
+cluster = DatabaseCluster()
+for project in ["project_a", "project_b", "project_c"]:
+    conn = cluster.connect(project)
+    print(f"{project}: connected, using {cluster.resource_usage(project)}")
+    conn.close()
+```
+
+The Docker SDK replaces manual shell scripting: health checks become callable methods, resource limits are verified programmatically, and lifecycle operations (start/stop/inspect) integrate naturally into application initialization and monitoring loops.
+
 ### Production readiness checklist
 
 **Backups** — Schedule per-database backups using `pg_dump` executed inside each container:
