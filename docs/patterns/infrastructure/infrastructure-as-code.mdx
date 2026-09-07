@@ -84,6 +84,82 @@ terraform {
 }
 ```
 
+```python
+# Pulumi — programmatic desired state (Python alternative)
+import pulumi
+import pulumi_aws as aws
+
+config = pulumi.Config()
+environment = pulumi.get_stack()
+api_replica_count = config.get_int("api_replica_count") or 1
+private_subnets = config.get("private_subnets").split(",")
+
+# Create ECS cluster with Container Insights enabled
+api_cluster = aws.ecs.Cluster("api",
+    name=f"{environment}-api-cluster",
+    settings=[
+        aws.ecs.ClusterSettingArgs(
+            name="containerInsights",
+            value="enabled",
+        )
+    ]
+)
+
+# Create ECS task definition
+task_def = aws.ecs.TaskDefinition("api",
+    family="api",
+    network_mode="awsvpc",
+    requires_compatibilities=["FARGATE"],
+    cpu="256",
+    memory="512",
+    container_definitions=pulumi.Output.all(api_cluster.arn).apply(
+        lambda args: pulumi.json.dumps([{
+            "name": "api",
+            "image": "myregistry.azurecr.io/api:latest",
+            "portMappings": [{"containerPort": 8080}],
+            "essential": True,
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": logs_group.name,
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "api",
+                }
+            }
+        }])
+    )
+)
+
+# Create CloudWatch log group
+logs_group = aws.cloudwatch.LogGroup("api_logs",
+    retention_in_days=30
+)
+
+# Create ECS service with load balancing
+api_service = aws.ecs.Service("api",
+    cluster=api_cluster.arn,
+    task_definition=task_def.arn,
+    desired_count=api_replica_count,
+    launch_type="FARGATE",
+    network_configuration={
+        "subnets": private_subnets,
+        "security_groups": [security_group.id],
+        "assign_public_ip": False,
+    },
+    load_balancers=[{
+        "target_group_arn": target_group.arn,
+        "container_name": "api",
+        "container_port": 8080,
+    }],
+    opts=pulumi.ResourceOptions(depends_on=[logs_group])
+)
+
+# Export service endpoint
+pulumi.export("service_endpoint", target_group.arn)
+```
+
+This Pulumi example mirrors the Terraform definition but in Python. The workflow remains identical: version control, code review, CI/CD apply — but the programmatic approach enables conditional logic and modularity that pure declarative DSLs cannot easily express.
+
 ## When to Use
 
 - Any environment that must be reproduced (dev, staging, production, disaster recovery)
