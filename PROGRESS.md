@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-09-04 by automated agent
+Last updated: 2026-09-07 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -87,6 +87,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-09-02 | Added "Shotgun Surgery" anti-pattern (Cross-Domain, severity 3) to src/pages/anti-patterns.astro and its hazard node to BlastRadiusViz.tsx — Cross-Domain previously had only Premature Generalisation; catalog is now 10 entries (BE 2, FE 2, DP 2, INFRA 2, XD 2), achieving full 2-per-domain balance. | 2b48ade |
 | 2026-09-03 | Fixed duplicate fontSize key in SkillTree.tsx component — resolved Vite build warning without affecting functionality; all 15 Playwright tests pass. | e4e7a07 |
 | 2026-09-04 | Added Python example to Multi-Database Orchestration pattern (docs/patterns/infrastructure/multi-database-orchestration.mdx) — Docker SDK-based DatabaseCluster class demonstrating programmatic container management, health check polling, and resource usage inspection; brings all 3 infrastructure patterns to dual-language depth. | 405cddb |
+| 2026-09-07 | Added Python example to Infrastructure as Code pattern (docs/patterns/infrastructure/infrastructure-as-code.mdx) — Pulumi programmatic IaC alongside existing Terraform declarative definition, illustrating the programmatic alternative; Infrastructure as Code is now at dual-language depth. | c2c069d |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
