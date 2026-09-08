@@ -1,0 +1,436 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AtlasBackdrop from '../components/AtlasBackdrop';
+import PatternsCatalogViz from '../components/PatternsCatalogViz';
+import Cartouche from '../components/Cartouche.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+interface Pattern {
+  title: string;
+  domain: 'backend' | 'data' | 'frontend' | 'infra' | 'cross-domain';
+  domainLabel: string;
+  complexity: 'fundamentals' | 'core' | 'advanced' | 'expert';
+  complexityRank: number;
+  tags: string[];
+  slug: string;
+  summary: string;
+}
+
+const patterns: Pattern[] = [
+  // Backend
+  {
+    title: 'Dependency Injection',
+    domain: 'backend',
+    domainLabel: 'Backend',
+    complexity: 'core',
+    complexityRank: 2,
+    tags: ['solid', 'decoupling', 'testing', 'inversion-of-control'],
+    slug: 'dependency-injection',
+    summary: 'Inject external dependencies into a class rather than creating them internally, enabling loose coupling and easier testing.',
+  },
+  {
+    title: 'Hexagonal Architecture',
+    domain: 'backend',
+    domainLabel: 'Backend',
+    complexity: 'advanced',
+    complexityRank: 3,
+    tags: ['architecture', 'ports-and-adapters', 'clean-architecture', 'domain-driven'],
+    slug: 'hexagonal-architecture',
+    summary: 'Organize code into a domain core surrounded by ports (interfaces) and adapters (implementations), isolating business logic from infrastructure concerns.',
+  },
+  {
+    title: 'CQRS',
+    domain: 'backend',
+    domainLabel: 'Backend',
+    complexity: 'advanced',
+    complexityRank: 3,
+    tags: ['cqrs', 'event-sourcing', 'read-model', 'write-model'],
+    slug: 'cqrs',
+    summary: 'Separate read and write models to optimize for different access patterns, scaling, and consistency requirements independently.',
+  },
+  {
+    title: 'Strategy Pattern',
+    domain: 'backend',
+    domainLabel: 'Backend',
+    complexity: 'core',
+    complexityRank: 2,
+    tags: ['behavioral-pattern', 'polymorphism', 'composition', 'dependency-injection'],
+    slug: 'strategy-pattern',
+    summary: 'Define a family of algorithms, encapsulate each one, and make them interchangeable, letting callers choose the strategy at runtime.',
+  },
+
+  // Data Pipeline
+  {
+    title: 'Medallion Architecture',
+    domain: 'data',
+    domainLabel: 'Data Pipeline',
+    complexity: 'expert',
+    complexityRank: 4,
+    tags: ['data-warehouse', 'etl', 'medallion', 'lake-house', 'bronze-silver-gold'],
+    slug: 'medallion-architecture',
+    summary: 'Organize data warehouse layers (Bronze/Silver/Gold) to progressively refine raw data through validated, enriched stages.',
+  },
+  {
+    title: 'Schema-Driven Validation',
+    domain: 'data',
+    domainLabel: 'Data Pipeline',
+    complexity: 'core',
+    complexityRank: 2,
+    tags: ['validation', 'schema', 'data-quality', 'fail-fast'],
+    slug: 'schema-driven-validation',
+    summary: 'Define data schemas upfront and validate every record against them at ingest, catching quality issues early rather than downstream.',
+  },
+  {
+    title: 'Pure Functions',
+    domain: 'data',
+    domainLabel: 'Data Pipeline',
+    complexity: 'fundamentals',
+    complexityRank: 1,
+    tags: ['functional-programming', 'deterministic', 'testability', 'no-side-effects'],
+    slug: 'pure-functions',
+    summary: 'Write transformation functions with no side effects — same input always produces same output, making pipelines deterministic and testable.',
+  },
+  {
+    title: 'Batch vs Streaming',
+    domain: 'data',
+    domainLabel: 'Data Pipeline',
+    complexity: 'advanced',
+    complexityRank: 3,
+    tags: ['batch', 'streaming', 'latency', 'throughput', 'watermarks'],
+    slug: 'batch-vs-streaming',
+    summary: 'Choose between accumulated batch windows and continuous event streams based on latency tolerance, cost, and complexity trade-offs.',
+  },
+
+  // Frontend
+  {
+    title: 'Component Composition',
+    domain: 'frontend',
+    domainLabel: 'Frontend',
+    complexity: 'core',
+    complexityRank: 2,
+    tags: ['react', 'components', 'composition', 'reusability', 'slots'],
+    slug: 'component-composition',
+    summary: 'Build complex UI by assembling small, single-purpose components through nesting and prop-passing rather than monolithic inheritance.',
+  },
+  {
+    title: 'State Management Patterns',
+    domain: 'frontend',
+    domainLabel: 'Frontend',
+    complexity: 'advanced',
+    complexityRank: 3,
+    tags: ['state', 'react', 'context', 'zustand', 'lifting-state'],
+    slug: 'state-management-patterns',
+    summary: 'Categorise state by scope and apply the appropriate mechanism (useState, Context, Zustand) to keep data flow predictable.',
+  },
+  {
+    title: 'Micro-Frontend Architecture',
+    domain: 'frontend',
+    domainLabel: 'Frontend',
+    complexity: 'advanced',
+    complexityRank: 3,
+    tags: ['micro-frontends', 'module-federation', 'independent-deployment', 'team-autonomy'],
+    slug: 'micro-frontend-architecture',
+    summary: 'Decompose large frontend applications into independently deployable modules owned by different teams.',
+  },
+
+  // Infrastructure
+  {
+    title: 'Docker Port Mapping',
+    domain: 'infra',
+    domainLabel: 'Infrastructure',
+    complexity: 'fundamentals',
+    complexityRank: 1,
+    tags: ['docker', 'containers', 'networking', 'port-mapping', 'isolation'],
+    slug: 'docker-port-mapping',
+    summary: 'Map container-internal ports to unique host ports to run multiple instances without reconfiguring the service itself.',
+  },
+  {
+    title: 'Multi-Database Orchestration',
+    domain: 'infra',
+    domainLabel: 'Infrastructure',
+    complexity: 'advanced',
+    complexityRank: 3,
+    tags: ['docker-compose', 'databases', 'orchestration', 'health-checks', 'resource-limits'],
+    slug: 'multi-database-orchestration',
+    summary: 'Manage multiple independent database containers with isolation, health checks, and a path to production-grade hosting.',
+  },
+  {
+    title: 'Infrastructure as Code',
+    domain: 'infra',
+    domainLabel: 'Infrastructure',
+    complexity: 'core',
+    complexityRank: 2,
+    tags: ['terraform', 'iac', 'pulumi', 'gitops', 'infrastructure-drift'],
+    slug: 'infrastructure-as-code',
+    summary: 'Declare infrastructure in version-controlled code (Terraform, Pulumi) to make deployments reproducible, reviewable, and auditable.',
+  },
+
+  // Cross-Domain
+  {
+    title: 'Single Responsibility Principle',
+    domain: 'cross-domain',
+    domainLabel: 'Cross-Domain',
+    complexity: 'fundamentals',
+    complexityRank: 1,
+    tags: ['solid', 'cohesion', 'separation-of-concerns', 'maintainability'],
+    slug: 'single-responsibility',
+    summary: 'A module, class, or function should have one reason to change, making code easier to test, maintain, and evolve safely.',
+  },
+  {
+    title: 'Composition Over Inheritance',
+    domain: 'cross-domain',
+    domainLabel: 'Cross-Domain',
+    complexity: 'core',
+    complexityRank: 2,
+    tags: ['object-oriented', 'composition', 'flexibility', 'inheritance-pitfalls'],
+    slug: 'composition-over-inheritance',
+    summary: 'Prefer combining smaller objects and behaviors over building class hierarchies, reducing fragility and increasing reusability.',
+  },
+];
+
+const complexityLabels = {
+  fundamentals: 'Fundamentals',
+  core: 'Core',
+  advanced: 'Advanced',
+  expert: 'Expert',
+};
+
+const complexityColors = {
+  fundamentals: 'var(--gold)',
+  core: 'var(--gold-bright)',
+  advanced: 'var(--ink-dim)',
+  expert: 'var(--anti)',
+};
+
+const domainColors = {
+  backend: 'var(--tint-backend)',
+  data: 'var(--tint-data)',
+  frontend: 'var(--tint-frontend)',
+  infra: 'var(--tint-infra)',
+  'cross-domain': 'var(--gold)',
+};
+---
+
+<BaseLayout
+  title="Patterns Catalog — Celestial Atlas"
+  description="Navigate all 16 architecture patterns across Frontend, Backend, Data Pipeline, and Infrastructure domains by complexity, tags, and domain."
+>
+  <AtlasBackdrop client:only="react" />
+
+  <main class="catalog-page">
+    <!-- ── Page header ──────────────────────────────────────────── -->
+    <section class="page-header">
+      <div class="breadcrumb">
+        <a href={`${base}/`}>Atlas</a>
+        <span aria-hidden="true"> › </span>
+        <span>Patterns</span>
+      </div>
+
+      <Cartouche label="Compendium of patterns — all domains">
+        <div class="header-inner">
+          <div class="header-glyph" aria-hidden="true">◆</div>
+          <div class="header-text">
+            <h1 class="page-title">Patterns Catalog</h1>
+            <p class="page-subtitle">
+              A navigable index of all {patterns.length} patterns across architecture domains.
+              Each pattern is ranked by complexity and tagged for discovery.
+            </p>
+
+            <div class="header-stats">
+              <div class="stat-item">
+                <span class="stat-num">{patterns.length}</span>
+                <span class="stat-label">Patterns</span>
+              </div>
+              <div class="stat-divider" aria-hidden="true"></div>
+              <div class="stat-item">
+                <span class="stat-num">4</span>
+                <span class="stat-label">Domains</span>
+              </div>
+              <div class="stat-divider" aria-hidden="true"></div>
+              <div class="stat-item">
+                <span class="stat-num">4</span>
+                <span class="stat-label">Complexity Levels</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Cartouche>
+    </section>
+
+    <!-- ── Interactive catalog ─────────────────────────────────── -->
+    <section class="catalog-row">
+      <Cartouche label="Register — sortable by domain, complexity, tags">
+        <PatternsCatalogViz client:load patterns={patterns} baseUrl={base} />
+      </Cartouche>
+    </section>
+
+    <!-- ── Footer row ─────────────────────────────────────────── -->
+    <section class="footer-row">
+      <div class="footer-nav">
+        <a href={`${base}/`} class="nav-link">← Atlas home</a>
+        <a href={`${base}/backend`} class="nav-link">Backend domain →</a>
+      </div>
+      <p class="footer-coord">Pattern compendium · Register I</p>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .catalog-page {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 80px 32px 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  /* ── Breadcrumb ── */
+  .breadcrumb {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 24px;
+  }
+
+  .breadcrumb a {
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--gold);
+  }
+
+  /* ── Header ── */
+  .header-inner {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+  }
+
+  .header-glyph {
+    font-size: 44px;
+    color: var(--gold);
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+
+  .page-title {
+    font-size: 52px;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+
+  .page-subtitle {
+    font-size: 17px;
+    color: var(--ink-dim);
+    line-height: 1.6;
+    max-width: 620px;
+    margin-bottom: 24px;
+  }
+
+  .header-stats {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-num {
+    font-size: 28px;
+    font-style: italic;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .stat-divider {
+    width: 0.5px;
+    height: 28px;
+    background: var(--paper-border);
+  }
+
+  @media (max-width: 600px) {
+    .header-inner {
+      flex-direction: column;
+      gap: 16px;
+    }
+    .header-glyph {
+      font-size: 32px;
+    }
+    .page-title {
+      font-size: 38px;
+    }
+  }
+
+  /* ── Catalog row ── */
+  .catalog-row {
+    min-height: 600px;
+  }
+
+  /* ── Footer row ── */
+  .footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .footer-nav {
+    display: flex;
+    gap: 32px;
+  }
+
+  .nav-link {
+    color: var(--gold);
+    text-decoration: none;
+    font-style: italic;
+  }
+
+  .nav-link:hover {
+    color: var(--gold-bright);
+  }
+
+  .footer-coord {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 640px) {
+    .catalog-page {
+      padding: 60px 20px 80px;
+    }
+
+    .footer-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+  }
+</style>
