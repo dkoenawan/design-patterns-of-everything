@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-09-07 by automated agent
+Last updated: 2026-09-08 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -36,7 +36,7 @@ Last updated: 2026-09-07 by automated agent
 All 25 queue items complete. Running SEO, cross-linking, and content enrichment improvements.
 
 ## Maintenance Log
-| Date | Improvement |
+| Date | Improvement | Commit |
 |------|-------------|
 | 2026-06-25 | Open Graph + Twitter Card + canonical URL meta tags in BaseLayout.astro |
 | 2026-06-26 | Add Snowflake Server (Infra, sev 4) and Prop Drilling (Frontend, sev 3) anti-patterns — completes all 4 domain coverage | 2a60ae6 |
@@ -88,6 +88,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-09-03 | Fixed duplicate fontSize key in SkillTree.tsx component — resolved Vite build warning without affecting functionality; all 15 Playwright tests pass. | e4e7a07 |
 | 2026-09-04 | Added Python example to Multi-Database Orchestration pattern (docs/patterns/infrastructure/multi-database-orchestration.mdx) — Docker SDK-based DatabaseCluster class demonstrating programmatic container management, health check polling, and resource usage inspection; brings all 3 infrastructure patterns to dual-language depth. | 405cddb |
 | 2026-09-07 | Added Python example to Infrastructure as Code pattern (docs/patterns/infrastructure/infrastructure-as-code.mdx) — Pulumi programmatic IaC alongside existing Terraform declarative definition, illustrating the programmatic alternative; Infrastructure as Code is now at dual-language depth. | c2c069d |
+| 2026-09-08 | Patterns Catalog page — new /patterns-catalog/ with interactive filterable discovery UI for all 16 patterns, searchable by domain/complexity/tags, React component (PatternsCatalogViz) managing filter state; improves portfolio navigation and recruiter/learner discoverability. | bb003dd |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
