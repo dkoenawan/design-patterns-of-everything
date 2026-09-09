@@ -7,6 +7,8 @@ summary: "Build complex UI by assembling small, focused components rather than i
 draft: false
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 Component Composition is the practice of combining small, single-purpose components into larger UI structures through nesting and prop-passing rather than inheritance or monolithic components. It is the foundational design principle behind scalable frontend architectures: each component does one thing well, and complexity emerges from their arrangement.
@@ -97,6 +99,321 @@ The `Tabs` parent owns state; `Tab` and `Panel` children consume it via context.
 | Structural changes to the parent don't ripple into content | Prop drilling risk if context is not used for deep trees |
 | Each piece is independently testable and reusable | Over-composing trivial UI creates unnecessary indirection |
 | Design system consumers can extend without forking | Compound component context adds internal complexity |
+
+## Live Playground
+
+Experiment with the pattern below. The two tabs show a monolithic `UserCard` component and the refactored composed equivalent. Edit either file to see how composition enables flexible UI assembly without the caller drowning in props.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · Component Composition"
+  entry="/composed.tsx"
+  files={{
+    "/monolithic.tsx": `// ── Before: Monolithic ──────────────────────────────────
+// Every variant and customization point becomes a prop.
+// Adding new features requires modifying the component;
+// callers have no way to control structure.
+
+interface User {
+  id: string;
+  name: string;
+  avatar: string;
+  title: string;
+  unread: number;
+}
+
+function MonolithicUserCard({
+  user,
+  showBadge,
+  showFollowButton,
+  onFollow,
+  variant = "default",
+}: {
+  user: User;
+  showBadge?: boolean;
+  showFollowButton?: boolean;
+  onFollow?: () => void;
+  variant?: "compact" | "default" | "detailed";
+}) {
+  return (
+    <div style={cardStyle}>
+      <div style={headerStyle}>
+        <img src={user.avatar} style={avatarStyle} alt="" />
+        {showBadge && (
+          <span style={badgeStyle}>{user.unread}</span>
+        )}
+      </div>
+      <div style={bodyStyle}>
+        <h3 style={nameStyle}>{user.name}</h3>
+        {variant !== "compact" && (
+          <p style={titleStyle}>{user.title}</p>
+        )}
+      </div>
+      {showFollowButton && (
+        <button style={buttonStyle} onClick={onFollow}>
+          Follow
+        </button>
+      )}
+    </div>
+  );
+}
+
+const user: User = {
+  id: "usr-1",
+  name: "Alex Chen",
+  avatar: "🧑",
+  title: "Senior Architect",
+  unread: 3,
+};
+
+export default function App() {
+  return (
+    <div style={appStyle}>
+      <MonolithicUserCard
+        user={user}
+        showBadge
+        showFollowButton
+        variant="default"
+        onFollow={() => console.log("Followed!")}
+      />
+    </div>
+  );
+}
+
+const appStyle: React.CSSProperties = {
+  background: "#0a0e1a",
+  color: "#e8dcb8",
+  padding: "20px",
+  minHeight: "100vh",
+  fontFamily: "system-ui, sans-serif",
+};
+
+const cardStyle: React.CSSProperties = {
+  background: "rgba(20,25,40,0.78)",
+  border: "0.5px solid rgba(212,177,94,0.35)",
+  borderRadius: 0,
+  padding: "16px",
+  width: "240px",
+};
+
+const headerStyle: React.CSSProperties = {
+  position: "relative",
+  marginBottom: "12px",
+};
+
+const avatarStyle: React.CSSProperties = {
+  width: "48px",
+  height: "48px",
+  borderRadius: "50%",
+  fontSize: "32px",
+  textAlign: "center",
+  lineHeight: "48px",
+};
+
+const badgeStyle: React.CSSProperties = {
+  position: "absolute",
+  top: 0,
+  right: 0,
+  background: "#d4b15e",
+  color: "#0a0e1a",
+  width: "24px",
+  height: "24px",
+  borderRadius: "50%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "12px",
+  fontWeight: "bold",
+};
+
+const bodyStyle: React.CSSProperties = {
+  marginBottom: "12px",
+};
+
+const nameStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: "16px",
+  fontWeight: 600,
+};
+
+const titleStyle: React.CSSProperties = {
+  margin: "4px 0 0 0",
+  fontSize: "12px",
+  color: "#a39570",
+};
+
+const buttonStyle: React.CSSProperties = {
+  background: "#d4b15e",
+  color: "#0a0e1a",
+  border: "none",
+  borderRadius: 0,
+  padding: "8px 16px",
+  fontSize: "12px",
+  fontWeight: 600,
+  cursor: "pointer",
+};
+`,
+    "/composed.tsx": `// ── After: Composed ─────────────────────────────────────
+// Structure is stable; content is caller-supplied.
+// New UI variations require no changes to Card; just
+// pass different children.
+
+function Card({
+  header,
+  body,
+  footer,
+}: {
+  header: React.ReactNode;
+  body: React.ReactNode;
+  footer?: React.ReactNode;
+}) {
+  return (
+    <div style={cardStyle}>
+      {header && <div style={headerStyle}>{header}</div>}
+      {body && <div style={bodyStyle}>{body}</div>}
+      {footer && <div style={footerStyle}>{footer}</div>}
+    </div>
+  );
+}
+
+function UserAvatar({
+  src,
+  badge,
+}: {
+  src: string;
+  badge?: number;
+}) {
+  return (
+    <div style={avatarContainerStyle}>
+      <img src={src} style={avatarStyle} alt="" />
+      {badge !== undefined && (
+        <span style={badgeStyle}>{badge}</span>
+      )}
+    </div>
+  );
+}
+
+function UserBio({
+  name,
+  title,
+}: {
+  name: string;
+  title: string;
+}) {
+  return (
+    <div>
+      <h3 style={nameStyle}>{name}</h3>
+      <p style={titleStyle}>{title}</p>
+    </div>
+  );
+}
+
+function FollowButton({ onClick }: { onClick?: () => void }) {
+  return (
+    <button style={buttonStyle} onClick={onClick}>
+      Follow
+    </button>
+  );
+}
+
+// Caller composes the full card from focused pieces
+export default function App() {
+  return (
+    <div style={appStyle}>
+      <Card
+        header={<UserAvatar src="🧑" badge={3} />}
+        body={<UserBio name="Alex Chen" title="Senior Architect" />}
+        footer={
+          <FollowButton onClick={() => console.log("Followed!")} />
+        }
+      />
+    </div>
+  );
+}
+
+const appStyle: React.CSSProperties = {
+  background: "#0a0e1a",
+  color: "#e8dcb8",
+  padding: "20px",
+  minHeight: "100vh",
+  fontFamily: "system-ui, sans-serif",
+};
+
+const cardStyle: React.CSSProperties = {
+  background: "rgba(20,25,40,0.78)",
+  border: "0.5px solid rgba(212,177,94,0.35)",
+  borderRadius: 0,
+  padding: "16px",
+  width: "240px",
+};
+
+const headerStyle: React.CSSProperties = {
+  marginBottom: "12px",
+};
+
+const bodyStyle: React.CSSProperties = {
+  marginBottom: "12px",
+};
+
+const footerStyle: React.CSSProperties = {
+  marginTop: "12px",
+};
+
+const avatarContainerStyle: React.CSSProperties = {
+  position: "relative",
+  width: "fit-content",
+};
+
+const avatarStyle: React.CSSProperties = {
+  width: "48px",
+  height: "48px",
+  borderRadius: "50%",
+  fontSize: "32px",
+  textAlign: "center",
+  lineHeight: "48px",
+};
+
+const badgeStyle: React.CSSProperties = {
+  position: "absolute",
+  top: 0,
+  right: 0,
+  background: "#d4b15e",
+  color: "#0a0e1a",
+  width: "24px",
+  height: "24px",
+  borderRadius: "50%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "12px",
+  fontWeight: "bold",
+};
+
+const nameStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: "16px",
+  fontWeight: 600,
+};
+
+const titleStyle: React.CSSProperties = {
+  margin: "4px 0 0 0",
+  fontSize: "12px",
+  color: "#a39570",
+};
+
+const buttonStyle: React.CSSProperties = {
+  background: "#d4b15e",
+  color: "#0a0e1a",
+  border: "none",
+  borderRadius: 0,
+  padding: "8px 16px",
+  fontSize: "12px",
+  fontWeight: 600,
+  cursor: "pointer",
+};
+`,
+  }}
+/>
 
 ## Related Patterns
 
