@@ -7,6 +7,8 @@ summary: "Choose the right scope and mechanism for each piece of application sta
 draft: false
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 State management is the discipline of deciding *where* state lives, *who* can change it, and *how* changes propagate through the UI. The central insight is that different state has different scope: local UI state belongs in a component; shared domain state belongs in a store; server state belongs in a cache. Mixing these categories in a single global store creates accidental coupling and makes components hard to reason about in isolation.
@@ -146,6 +148,303 @@ Store / Context
 | Granular subscriptions limit re-render surface area | Multiple state libraries in one project can be confusing |
 | Server state is decoupled from client state, with automatic cache management | Query library setup and tuning (staleTime, gcTime) adds initial overhead |
 | Unidirectional flow makes debugging straightforward | Stores and query caches are harder to unit-test than pure local state |
+
+## Live Playground
+
+Experiment with the pattern below. The example demonstrates the trade-off: lifting state to a parent solves prop drilling but causes cascading re-renders. Fine-grained subscriptions (Zustand) prevent unnecessary re-renders by letting components subscribe only to the state they need. Edit the controls or uncomment different implementations to observe the re-render counts.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · State Management Trade-offs"
+  entry="/app.tsx"
+  files={{
+    "/app.tsx": `import React, { useState, createContext, useContext } from 'react';
+
+// ── Problem: Lifting State Causes Cascading Re-renders ──
+// When filters state lives in a parent, ALL children re-render
+// on every filter change, even if they don't use that state.
+
+interface FilterContextType {
+  selectedTags: string[];
+  sortOrder: 'asc' | 'desc';
+  addTag: (tag: string) => void;
+  setSortOrder: (order: 'asc' | 'desc') => void;
+}
+
+const FilterContext = createContext<FilterContextType | undefined>(undefined);
+
+function useFilters() {
+  const ctx = useContext(FilterContext);
+  if (!ctx) throw new Error('useFilters must be inside FilterProvider');
+  return ctx;
+}
+
+// Component that needs sortOrder only
+let CatalogRenderCount = 0;
+function CatalogHeader() {
+  const { sortOrder, setSortOrder } = useFilters();
+  CatalogRenderCount++;
+  
+  return (
+    <div style={panelStyle}>
+      <p style={labelStyle}>CatalogHeader · renders: {CatalogRenderCount}</p>
+      <button 
+        onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+        style={buttonStyle}
+      >
+        Sort: {sortOrder}
+      </button>
+    </div>
+  );
+}
+
+// Component that needs selectedTags only
+let TagListRenderCount = 0;
+function TagList() {
+  const { selectedTags, addTag } = useFilters();
+  TagListRenderCount++;
+  
+  const allTags = ['React', 'Architecture', 'Performance'];
+  
+  return (
+    <div style={panelStyle}>
+      <p style={labelStyle}>TagList · renders: {TagListRenderCount}</p>
+      <div style={{ marginBottom: '8px' }}>
+        Selected: {selectedTags.join(', ') || 'none'}
+      </div>
+      {allTags.map(tag => (
+        <button
+          key={tag}
+          onClick={() => addTag(tag)}
+          style={{
+            ...buttonStyle,
+            background: selectedTags.includes(tag) ? '#d4b15e' : '#5a4f33'
+          }}
+        >
+          {tag}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Solution: Fine-grained Subscriptions (Zustand Pattern) ──
+// Use a simple store with selective subscriptions.
+// Only CatalogHeader re-renders when sortOrder changes;
+// only TagList re-renders when selectedTags changes.
+
+type Store = {
+  selectedTags: string[];
+  sortOrder: 'asc' | 'desc';
+  addTag: (tag: string) => void;
+  setSortOrder: (order: 'asc' | 'desc') => void;
+};
+
+// Minimal Zustand-like store
+class SimpleStore {
+  private state: Store['selectedTags' | 'sortOrder'] = {
+    selectedTags: [],
+    sortOrder: 'asc' as const,
+  };
+  private listeners = new Set<(key: string) => void>();
+  
+  subscribe(cb: (key: string) => void) {
+    this.listeners.add(cb);
+    return () => this.listeners.delete(cb);
+  }
+  
+  notify(key: string) {
+    this.listeners.forEach(cb => cb(key));
+  }
+  
+  getState(key: 'selectedTags' | 'sortOrder') {
+    return this.state[key];
+  }
+  
+  setState(key: string, value: any) {
+    (this.state as any)[key] = value;
+    this.notify(key);
+  }
+}
+
+const store = new SimpleStore();
+
+function useStoreSlice<T>(key: string, selector: () => T): T {
+  const [value, setValue] = React.useState(selector);
+  
+  React.useEffect(() => {
+    const unsubscribe = store.subscribe(changedKey => {
+      if (changedKey === key) {
+        setValue(selector());
+      }
+    });
+    return unsubscribe;
+  }, [key]);
+  
+  return value;
+}
+
+let CatalogHeaderStoreRenderCount = 0;
+function CatalogHeaderStore() {
+  const sortOrder = useStoreSlice(
+    'sortOrder',
+    () => store.getState('sortOrder') as any
+  );
+  CatalogHeaderStoreRenderCount++;
+  
+  return (
+    <div style={panelStyle}>
+      <p style={labelStyle}>
+        CatalogHeader (Store) · renders: {CatalogHeaderStoreRenderCount}
+      </p>
+      <button 
+        onClick={() => {
+          const current = store.getState('sortOrder') as any;
+          store.setState('sortOrder', current === 'asc' ? 'desc' : 'asc');
+        }}
+        style={buttonStyle}
+      >
+        Sort: {sortOrder}
+      </button>
+    </div>
+  );
+}
+
+let TagListStoreRenderCount = 0;
+function TagListStore() {
+  const selectedTags = useStoreSlice(
+    'selectedTags',
+    () => store.getState('selectedTags') as any
+  );
+  TagListStoreRenderCount++;
+  
+  const allTags = ['React', 'Architecture', 'Performance'];
+  
+  return (
+    <div style={panelStyle}>
+      <p style={labelStyle}>
+        TagList (Store) · renders: {TagListStoreRenderCount}
+      </p>
+      <div style={{ marginBottom: '8px' }}>
+        Selected: {selectedTags.join(', ') || 'none'}
+      </div>
+      {allTags.map(tag => (
+        <button
+          key={tag}
+          onClick={() => {
+            const current = store.getState('selectedTags') as any;
+            store.setState(
+              'selectedTags',
+              current.includes(tag)
+                ? current.filter((t: string) => t !== tag)
+                : [...current, tag]
+            );
+          }}
+          style={{
+            ...buttonStyle,
+            background: selectedTags.includes(tag) ? '#d4b15e' : '#5a4f33'
+          }}
+        >
+          {tag}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Toggle between implementations to observe the difference
+const USE_STORE = true;
+
+export default function App() {
+  const [ctxFilters, setCtxFilters] = useState<FilterContextType>({
+    selectedTags: [],
+    sortOrder: 'asc',
+    addTag: (tag) => {
+      setCtxFilters(f => ({
+        ...f,
+        selectedTags: f.selectedTags.includes(tag)
+          ? f.selectedTags.filter(t => t !== tag)
+          : [...f.selectedTags, tag]
+      }));
+    },
+    setSortOrder: (order) => {
+      setCtxFilters(f => ({ ...f, sortOrder: order }));
+    }
+  });
+  
+  return (
+    <div style={appStyle}>
+      <div style={{ marginBottom: '24px' }}>
+        <p style={labelStyle}>Strategy: {USE_STORE ? 'Fine-grained Store' : 'Lifted Context'}</p>
+        <p style={descriptionStyle}>
+          Edit the \`const USE_STORE = ...\` line to toggle strategies.
+          Count re-renders as you interact: Context causes cascading re-renders,
+          while Store subscriptions only re-render subscribed components.
+        </p>
+      </div>
+      
+      {USE_STORE ? (
+        <>
+          <CatalogHeaderStore />
+          <TagListStore />
+        </>
+      ) : (
+        <FilterContext.Provider value={ctxFilters}>
+          <CatalogHeader />
+          <TagList />
+        </FilterContext.Provider>
+      )}
+    </div>
+  );
+}
+
+const appStyle: React.CSSProperties = {
+  background: '#0a0e1a',
+  color: '#e8dcb8',
+  padding: '20px',
+  minHeight: '100vh',
+  fontFamily: 'system-ui, sans-serif',
+};
+
+const panelStyle: React.CSSProperties = {
+  background: 'rgba(20,25,40,0.78)',
+  border: '0.5px solid rgba(212,177,94,0.35)',
+  borderRadius: 0,
+  padding: '16px',
+  marginBottom: '16px',
+};
+
+const labelStyle: React.CSSProperties = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '12px',
+  letterSpacing: '1px',
+  textTransform: 'uppercase',
+  color: '#a39570',
+  margin: '0 0 8px 0',
+  fontWeight: 600,
+};
+
+const descriptionStyle: React.CSSProperties = {
+  fontSize: '14px',
+  color: '#a39570',
+  margin: '0 0 16px 0',
+  lineHeight: '1.5',
+};
+
+const buttonStyle: React.CSSProperties = {
+  background: '#5a4f33',
+  color: '#e8dcb8',
+  border: '0.5px solid rgba(212,177,94,0.35)',
+  borderRadius: 0,
+  padding: '8px 12px',
+  marginRight: '8px',
+  marginBottom: '8px',
+  fontSize: '12px',
+  cursor: 'pointer',
+  fontFamily: "'JetBrains Mono', monospace",
+};`,
+  }}
+/>
 
 ## Related Patterns
 
