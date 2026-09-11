@@ -7,6 +7,8 @@ summary: "Separate read and write models to optimize each independently and redu
 draft: false
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 Command Query Responsibility Segregation (CQRS) splits an application's data access model into two distinct sides: **commands** that mutate state, and **queries** that read state. Each side is optimized independently — writes enforce business invariants, reads serve UI and reporting needs without those constraints.
@@ -93,6 +95,152 @@ class OrderSummaryQuery:
             [user_id],
         )
 ```
+
+## Live Playground
+
+Experiment with the pattern below. The two tabs show a monolithic service (`before.ts`) where commands and queries are tangled, and the CQRS-refactored equivalent (`after.ts`) with separate command and query handlers.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · CQRS"
+  entry="/after.ts"
+  files={{
+    "/before.ts": `// ── Before: monolithic model ──────────────────────────────
+// OrderService handles both commands and queries with a single
+// schema. Write logic (invariants) leaks into read paths; scaling
+// reads and writes together creates inefficiency.
+
+interface Order {
+  id: string;
+  status: string;
+  total: number;
+  items: Array<{ name: string; qty: number; price: number }>;
+  createdAt: Date;
+}
+
+class OrderService {
+  private orders = new Map<string, Order>();
+
+  // Command: PlaceOrder — enforces business rules
+  placeOrder(items: string[]): string {
+    const id = \`ORD-\${Date.now()}\`;
+    const order: Order = {
+      id,
+      status: 'pending',
+      total: items.length * 10,
+      items: items.map(name => ({ name, qty: 1, price: 10 })),
+      createdAt: new Date(),
+    };
+    this.orders.set(id, order);
+    console.log(\`✓ Order \${id} placed\`);
+    return id;
+  }
+
+  // Query: GetOrders — reads the full Order model
+  getOrders(userId: string): Order[] {
+    // Problem: must read the entire schema even though
+    // the UI only needs id, status, total
+    return Array.from(this.orders.values());
+  }
+
+  // Query: GetOrderSummary — same schema, different projection
+  getOrderSummary(orderId: string): any {
+    const order = this.orders.get(orderId);
+    if (!order) return null;
+    // Denormalizing by hand here — tedious and error-prone
+    return {
+      id: order.id,
+      status: order.status,
+      total: order.total,
+      itemCount: order.items.length,
+    };
+  }
+}
+
+const svc = new OrderService();
+svc.placeOrder(['Laptop', 'Mouse']);
+svc.placeOrder(['Keyboard']);
+console.log('Orders:', svc.getOrders('user-1'));
+console.log('Summary:', svc.getOrderSummary('ORD-1'));
+`,
+    "/after.ts": `// ── After: CQRS (separate command and query models) ──────────
+// Commands enforce invariants on a normalized write store.
+// Queries read from a pre-projected read model optimized for
+// specific consumers. Each scales independently.
+
+// ─── Write Model (Commands) ─────────────────────────────────
+interface OrderAggregate {
+  id: string;
+  status: string;
+  items: Array<{ name: string; qty: number; price: number }>;
+}
+
+class PlaceOrderCommand {
+  constructor(readonly items: string[]) {}
+}
+
+class PlaceOrderHandler {
+  private writeStore = new Map<string, OrderAggregate>();
+
+  handle(cmd: PlaceOrderCommand): string {
+    const id = \`ORD-\${Date.now()}\`;
+    const order: OrderAggregate = {
+      id,
+      status: 'pending',
+      items: cmd.items.map(name => ({ name, qty: 1, price: 10 })),
+    };
+    // Enforce invariants, emit domain events, persist to write DB
+    this.writeStore.set(id, order);
+    console.log(\`✓ Order \${id} placed (domain event emitted)\`);
+    return id;
+  }
+}
+
+// ─── Read Model (Queries) ──────────────────────────────────
+interface OrderSummaryDTO {
+  id: string;
+  status: string;
+  total: number;
+  itemCount: number;
+}
+
+class GetOrdersQuery {
+  // Pre-projected read store — only what the UI needs
+  private readStore: OrderSummaryDTO[] = [
+    { id: 'ORD-100', status: 'shipped', total: 50, itemCount: 5 },
+    { id: 'ORD-101', status: 'pending', total: 20, itemCount: 2 },
+  ];
+
+  execute(): OrderSummaryDTO[] {
+    // No domain logic, no schema joins — just return denormalized data
+    return this.readStore;
+  }
+}
+
+class GetOrderSummaryQuery {
+  private readStore: OrderSummaryDTO[] = [
+    { id: 'ORD-100', status: 'shipped', total: 50, itemCount: 5 },
+    { id: 'ORD-101', status: 'pending', total: 20, itemCount: 2 },
+  ];
+
+  execute(orderId: string): OrderSummaryDTO | null {
+    // Query directly from pre-projected read model
+    return this.readStore.find(o => o.id === orderId) || null;
+  }
+}
+
+// Usage
+const cmdHandler = new PlaceOrderHandler();
+cmdHandler.handle(new PlaceOrderCommand(['Laptop', 'Mouse']));
+
+const queryOrders = new GetOrdersQuery();
+console.log('Orders (read model):', queryOrders.execute());
+
+const querySummary = new GetOrderSummaryQuery();
+console.log('Summary:', querySummary.execute('ORD-101'));
+`,
+  }}
+/>
 
 ## When to Use
 
