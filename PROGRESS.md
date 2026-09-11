@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-09-10 by automated agent
+Last updated: 2026-09-11 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -91,6 +91,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-09-08 | Patterns Catalog page — new /patterns-catalog/ with interactive filterable discovery UI for all 16 patterns, searchable by domain/complexity/tags, React component (PatternsCatalogViz) managing filter state; improves portfolio navigation and recruiter/learner discoverability. | bb003dd |
 | 2026-09-09 | Sandpack playground added to Component Composition pattern (docs/patterns/frontend/component-composition.mdx) — before/after comparison of monolithic vs. composed components with live editor; matches the depth and interactivity of the Dependency Injection pattern playground. | abb0e80 |
 | 2026-09-10 | Sandpack playground added to State Management Patterns (docs/patterns/frontend/state-management-patterns.mdx) — interactive toggle between lifted Context (cascading re-renders) and fine-grained subscriptions (selective re-renders) with live render-count tracking; brings State Management to parity with Component Composition/Dependency Injection. | 3d54281 |
+| 2026-09-11 | Sandpack playground added to CQRS pattern (docs/patterns/backend/cqrs.mdx) — before/after comparison of monolithic command/query handling vs. CQRS-refactored separate handlers; shopping cart scenario demonstrates write-side invariants vs. read-side optimization; brings Backend domain to 2/4 Sandpack coverage (Dependency Injection, CQRS). | b4054a3 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
