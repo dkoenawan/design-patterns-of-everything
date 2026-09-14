@@ -7,6 +7,8 @@ summary: "Define a family of algorithms behind a common interface and make them 
 draft: false
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 The Strategy Pattern defines a set of interchangeable behaviors (strategies) behind a shared interface. The consuming class delegates to whichever strategy is injected, enabling behavior to vary without modifying the class itself. It is the behavioral realization of the Open/Closed Principle.
@@ -76,6 +78,111 @@ express_total = OrderService(ExpressShipping()).get_total(order)
 ```
 
 `Protocol` gives structural typing — any class with a matching `calculate_cost` method satisfies `ShippingStrategy`, with no explicit inheritance required.
+
+## Live Playground
+
+Experiment with the pattern below. The two tabs show a checkout flow before extraction, where shipping cost logic lives in an `if/else` chain inside `OrderService`, and the after version where each shipping method is its own `ShippingStrategy` implementation swapped in at runtime.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · Strategy Pattern"
+  entry="/after.ts"
+  files={{
+    "/before.ts": `// ── Before: conditional branching ─────────────────────────
+// OrderService owns every shipping rule. Adding a new shipping
+// method means editing this method and risking the existing branches.
+
+interface Order {
+  subtotal: number;
+  weight: number;
+}
+
+class OrderService {
+  getTotal(order: Order, shippingMethod: string): number {
+    let shippingCost: number;
+
+    if (shippingMethod === 'standard') {
+      shippingCost = order.weight * 2.5;
+    } else if (shippingMethod === 'express') {
+      shippingCost = order.weight * 5.0 + 10;
+    } else if (shippingMethod === 'overnight') {
+      shippingCost = order.weight * 8.0 + 25;
+    } else if (shippingMethod === 'economy') {
+      shippingCost = order.weight * 1.5;
+    } else {
+      throw new Error(\`Unknown shipping method: \${shippingMethod}\`);
+    }
+
+    return order.subtotal + shippingCost;
+  }
+}
+
+const svc = new OrderService();
+const order: Order = { subtotal: 100, weight: 4 };
+
+for (const method of ['standard', 'express', 'overnight', 'economy']) {
+  console.log(\`\${method}: $\${svc.getTotal(order, method).toFixed(2)}\`);
+}
+`,
+    "/after.ts": `// ── After: Strategy Pattern ───────────────────────────────
+// Each shipping method implements a shared interface. OrderService
+// delegates to whichever strategy is injected and never branches
+// on method name. New strategies plug in without touching this class.
+
+interface Order {
+  subtotal: number;
+  weight: number;
+}
+
+interface ShippingStrategy {
+  name: string;
+  calculateCost(order: Order): number;
+}
+
+class StandardShipping implements ShippingStrategy {
+  name = 'standard';
+  calculateCost(order: Order) { return order.weight * 2.5; }
+}
+
+class ExpressShipping implements ShippingStrategy {
+  name = 'express';
+  calculateCost(order: Order) { return order.weight * 5.0 + 10; }
+}
+
+class OvernightShipping implements ShippingStrategy {
+  name = 'overnight';
+  calculateCost(order: Order) { return order.weight * 8.0 + 25; }
+}
+
+class EconomyShipping implements ShippingStrategy {
+  name = 'economy';
+  calculateCost(order: Order) { return order.weight * 1.5; }
+}
+
+class OrderService {
+  constructor(private shipping: ShippingStrategy) {}
+
+  getTotal(order: Order): number {
+    return order.subtotal + this.shipping.calculateCost(order);
+  }
+}
+
+const order: Order = { subtotal: 100, weight: 4 };
+const strategies: ShippingStrategy[] = [
+  new StandardShipping(),
+  new ExpressShipping(),
+  new OvernightShipping(),
+  new EconomyShipping(),
+];
+
+// Swap strategies at runtime — OrderService is never modified
+for (const strategy of strategies) {
+  const svc = new OrderService(strategy);
+  console.log(\`\${strategy.name}: $\${svc.getTotal(order).toFixed(2)}\`);
+}
+`,
+  }}
+/>
 
 ## When to Use
 
