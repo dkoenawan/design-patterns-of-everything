@@ -7,6 +7,8 @@ summary: "Isolate application core logic from external dependencies using ports 
 draft: false
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 Hexagonal Architecture (also called Ports and Adapters) structures an application so that the core domain logic is entirely independent of external systems — databases, APIs, UIs, and messaging infrastructure. External interactions flow through defined ports (interfaces) and are wired up via adapters at runtime.
@@ -140,6 +142,114 @@ Because `OrderRepository` is a `Protocol`, `PostgresOrderRepository` and `InMemo
 | Infrastructure is swappable without touching domain code | Indirection can make control flow harder to trace |
 | Clear dependency direction enforced by structure | Requires discipline to avoid leaking adapters into core |
 | Supports parallel development (core vs. adapters) | Initial setup cost is higher than layered architecture |
+
+## Live Playground
+
+Experiment with the pattern below. `before.ts` couples the use case directly to Postgres; `after.ts` extracts an `OrderRepository` port and swaps in an in-memory adapter with zero changes to the core. Edit either file and the preview updates in real time.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · Hexagonal Architecture"
+  entry="/after.ts"
+  files={{
+    "/before.ts": `// ── Before: core coupled to infrastructure ──────────────────
+// PlaceOrderUseCase constructs and calls Postgres directly.
+// Testing the use case means standing up a real database.
+
+class PostgresOrderRepository {
+  private rows: Record<string, any> = {};
+
+  save(order: { id: string; items: string[] }): void {
+    console.log(\`[Postgres] INSERT INTO orders VALUES ('\${order.id}')\`);
+    this.rows[order.id] = order;
+  }
+
+  findById(id: string) {
+    console.log(\`[Postgres] SELECT * FROM orders WHERE id = '\${id}'\`);
+    return this.rows[id] ?? null;
+  }
+}
+
+class PlaceOrderUseCase {
+  private orders = new PostgresOrderRepository(); // concrete — not swappable
+
+  execute(id: string, items: string[]): void {
+    this.orders.save({ id, items });
+  }
+
+  lookup(id: string) {
+    return this.orders.findById(id);
+  }
+}
+
+const useCase = new PlaceOrderUseCase();
+useCase.execute("ORD-001", ["Widget"]);
+console.log(useCase.lookup("ORD-001"));
+`,
+    "/after.ts": `// ── After: Hexagonal Architecture ───────────────────────────
+// The core depends on an OrderRepository port, not a concrete
+// database. Adapters implement the port; the core never changes.
+
+interface OrderRepository {
+  save(order: { id: string; items: string[] }): void;
+  findById(id: string): { id: string; items: string[] } | null;
+}
+
+// Adapter — owns the infrastructure detail
+class PostgresOrderRepository implements OrderRepository {
+  private rows: Record<string, any> = {};
+
+  save(order: { id: string; items: string[] }): void {
+    console.log(\`[Postgres] INSERT INTO orders VALUES ('\${order.id}')\`);
+    this.rows[order.id] = order;
+  }
+
+  findById(id: string) {
+    console.log(\`[Postgres] SELECT * FROM orders WHERE id = '\${id}'\`);
+    return this.rows[id] ?? null;
+  }
+}
+
+// Adapter — no infrastructure required, ideal for tests
+class InMemoryOrderRepository implements OrderRepository {
+  private rows: Record<string, any> = {};
+
+  save(order: { id: string; items: string[] }): void {
+    console.log(\`[InMemory] storing '\${order.id}'\`);
+    this.rows[order.id] = order;
+  }
+
+  findById(id: string) {
+    console.log(\`[InMemory] looking up '\${id}'\`);
+    return this.rows[id] ?? null;
+  }
+}
+
+// Application core — depends only on the port interface
+class PlaceOrderUseCase {
+  constructor(private readonly orders: OrderRepository) {}
+
+  execute(id: string, items: string[]): void {
+    this.orders.save({ id, items });
+  }
+
+  lookup(id: string) {
+    return this.orders.findById(id);
+  }
+}
+
+// Wired with production DB:
+const prodUseCase = new PlaceOrderUseCase(new PostgresOrderRepository());
+prodUseCase.execute("ORD-001", ["Widget"]);
+console.log(prodUseCase.lookup("ORD-001"));
+
+// Wired with in-memory adapter — no infrastructure required:
+const testUseCase = new PlaceOrderUseCase(new InMemoryOrderRepository());
+testUseCase.execute("ORD-002", ["Gadget"]);
+console.log(testUseCase.lookup("ORD-002"));
+`,
+  }}
+/>
 
 ## Related Patterns
 
