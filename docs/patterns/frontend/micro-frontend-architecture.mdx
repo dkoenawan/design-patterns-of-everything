@@ -7,6 +7,8 @@ summary: "Decompose a large frontend monolith into independently deployable UI a
 draft: false
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 Micro-Frontend Architecture applies the microservices decomposition model to the UI layer. Instead of a single frontend codebase owned by everyone (and therefore controlled by no one), the product is split into vertical slices — each slice is a self-contained application that a single team builds, tests, and deploys independently. A shell application composes these slices at runtime into the experience a user sees.
@@ -138,6 +140,178 @@ Each remote publishes a `remoteEntry.js` at a stable URL. The shell resolves rem
 | Teams can adopt different frameworks or versions per domain | Testing the integrated product requires a full composition environment |
 | Legacy monolith can be extracted incrementally | Cross-remote debugging is harder: stack traces cross bundle boundaries |
 | Scales team autonomy without scaling coordination overhead | Shared state contracts between remotes must be versioned as APIs |
+
+## Live Playground
+
+Experiment with the pattern below. The "before" tab shows a shell that imports a remote panel directly at build time — a single crash anywhere in the remote takes down the whole shell, and the shell can never ship without rebuilding against the remote's exact version. The "after" tab shows the same shell resolving the remote from a runtime registry (standing in for `remoteEntry.js` resolution) and wrapping it in an error boundary, so the remote can fail, change, or redeploy independently.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · Micro-Frontend Architecture"
+  entry="/runtime-composed.tsx"
+  files={{
+    "/build-time-coupled.tsx": `// ── Before: Build-time coupled ──────────────────────────
+// The shell imports the remote directly. A bug in
+// RecommendationPanel breaks the entire page, and the
+// shell cannot deploy without the remote's exact version
+// being present at build time.
+
+function RecommendationPanel({ productId }: { productId: string }) {
+  // Simulates a remote that throws on a bad response shape
+  const items = null as unknown as string[];
+  return (
+    <ul style={panelStyle}>
+      {items.map((item) => (
+        <li key={item}>{item}</li>
+      ))}
+    </ul>
+  );
+}
+
+function ProductDetails({ productId }: { productId: string }) {
+  return <h3 style={titleStyle}>Product #{productId}</h3>;
+}
+
+export default function App() {
+  return (
+    <div style={appStyle}>
+      <ProductDetails productId="sku-42" />
+      {/* No isolation: RecommendationPanel's crash unmounts everything */}
+      <RecommendationPanel productId="sku-42" />
+    </div>
+  );
+}
+
+const appStyle: React.CSSProperties = {
+  background: "#0a0e1a",
+  color: "#e8dcb8",
+  padding: "20px",
+  minHeight: "100vh",
+  fontFamily: "system-ui, sans-serif",
+};
+
+const titleStyle: React.CSSProperties = {
+  fontSize: "16px",
+  fontWeight: 600,
+  marginBottom: "12px",
+};
+
+const panelStyle: React.CSSProperties = {
+  border: "0.5px solid rgba(212,177,94,0.35)",
+  padding: "12px",
+  listStyle: "none",
+};
+`,
+    "/runtime-composed.tsx": `// ── After: Runtime composed ─────────────────────────────
+// The shell resolves the remote from a runtime registry
+// (standing in for Module Federation's remoteEntry.js) and
+// wraps it in an error boundary. The remote can crash,
+// change, or redeploy without touching the shell.
+
+import { Component, Suspense, useEffect, useState } from "react";
+
+class ErrorBoundary extends Component<
+  { fallback: React.ReactNode; children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children;
+  }
+}
+
+// Broken remote — throws just like the coupled example,
+// but isolated behind the boundary below.
+function RecommendationPanel({ productId }: { productId: string }) {
+  const items = null as unknown as string[];
+  return (
+    <ul style={panelStyle}>
+      {items.map((item) => (
+        <li key={item}>{item}</li>
+      ))}
+    </ul>
+  );
+}
+
+// Runtime registry — a stand-in for resolving remoteEntry.js
+// from a manifest URL rather than a build-time import.
+const remoteRegistry: Record<string, React.ComponentType<any>> = {
+  recommendations: RecommendationPanel,
+};
+
+function useRemote(name: string) {
+  const [Remote, setRemote] = useState<React.ComponentType<any> | null>(null);
+  useEffect(() => {
+    // In production this resolves remoteEntry.js over the network;
+    // here it resolves synchronously from the in-memory registry.
+    setRemote(() => remoteRegistry[name]);
+  }, [name]);
+  return Remote;
+}
+
+function ProductDetails({ productId }: { productId: string }) {
+  return <h3 style={titleStyle}>Product #{productId}</h3>;
+}
+
+function RemoteSlot({ name, productId }: { name: string; productId: string }) {
+  const Remote = useRemote(name);
+  if (!Remote) return <p style={skeletonStyle}>Loading remote…</p>;
+  return (
+    <ErrorBoundary fallback={<p style={fallbackStyle}>Recommendations unavailable</p>}>
+      <Suspense fallback={<p style={skeletonStyle}>Loading remote…</p>}>
+        <Remote productId={productId} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
+export default function App() {
+  return (
+    <div style={appStyle}>
+      <ProductDetails productId="sku-42" />
+      {/* Isolated: a crash here degrades gracefully, page stays up */}
+      <RemoteSlot name="recommendations" productId="sku-42" />
+    </div>
+  );
+}
+
+const appStyle: React.CSSProperties = {
+  background: "#0a0e1a",
+  color: "#e8dcb8",
+  padding: "20px",
+  minHeight: "100vh",
+  fontFamily: "system-ui, sans-serif",
+};
+
+const titleStyle: React.CSSProperties = {
+  fontSize: "16px",
+  fontWeight: 600,
+  marginBottom: "12px",
+};
+
+const panelStyle: React.CSSProperties = {
+  border: "0.5px solid rgba(212,177,94,0.35)",
+  padding: "12px",
+  listStyle: "none",
+};
+
+const fallbackStyle: React.CSSProperties = {
+  border: "0.5px solid rgba(212,177,94,0.35)",
+  padding: "12px",
+  color: "#a39570",
+  fontStyle: "italic",
+};
+
+const skeletonStyle: React.CSSProperties = {
+  color: "#5a4f33",
+  fontStyle: "italic",
+};
+`,
+  }}
+/>
 
 ## Related Patterns
 

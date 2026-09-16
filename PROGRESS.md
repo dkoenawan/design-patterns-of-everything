@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-09-15 by automated agent
+Last updated: 2026-09-16 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -94,6 +94,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-09-11 | Sandpack playground added to CQRS pattern (docs/patterns/backend/cqrs.mdx) — before/after comparison of monolithic command/query handling vs. CQRS-refactored separate handlers; shopping cart scenario demonstrates write-side invariants vs. read-side optimization; brings Backend domain to 2/4 Sandpack coverage (Dependency Injection, CQRS). | b4054a3 |
 | 2026-09-14 | Sandpack playground added to Strategy Pattern (docs/patterns/backend/strategy-pattern.mdx) — before/after comparison of an if/else shipping-cost branch vs. four interchangeable ShippingStrategy implementations swapped at runtime; brings Backend domain to 3/4 Sandpack coverage (Dependency Injection, CQRS, Strategy Pattern). | a22910e |
 | 2026-09-15 | Sandpack playground added to Hexagonal Architecture pattern (docs/patterns/backend/hexagonal-architecture.mdx) — before/after comparison of a use case coupled directly to Postgres vs. one depending on an OrderRepository port with swappable Postgres/in-memory adapters; brings Backend domain to 4/4 Sandpack coverage (Dependency Injection, CQRS, Strategy Pattern, Hexagonal Architecture). | 94e4f83 |
+| 2026-09-16 | Sandpack playground added to Micro-Frontend Architecture pattern (docs/patterns/frontend/micro-frontend-architecture.mdx) — before/after comparison of a shell with a build-time-coupled remote import (crash takes down the page) vs. one resolving the remote from a runtime registry behind an error boundary (crash degrades gracefully); brings Frontend domain to 3/3 Sandpack coverage (Component Composition, State Management, Micro-Frontend Architecture). | pending |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
