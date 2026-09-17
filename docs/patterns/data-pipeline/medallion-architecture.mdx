@@ -7,6 +7,8 @@ summary: "Progressively refine raw data through Bronze, Silver, and Gold layers 
 draft: false
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 Medallion Architecture organizes a data lakehouse into three progressive refinement layers — Bronze (raw ingestion), Silver (cleansed and conformed), and Gold (business-ready aggregates). Each layer has a defined contract for data quality, enabling downstream consumers to trust the data they use without re-engineering upstream pipelines.
@@ -172,6 +174,132 @@ def aggregate_to_gold(silver: list[SilverOrder]) -> list[GoldDailyRevenue]:
         bucket.total_revenue += order.total
     return list(by_date.values())
 ```
+
+## Live Playground
+
+Experiment with the pattern below. The two tabs show a monolithic transform (`before.ts`) that cleans and aggregates raw events in one pass, and the Medallion-refactored equivalent (`after.ts`) with distinct Bronze, Silver, and Gold stages.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · Medallion Architecture"
+  entry="/after.ts"
+  files={{
+    "/before.ts": `// ── Before: single-pass transform ─────────────────────────
+// Raw events are cleaned and aggregated in one function. No
+// intermediate state is kept — a bug in aggregation forces
+// re-ingestion from the source, and nothing is auditable.
+
+interface RawEvent {
+  order_id?: unknown;
+  customer_id?: unknown;
+  total?: unknown;
+  placed_at?: unknown;
+}
+
+function processEvents(raw: RawEvent[]): { date: string; orderCount: number; totalRevenue: number }[] {
+  const seen = new Set<string>();
+  const byDate = new Map<string, { date: string; orderCount: number; totalRevenue: number }>();
+
+  for (const r of raw) {
+    // Validation, dedup, typing, and aggregation all tangled together
+    if (typeof r.order_id !== 'string' || typeof r.total !== 'number') continue;
+    if (seen.has(r.order_id)) continue;
+    seen.add(r.order_id);
+
+    const date = String(r.placed_at).slice(0, 10);
+    const bucket = byDate.get(date) ?? { date, orderCount: 0, totalRevenue: 0 };
+    bucket.orderCount += 1;
+    bucket.totalRevenue += r.total;
+    byDate.set(date, bucket);
+  }
+
+  return [...byDate.values()];
+  // Problem: if this throws halfway through, raw events are lost —
+  // there's no Bronze snapshot to retry from.
+}
+
+const raw: RawEvent[] = [
+  { order_id: 'ORD-1', customer_id: 'C-1', total: 42, placed_at: '2026-09-01T10:00:00Z' },
+  { order_id: 'ORD-2', customer_id: 'C-2', total: 18, placed_at: '2026-09-01T14:00:00Z' },
+  { order_id: 'ORD-1', customer_id: 'C-1', total: 42, placed_at: '2026-09-01T10:00:00Z' }, // dup
+  { order_id: 'ORD-3', total: 'bad-data', placed_at: '2026-09-02T09:00:00Z' }, // malformed
+];
+
+console.log('Gold output:', processEvents(raw));
+`,
+    "/after.ts": `// ── After: Medallion layers (Bronze → Silver → Gold) ──────────
+// Each stage is pure and isolated. Bronze preserves raw input;
+// Silver enforces quality; Gold aggregates for consumers. A
+// failure in Gold never touches Bronze — rerun from Silver.
+
+interface BronzeOrderEvent {
+  raw: Record<string, unknown>;
+  ingestedAt: Date;
+}
+
+function ingestToBronze(events: Record<string, unknown>[]): BronzeOrderEvent[] {
+  // Preserve exactly as received — no validation, no shape assumptions
+  return events.map((raw) => ({ raw, ingestedAt: new Date() }));
+}
+
+interface SilverOrder {
+  orderId: string;
+  total: number;
+  placedAt: string;
+}
+
+function promoteToSilver(bronze: BronzeOrderEvent[]): SilverOrder[] {
+  const seen = new Set<string>();
+  return bronze
+    .filter((b) => typeof b.raw.order_id === 'string' && typeof b.raw.total === 'number')
+    .filter((b) => {
+      const id = b.raw.order_id as string;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    })
+    .map((b) => ({
+      orderId: b.raw.order_id as string,
+      total: b.raw.total as number,
+      placedAt: String(b.raw.placed_at).slice(0, 10),
+    }));
+}
+
+interface GoldDailyRevenue {
+  date: string;
+  orderCount: number;
+  totalRevenue: number;
+}
+
+function aggregateToGold(silver: SilverOrder[]): GoldDailyRevenue[] {
+  const byDate = new Map<string, GoldDailyRevenue>();
+  for (const order of silver) {
+    const bucket = byDate.get(order.placedAt) ?? { date: order.placedAt, orderCount: 0, totalRevenue: 0 };
+    bucket.orderCount += 1;
+    bucket.totalRevenue += order.total;
+    byDate.set(order.placedAt, bucket);
+  }
+  return [...byDate.values()];
+}
+
+const raw = [
+  { order_id: 'ORD-1', customer_id: 'C-1', total: 42, placed_at: '2026-09-01T10:00:00Z' },
+  { order_id: 'ORD-2', customer_id: 'C-2', total: 18, placed_at: '2026-09-01T14:00:00Z' },
+  { order_id: 'ORD-1', customer_id: 'C-1', total: 42, placed_at: '2026-09-01T10:00:00Z' }, // dup — dropped in Silver
+  { order_id: 'ORD-3', total: 'bad-data', placed_at: '2026-09-02T09:00:00Z' }, // malformed — dropped in Silver
+];
+
+const bronze = ingestToBronze(raw);
+console.log('Bronze (raw, preserved):', bronze.length, 'records');
+
+const silver = promoteToSilver(bronze);
+console.log('Silver (cleansed, deduped):', silver);
+
+const gold = aggregateToGold(silver);
+console.log('Gold (business aggregate):', gold);
+`,
+  }}
+/>
 
 ## When to Use
 
