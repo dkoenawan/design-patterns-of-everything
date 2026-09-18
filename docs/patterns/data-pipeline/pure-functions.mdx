@@ -7,6 +7,8 @@ summary: "Write transformations as functions with no side effects and determinis
 draft: false
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 A pure function always produces the same output for the same input and has no observable side effects — no database writes, no external API calls, no mutation of shared state. In data pipelines, applying this principle to transformation logic dramatically improves testability, composability, and reproducibility.
@@ -69,6 +71,97 @@ await writeOrders(db, highValue);
 ```
 
 `filterHighValue` takes no `db`, no `Date.now()`, no ambient state — every unit test supplies fixtures directly and asserts on the return value, with no mocks or fakes required.
+
+## Live Playground
+
+Experiment with the pattern below. The two tabs show an impure transform (`before.ts`) that mixes a fake "database read," a running total mutation, and filtering into one function, and a pure equivalent (`after.ts`) that separates I/O from computation.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · Pure Functions"
+  entry="/after.ts"
+  files={{
+    "/before.ts": `// ── Before: impure transform ───────────────────────────────
+// Reads from a "database," mutates a shared running total, and
+// filters — all tangled in one function. Untestable without a
+// fake DB, and calling it twice gives different results.
+
+interface Order {
+  id: string;
+  total: number;
+}
+
+// Simulates an external data source
+function readOrdersFromDb(): Order[] {
+  return [
+    { id: 'ORD-1', total: 120 },
+    { id: 'ORD-2', total: 45 },
+    { id: 'ORD-3', total: 210 },
+  ];
+}
+
+let runningTotal = 0; // shared mutable state — a hidden dependency
+
+function processHighValueOrders(threshold: number): Order[] {
+  const orders = readOrdersFromDb(); // hidden I/O dependency
+  const result: Order[] = [];
+  for (const o of orders) {
+    if (o.total > threshold) {
+      runningTotal += o.total; // mutates external state as a side effect
+      result.push(o);
+    }
+  }
+  return result;
+  // Problem: calling this twice doubles runningTotal. Unit-testing
+  // requires mocking readOrdersFromDb. The result depends on when
+  // and how many times this function has run before.
+}
+
+console.log('High-value orders:', processHighValueOrders(100));
+console.log('Running total (hidden side effect):', runningTotal);
+`,
+    "/after.ts": `// ── After: pure transform, I/O pushed to the boundary ─────
+// The transformation takes plain data and returns plain data.
+// No hidden reads, no mutation of external state — every call
+// with the same input gives the same output.
+
+interface Order {
+  id: string;
+  total: number;
+}
+
+// I/O lives at the boundary, separate from the transformation
+function readOrdersFromDb(): Order[] {
+  return [
+    { id: 'ORD-1', total: 120 },
+    { id: 'ORD-2', total: 45 },
+    { id: 'ORD-3', total: 210 },
+  ];
+}
+
+// Pure — just the transformation. Deterministic, no side effects.
+function filterHighValue(orders: Order[], threshold: number): Order[] {
+  return orders.filter((o) => o.total > threshold);
+}
+
+// Pure — derives a total without mutating anything
+function sumTotals(orders: Order[]): number {
+  return orders.reduce((sum, o) => sum + o.total, 0);
+}
+
+const orders = readOrdersFromDb();
+const highValue = filterHighValue(orders, 100);
+const total = sumTotals(highValue);
+
+console.log('High-value orders:', highValue);
+console.log('Total (derived, not mutated):', total);
+
+// Calling the same pure functions again with the same input
+// yields the exact same result — no hidden state to worry about.
+console.log('Re-run is identical:', filterHighValue(orders, 100).length === highValue.length);
+`,
+  }}
+/>
 
 ## When to Use
 
