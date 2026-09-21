@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-09-18 by automated agent
+Last updated: 2026-09-21 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -97,6 +97,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-09-16 | Sandpack playground added to Micro-Frontend Architecture pattern (docs/patterns/frontend/micro-frontend-architecture.mdx) — before/after comparison of a shell with a build-time-coupled remote import (crash takes down the page) vs. one resolving the remote from a runtime registry behind an error boundary (crash degrades gracefully); brings Frontend domain to 3/3 Sandpack coverage (Component Composition, State Management, Micro-Frontend Architecture). | 9d27163 |
 | 2026-09-17 | Sandpack playground added to Medallion Architecture pattern (docs/patterns/data-pipeline/medallion-architecture.mdx) — before/after comparison of a monolithic single-pass transform (validation/dedup/aggregation tangled, no recovery point) vs. the layered Bronze/Silver/Gold pipeline (pure, isolated stages, rerunnable from Silver); Backend and Frontend now have full Sandpack coverage, this begins Data Pipeline's (1/4: Medallion Architecture). | 799a199 |
 | 2026-09-18 | Sandpack playground added to Pure Functions pattern (docs/patterns/data-pipeline/pure-functions.mdx) — before/after comparison of an impure transform (hidden DB read, mutated shared running total) vs. a pure equivalent (I/O pushed to the boundary, deterministic re-runs); brings Data Pipeline to 2/4 Sandpack coverage (Medallion Architecture, Pure Functions). | 5a16592 |
+| 2026-09-21 | Sandpack playground added to Schema-Driven Validation pattern (docs/patterns/data-pipeline/schema-driven-validation.mdx) — before/after comparison of scattered imperative if-checks (loose string error, easy to under-cover) vs. a single declarative schema whose safeParse is both the type source and validation contract; brings Data Pipeline to 3/4 Sandpack coverage (Medallion Architecture, Pure Functions, Schema-Driven Validation). | bf71065 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
