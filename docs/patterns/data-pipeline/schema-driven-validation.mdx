@@ -7,6 +7,8 @@ summary: "Declare data expectations as schemas and validate data against them ra
 draft: false
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 Schema-Driven Validation encodes data expectations — types, nullability, value ranges, referential constraints — as explicit schema definitions. Data is validated against the schema automatically, separating the declaration of what is valid from the logic that checks it. Violations surface as structured errors rather than silent corruption.
@@ -76,6 +78,134 @@ function validateBatch(records: unknown[]): ValidationResult {
 ```
 
 `OrderSchema` is the single source of truth: the type `Order` is inferred from it rather than kept in sync by hand, and `safeParse` turns validation into a data transformation — bad records are routed to `rejected` instead of throwing mid-pipeline.
+
+## Live Playground
+
+Experiment with the pattern below. The two tabs show an imperative validator (`before.ts`) with scattered `if` checks that silently drop context on failure, and a schema-driven equivalent (`after.ts`) where a single Zod schema is both the type source and the validation contract.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · Schema-Driven Validation"
+  entry="/after.ts"
+  files={{
+    "/before.ts": `// ── Before: imperative, scattered checks ──────────────────
+// Each field is validated by hand. Checks are easy to forget,
+// hard to audit as a whole, and the failure reason is a loose
+// string with no structure — nothing enforces that every field
+// actually got checked.
+
+interface RawRecord {
+  orderId?: string;
+  total?: number;
+  status?: string;
+}
+
+function validateOrder(record: RawRecord): { valid: boolean; error?: string } {
+  if (!record.orderId) {
+    return { valid: false, error: 'missing orderId' };
+  }
+  if (record.total === undefined || record.total <= 0) {
+    return { valid: false, error: 'total must be positive' };
+  }
+  if (!['pending', 'complete', 'cancelled'].includes(record.status ?? '')) {
+    return { valid: false, error: 'invalid status' };
+  }
+  // Nothing stops a new field being added upstream without a
+  // matching check being added here — silent coverage gaps.
+  return { valid: true };
+}
+
+const records: RawRecord[] = [
+  { orderId: 'ORD-1', total: 120, status: 'complete' },
+  { orderId: 'ORD-2', total: -5, status: 'pending' },
+  { orderId: 'ORD-3', total: 40, status: 'unknown' },
+];
+
+for (const r of records) {
+  console.log(r.orderId, '->', validateOrder(r));
+}
+`,
+    "/after.ts": `// ── After: schema-driven, declarative contract ───────────
+// One schema is the single source of truth for both the type
+// and the validation rules. safeParse turns validation into a
+// data transformation: bad records are routed to "rejected"
+// with structured detail instead of a loose string.
+
+// Minimal stand-in for the "zod" import used in the write-up —
+// same z.object/z.string/z.number/z.enum API, just inlined so
+// the playground runs with zero dependencies.
+type Check<T> = { parse: (v: unknown) => { ok: true; value: T } | { ok: false; issue: string } };
+
+const z = {
+  string: (): Check<string> => ({
+    parse: (v) => (typeof v === 'string' && v.length > 0 ? { ok: true, value: v } : { ok: false, issue: 'expected non-empty string' }),
+  }),
+  positiveNumber: (): Check<number> => ({
+    parse: (v) => (typeof v === 'number' && v > 0 ? { ok: true, value: v } : { ok: false, issue: 'total must be positive' }),
+  }),
+  enum: <T extends string>(values: readonly T[]): Check<T> => ({
+    parse: (v) => (values.includes(v as T) ? { ok: true, value: v as T } : { ok: false, issue: \`status must be one of \${values.join(', ')}\` }),
+  }),
+};
+
+interface Order {
+  orderId: string;
+  total: number;
+  status: 'pending' | 'complete' | 'cancelled';
+}
+
+const OrderSchema = {
+  orderId: z.string(),
+  total: z.positiveNumber(),
+  status: z.enum(['pending', 'complete', 'cancelled'] as const),
+};
+
+interface ValidationResult {
+  valid: Order[];
+  rejected: { record: unknown; reason: string }[];
+}
+
+function safeParse(record: Record<string, unknown>): { success: true; data: Order } | { success: false; reason: string } {
+  const orderId = OrderSchema.orderId.parse(record.orderId);
+  if (!orderId.ok) return { success: false, reason: orderId.issue };
+
+  const total = OrderSchema.total.parse(record.total);
+  if (!total.ok) return { success: false, reason: total.issue };
+
+  const status = OrderSchema.status.parse(record.status);
+  if (!status.ok) return { success: false, reason: status.issue };
+
+  return { success: true, data: { orderId: orderId.value, total: total.value, status: status.value } };
+}
+
+function validateBatch(records: Record<string, unknown>[]): ValidationResult {
+  const valid: Order[] = [];
+  const rejected: ValidationResult['rejected'] = [];
+
+  for (const record of records) {
+    const result = safeParse(record);
+    if (result.success) {
+      valid.push(result.data);
+    } else {
+      rejected.push({ record, reason: result.reason });
+    }
+  }
+
+  return { valid, rejected };
+}
+
+const records = [
+  { orderId: 'ORD-1', total: 120, status: 'complete' },
+  { orderId: 'ORD-2', total: -5, status: 'pending' },
+  { orderId: 'ORD-3', total: 40, status: 'unknown' },
+];
+
+const { valid, rejected } = validateBatch(records);
+console.log('Valid:', valid);
+console.log('Rejected:', rejected);
+`,
+  }}
+/>
 
 ## When to Use
 
