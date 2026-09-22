@@ -7,6 +7,8 @@ summary: "Choose between processing data in bounded chunks or as a continuous un
 draft: false
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 Batch and streaming are the two fundamental execution models for data pipelines. Batch processes bounded, finite datasets at scheduled intervals, optimizing for throughput and simplicity. Streaming processes data as an unbounded, continuous flow, optimizing for latency and real-time insight. The choice between them — or a hybrid micro-batch approach — determines pipeline architecture, tooling, cost model, and operational complexity.
@@ -122,6 +124,100 @@ function partitionByWatermark(events: DomainEvent[]) {
 ```
 
 `WatermarkGate` tracks the highest event time seen so far as a proxy for "now" in event time, rather than trusting wall-clock arrival order — the same principle Flink's `WatermarkStrategy` applies internally, made explicit for pipelines built on plain Kafka consumers.
+
+## Live Playground
+
+Experiment with the pattern below. The two tabs show a fixed-interval batch job (`before.ts`) that groups events strictly by wall-clock arrival — a late event silently lands in whichever batch happens to be open when it shows up — and a watermark-aware equivalent (`after.ts`) that classifies events against event time and routes late arrivals to a side-output instead of corrupting the wrong window.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · Batch vs Streaming"
+  entry="/after.ts"
+  files={{
+    "/before.ts": `// ── Before: fixed-interval batch, arrival-order only ──────
+// Events are grouped purely by when they showed up at the
+// consumer, not by when they actually happened (event time).
+// A network hiccup or retry can put a late event in the wrong
+// batch with no way to tell after the fact.
+
+interface DomainEvent {
+  eventTime: number; // epoch millis, assigned by the producer
+  payload: unknown;
+}
+
+const BATCH_SIZE = 3;
+
+function batchByArrival(events: DomainEvent[]): DomainEvent[][] {
+  const batches: DomainEvent[][] = [];
+  for (let i = 0; i < events.length; i += BATCH_SIZE) {
+    batches.push(events.slice(i, i + BATCH_SIZE));
+  }
+  // Nothing here checks whether an event's eventTime actually
+  // belongs in the batch it landed in — a late-arriving event
+  // is aggregated as if it were on time.
+  return batches;
+}
+
+const events: DomainEvent[] = [
+  { eventTime: 1000, payload: 'a' },
+  { eventTime: 2000, payload: 'b' },
+  { eventTime: 3000, payload: 'c' },
+  { eventTime: 4000, payload: 'd' },
+  { eventTime: 1500, payload: 'late-a' }, // arrived after 'd' but happened before 'b'
+];
+
+batchByArrival(events).forEach((batch, i) => {
+  console.log(\`Batch \${i}:\`, batch.map((e) => e.payload));
+});
+`,
+    "/after.ts": `// ── After: watermark-aware classification ────────────────
+// Event time, not arrival order, decides whether a record is
+// on time or late. Late records are routed to a side-output
+// instead of silently polluting whatever window is open.
+
+interface DomainEvent {
+  eventTime: number; // epoch millis, assigned by the producer
+  payload: unknown;
+}
+
+const LATE_TOLERANCE_MS = 1_000;
+
+class WatermarkGate {
+  private maxEventTime = 0;
+
+  classify(event: DomainEvent): 'onTime' | 'late' {
+    this.maxEventTime = Math.max(this.maxEventTime, event.eventTime);
+    const watermark = this.maxEventTime - LATE_TOLERANCE_MS;
+    return event.eventTime < watermark ? 'late' : 'onTime';
+  }
+}
+
+function partitionByWatermark(events: DomainEvent[]) {
+  const gate = new WatermarkGate();
+  const onTime: DomainEvent[] = [];
+  const late: DomainEvent[] = [];
+
+  for (const event of events) {
+    (gate.classify(event) === 'onTime' ? onTime : late).push(event);
+  }
+
+  return { onTime, late };
+}
+
+const events: DomainEvent[] = [
+  { eventTime: 1000, payload: 'a' },
+  { eventTime: 2000, payload: 'b' },
+  { eventTime: 3000, payload: 'c' },
+  { eventTime: 4000, payload: 'd' },
+  { eventTime: 1500, payload: 'late-a' }, // arrived after 'd' but happened before 'b'
+];
+
+const { onTime, late } = partitionByWatermark(events);
+console.log('On time:', onTime.map((e) => e.payload));
+console.log('Late (side-output):', late.map((e) => e.payload));
+`,
+  }}
+/>
 
 ## When to Use
 
