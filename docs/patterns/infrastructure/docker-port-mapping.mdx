@@ -7,6 +7,8 @@ summary: "Map container-internal ports to unique host ports to run multiple inst
 draft: false
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 Containers run services on their default internal ports. Docker's port-mapping flag (`-p host:container`) exposes each container to a unique port on the host, preventing conflicts when running multiple instances of the same service on one machine.
@@ -101,6 +103,110 @@ echo "No port conflicts detected across $(echo "$host_ports" | wc -l) mapped por
 ```
 
 Run it as a pre-flight gate: `./check-port-conflicts.sh docker-compose.yml && docker compose up -d`. This turns a runtime failure (a container that silently fails to bind) into a fast, explicit pre-flight error.
+
+## Live Playground
+
+Experiment with the pattern below. The before version assigns every service the same hardcoded host port and only discovers the collision when the second container tries to bind. The after version tracks assigned host ports and allocates the next free one, catching the conflict before it ever reaches Docker.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · Docker Port Mapping"
+  entry="/after.ts"
+  files={{
+    "/before.ts": `// ── Before: hardcoded host ports ──────────────────────────
+// Every service definition copies the same internal port straight
+// through to the host. Two instances of the same image collide,
+// and the failure only shows up when Docker tries to bind.
+
+interface ServiceSpec {
+  name: string;
+  image: string;
+  internalPort: number;
+}
+
+interface BoundService extends ServiceSpec {
+  hostPort: number;
+}
+
+function bindService(spec: ServiceSpec): BoundService {
+  // Naively reuses the internal port as the host port.
+  return { ...spec, hostPort: spec.internalPort };
+}
+
+const services: ServiceSpec[] = [
+  { name: 'project_a_db', image: 'postgres:16', internalPort: 5432 },
+  { name: 'project_b_db', image: 'postgres:15', internalPort: 5432 },
+  { name: 'project_c_db', image: 'postgres:16', internalPort: 5432 },
+];
+
+const bound: BoundService[] = [];
+const hostPortsInUse = new Set<number>();
+
+for (const spec of services) {
+  const service = bindService(spec);
+  if (hostPortsInUse.has(service.hostPort)) {
+    console.log(\`FAILED to start \${service.name}: host port \${service.hostPort} already bound by another container\`);
+    continue;
+  }
+  hostPortsInUse.add(service.hostPort);
+  bound.push(service);
+  console.log(\`started \${service.name} -> localhost:\${service.hostPort}\`);
+}
+
+console.log(\`\\n\${bound.length}/\${services.length} services started\`);
+`,
+    "/after.ts": `// ── After: allocated host ports ───────────────────────────
+// Internal ports stay on the service default. Host ports are
+// allocated from a pool, skipping anything already assigned,
+// so collisions are prevented instead of discovered at runtime.
+
+interface ServiceSpec {
+  name: string;
+  image: string;
+  internalPort: number;
+}
+
+interface BoundService extends ServiceSpec {
+  hostPort: number;
+}
+
+class PortAllocator {
+  private assigned = new Set<number>();
+
+  constructor(private readonly rangeStart: number) {}
+
+  allocate(): number {
+    let candidate = this.rangeStart;
+    while (this.assigned.has(candidate)) {
+      candidate += 1;
+    }
+    this.assigned.add(candidate);
+    return candidate;
+  }
+}
+
+function bindService(spec: ServiceSpec, allocator: PortAllocator): BoundService {
+  // Internal port never changes; host port comes from the allocator.
+  return { ...spec, hostPort: allocator.allocate() };
+}
+
+const services: ServiceSpec[] = [
+  { name: 'project_a_db', image: 'postgres:16', internalPort: 5432 },
+  { name: 'project_b_db', image: 'postgres:15', internalPort: 5432 },
+  { name: 'project_c_db', image: 'postgres:16', internalPort: 5432 },
+];
+
+const allocator = new PortAllocator(5432);
+const bound = services.map((spec) => bindService(spec, allocator));
+
+for (const service of bound) {
+  console.log(\`started \${service.name} (internal :\${service.internalPort}) -> localhost:\${service.hostPort}\`);
+}
+
+console.log(\`\\n\${bound.length}/\${services.length} services started, zero conflicts\`);
+`,
+  }}
+/>
 
 ## When to Use
 

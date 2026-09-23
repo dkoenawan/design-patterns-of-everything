@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-09-22 by automated agent
+Last updated: 2026-09-23 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -99,6 +99,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-09-18 | Sandpack playground added to Pure Functions pattern (docs/patterns/data-pipeline/pure-functions.mdx) — before/after comparison of an impure transform (hidden DB read, mutated shared running total) vs. a pure equivalent (I/O pushed to the boundary, deterministic re-runs); brings Data Pipeline to 2/4 Sandpack coverage (Medallion Architecture, Pure Functions). | 5a16592 |
 | 2026-09-21 | Sandpack playground added to Schema-Driven Validation pattern (docs/patterns/data-pipeline/schema-driven-validation.mdx) — before/after comparison of scattered imperative if-checks (loose string error, easy to under-cover) vs. a single declarative schema whose safeParse is both the type source and validation contract; brings Data Pipeline to 3/4 Sandpack coverage (Medallion Architecture, Pure Functions, Schema-Driven Validation). | bf71065 |
 | 2026-09-22 | Sandpack playground added to Batch vs Streaming pattern (docs/patterns/data-pipeline/batch-vs-streaming.mdx) — before/after comparison of fixed-interval batching by arrival order (a late event silently lands in the wrong batch) vs. a watermark-aware WatermarkGate that classifies by event time and routes late arrivals to a side-output; Data Pipeline now has full 4/4 Sandpack coverage, completing all four domains. | cf8fab5 |
+| 2026-09-23 | Sandpack playground added to Docker Port Mapping pattern (docs/patterns/infrastructure/docker-port-mapping.mdx) — before/after comparison of hardcoded host-port reuse (collision only discovered when the second container tries to bind) vs. a PortAllocator that assigns the next free host port up front; begins Infrastructure's Sandpack coverage (1/3: Docker Port Mapping). | badd939 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
