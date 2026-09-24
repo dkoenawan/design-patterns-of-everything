@@ -7,6 +7,8 @@ summary: "Define infrastructure topology in version-controlled code so environme
 draft: false
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 Infrastructure as Code (IaC) replaces manual provisioning with declarative or programmatic definitions stored in version control. The runtime (Terraform, Pulumi, CDK) reconciles desired state against current state, creating, updating, or destroying resources to reach the target topology. The same code that creates a dev environment creates production — eliminating configuration drift by construction.
@@ -159,6 +161,125 @@ pulumi.export("service_endpoint", target_group.arn)
 ```
 
 This Pulumi example mirrors the Terraform definition but in Python. The workflow remains identical: version control, code review, CI/CD apply — but the programmatic approach enables conditional logic and modularity that pure declarative DSLs cannot easily express.
+
+## Live Playground
+
+Experiment with the pattern below. The before version provisions infrastructure with imperative create calls: re-running the script duplicates resources, and a manual console change goes unnoticed. The after version declares desired state and reconciles it through a plan/apply cycle, so re-runs are idempotent and drift shows up in the plan.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · Infrastructure as Code"
+  entry="/after.ts"
+  files={{
+    "/before.ts": `// ── Before: imperative provisioning ───────────────────────
+// A setup script issues create calls in order. It has no notion
+// of what already exists, so running it twice doubles the fleet,
+// and a manual change made in the console is invisible.
+
+interface Resource {
+  id: string;
+  type: string;
+  name: string;
+  props: Record<string, string | number>;
+}
+
+const cloud: Resource[] = [];
+let nextId = 1;
+
+function create(type: string, name: string, props: Record<string, string | number>) {
+  const resource = { id: \`\${type}-\${nextId++}\`, type, name, props };
+  cloud.push(resource);
+  console.log(\`created \${resource.id} (\${name})\`);
+}
+
+function setupEnvironment() {
+  create('cluster', 'production-api-cluster', { insights: 'enabled' });
+  create('service', 'api', { replicas: 3, port: 8080 });
+}
+
+console.log('── run 1');
+setupEnvironment();
+
+// Someone scales the service down by hand during an incident.
+cloud[1].props.replicas = 1;
+
+console.log('── run 2 (re-applying after an incident)');
+setupEnvironment();
+
+console.log(\`\\n\${cloud.length} resources in the account:\`);
+for (const r of cloud) {
+  console.log(\`  \${r.id} \${r.name} \${JSON.stringify(r.props)}\`);
+}
+console.log('duplicated cluster + service, and the manual scale-down was never reported');
+`,
+    "/after.ts": `// ── After: declarative desired state ──────────────────────
+// Resources are declared by stable address. A planner diffs
+// desired state against actual state, and apply executes only
+// the diff, so re-runs are idempotent and drift is surfaced.
+
+type Props = Record<string, string | number>;
+
+interface Resource {
+  address: string;
+  props: Props;
+}
+
+type Change =
+  | { action: 'create'; address: string; props: Props }
+  | { action: 'update'; address: string; from: Props; to: Props };
+
+const desired: Resource[] = [
+  { address: 'cluster.api', props: { name: 'production-api-cluster', insights: 'enabled' } },
+  { address: 'service.api', props: { replicas: 3, port: 8080 } },
+];
+
+const actual = new Map<string, Props>();
+
+function plan(): Change[] {
+  const changes: Change[] = [];
+  for (const { address, props } of desired) {
+    const current = actual.get(address);
+    if (!current) {
+      changes.push({ action: 'create', address, props });
+    } else if (JSON.stringify(current) !== JSON.stringify(props)) {
+      changes.push({ action: 'update', address, from: current, to: props });
+    }
+  }
+  return changes;
+}
+
+function apply(changes: Change[]) {
+  if (changes.length === 0) {
+    console.log('no changes: infrastructure matches desired state');
+    return;
+  }
+  for (const change of changes) {
+    if (change.action === 'create') {
+      console.log(\`+ create \${change.address} \${JSON.stringify(change.props)}\`);
+      actual.set(change.address, { ...change.props });
+    } else {
+      console.log(\`~ update \${change.address} \${JSON.stringify(change.from)} -> \${JSON.stringify(change.to)}\`);
+      actual.set(change.address, { ...change.to });
+    }
+  }
+}
+
+console.log('── run 1');
+apply(plan());
+
+console.log('── run 2 (no edits)');
+apply(plan());
+
+// Someone scales the service down by hand during an incident.
+actual.get('service.api')!.replicas = 1;
+
+console.log('── run 3 (after manual change)');
+apply(plan());
+
+console.log(\`\\n\${actual.size} resources in the account, matching \${desired.length} declared\`);
+`,
+  }}
+/>
 
 ## When to Use
 
