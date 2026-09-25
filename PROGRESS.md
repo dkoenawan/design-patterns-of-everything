@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-09-24 by automated agent
+Last updated: 2026-09-25 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -101,6 +101,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-09-22 | Sandpack playground added to Batch vs Streaming pattern (docs/patterns/data-pipeline/batch-vs-streaming.mdx) — before/after comparison of fixed-interval batching by arrival order (a late event silently lands in the wrong batch) vs. a watermark-aware WatermarkGate that classifies by event time and routes late arrivals to a side-output; Data Pipeline now has full 4/4 Sandpack coverage, completing all four domains. | cf8fab5 |
 | 2026-09-23 | Sandpack playground added to Docker Port Mapping pattern (docs/patterns/infrastructure/docker-port-mapping.mdx) — before/after comparison of hardcoded host-port reuse (collision only discovered when the second container tries to bind) vs. a PortAllocator that assigns the next free host port up front; begins Infrastructure's Sandpack coverage (1/3: Docker Port Mapping). | cbc8b14 |
 | 2026-09-24 | Sandpack playground added to Infrastructure as Code pattern (docs/patterns/infrastructure/infrastructure-as-code.mdx) — before/after comparison of imperative create-call provisioning (re-runs duplicate resources, a manual console scale-down goes unreported) vs. declarative desired state reconciled through plan/apply (idempotent re-runs, drift surfaced as an update in the plan); brings Infrastructure to 2/3 Sandpack coverage (Docker Port Mapping, Infrastructure as Code). | 4def8fb |
+| 2026-09-25 | Sandpack playground added to Multi-Database Orchestration pattern (docs/patterns/infrastructure/multi-database-orchestration.mdx) — before/after comparison of three projects sharing one database instance (a runaway query in one project exhausts the shared memory pool, and a maintenance restart takes all three offline) vs. one instance per project with memory limits and pg_isready-style health checks (the runaway query is cancelled at its own limit, and one instance can be stopped without affecting the others); Infrastructure now has full 3/3 Sandpack coverage, completing all 15 domain patterns. | 6853134 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
