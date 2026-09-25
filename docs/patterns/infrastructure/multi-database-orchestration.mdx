@@ -7,6 +7,8 @@ summary: "Manage multiple independent database instances on a single server with
 draft: false
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 When multiple projects each need their own database, orchestrate them as independent containers with dedicated ports, volumes, networks, and health checks. This pattern covers the full lifecycle — from local development through production-grade hosting on a single server — and defines when to graduate to managed services.
@@ -218,6 +220,128 @@ docker exec project_a_db pg_dump -U admin project_a > backup_a_$(date +%F).sql
 - Point-in-time recovery beyond manual pg_dump
 - More databases than your single server can resource
 - Multi-region replication
+
+## Live Playground
+
+Experiment with the pattern below. The before version puts every project on one shared database instance: a runaway query in one project exhausts the shared memory pool, and restarting for one project's maintenance takes every project offline. The after version gives each project its own instance with a memory limit and a health check. The runaway query only affects its own instance, and each database can be stopped on its own.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · Multi-Database Orchestration"
+  entry="/after.ts"
+  files={{
+    "/before.ts": `// ── Before: one shared instance for every project ─────────
+// Three projects share a single database server and its memory
+// pool. Nothing bounds what one project can consume, and the
+// server has a single lifecycle.
+
+const POOL_MB = 1024;
+
+interface Workload {
+  project: string;
+  memoryMb: number;
+}
+
+let running = true;
+const workloads: Workload[] = [
+  { project: 'project_a', memoryMb: 180 },
+  { project: 'project_b', memoryMb: 220 },
+  { project: 'project_c', memoryMb: 90 },
+];
+
+function used() {
+  return workloads.reduce((sum, w) => sum + w.memoryMb, 0);
+}
+
+function status() {
+  for (const w of workloads) {
+    const ok = running && used() <= POOL_MB;
+    console.log(\`  \${w.project}: \${ok ? 'healthy' : 'UNAVAILABLE'}\`);
+  }
+}
+
+console.log(\`── steady state (\${used()}/\${POOL_MB} MB)\`);
+status();
+
+// project_b runs an unbounded analytical query.
+workloads[1].memoryMb += 900;
+console.log(\`\\n── runaway query in project_b (\${used()}/\${POOL_MB} MB)\`);
+status();
+
+// Recover by restarting the server, which stops everyone.
+workloads[1].memoryMb = 220;
+running = false;
+console.log('\\n── restart for project_b maintenance');
+status();
+console.log('\\none project\\'s problem became an outage for all three');
+`,
+    "/after.ts": `// ── After: one instance per project ───────────────────────
+// Each project gets its own container with a memory limit and
+// a health check. Faults and lifecycle operations are scoped to
+// a single instance.
+
+type Health = 'healthy' | 'unhealthy' | 'stopped';
+
+class DatabaseInstance {
+  private usedMb: number;
+  private running = true;
+
+  constructor(
+    readonly project: string,
+    readonly port: number,
+    readonly limitMb: number,
+    baselineMb: number,
+  ) {
+    this.usedMb = baselineMb;
+  }
+
+  allocate(mb: number) {
+    if (this.usedMb + mb > this.limitMb) {
+      console.log(\`  \${this.project}: query cancelled, \${mb} MB exceeds \${this.limitMb} MB limit\`);
+      return;
+    }
+    this.usedMb += mb;
+  }
+
+  stop() { this.running = false; }
+  start() { this.running = true; }
+
+  // Stands in for pg_isready: running is not the same as ready.
+  health(): Health {
+    if (!this.running) return 'stopped';
+    return this.usedMb <= this.limitMb ? 'healthy' : 'unhealthy';
+  }
+}
+
+const cluster = [
+  new DatabaseInstance('project_a', 5432, 512, 180),
+  new DatabaseInstance('project_b', 5433, 512, 220),
+  new DatabaseInstance('project_c', 5434, 256, 90),
+];
+
+function status() {
+  for (const db of cluster) {
+    console.log(\`  \${db.project} :\${db.port} \${db.health()}\`);
+  }
+}
+
+console.log('── steady state');
+status();
+
+console.log('\\n── runaway query in project_b');
+cluster[1].allocate(900);
+status();
+
+console.log('\\n── maintenance on project_b only');
+cluster[1].stop();
+status();
+cluster[1].start();
+
+const healthy = cluster.filter((db) => db.health() === 'healthy').length;
+console.log(\`\\n\${healthy}/\${cluster.length} instances healthy; the fault never left project_b\`);
+`,
+  }}
+/>
 
 ## When to Use
 
