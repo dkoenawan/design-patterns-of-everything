@@ -1,6 +1,6 @@
 # Daily Build Progress Ledger
 
-Last updated: 2026-09-25 by automated agent
+Last updated: 2026-09-28 by automated agent
 
 ## Completed Increments
 | Date | Increment | Commit |
@@ -102,6 +102,7 @@ All 25 queue items complete. Running SEO, cross-linking, and content enrichment 
 | 2026-09-23 | Sandpack playground added to Docker Port Mapping pattern (docs/patterns/infrastructure/docker-port-mapping.mdx) — before/after comparison of hardcoded host-port reuse (collision only discovered when the second container tries to bind) vs. a PortAllocator that assigns the next free host port up front; begins Infrastructure's Sandpack coverage (1/3: Docker Port Mapping). | cbc8b14 |
 | 2026-09-24 | Sandpack playground added to Infrastructure as Code pattern (docs/patterns/infrastructure/infrastructure-as-code.mdx) — before/after comparison of imperative create-call provisioning (re-runs duplicate resources, a manual console scale-down goes unreported) vs. declarative desired state reconciled through plan/apply (idempotent re-runs, drift surfaced as an update in the plan); brings Infrastructure to 2/3 Sandpack coverage (Docker Port Mapping, Infrastructure as Code). | 4def8fb |
 | 2026-09-25 | Sandpack playground added to Multi-Database Orchestration pattern (docs/patterns/infrastructure/multi-database-orchestration.mdx) — before/after comparison of three projects sharing one database instance (a runaway query in one project exhausts the shared memory pool, and a maintenance restart takes all three offline) vs. one instance per project with memory limits and pg_isready-style health checks (the runaway query is cancelled at its own limit, and one instance can be stopped without affecting the others); Infrastructure now has full 3/3 Sandpack coverage, completing all 14 domain patterns (only the two cross-domain patterns, Single Responsibility and Composition Over Inheritance, still lack a playground). | 6853134 |
+| 2026-09-28 | Sandpack playground added to Single Responsibility Principle (docs/patterns/cross-domain/single-responsibility.mdx) — before/after comparison of a UserService that owns credentials, profile storage, welcome email and audit (a marketing greeting change crashes registration, so the user is neither saved nor audited) vs. one service per concern composed by a RegistrationFlow (the same template bug is caught by a test that constructs only EmailService, and at registration it is contained to the notification step); first cross-domain playground (1/2: only Composition Over Inheritance remains without one). | 22120d3 |
 
 ## Current Queue
 1. [x] Backend domain overview page — src/pages/backend.astro
