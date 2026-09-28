@@ -7,6 +7,8 @@ summary: "A module, class, or function should have one reason to change"
 draft: false
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 The Single Responsibility Principle (SRP) states that a unit of code — function, class, module — should encapsulate one concern and have only one reason to change. When a component owns multiple concerns, changes to one can inadvertently break the other, making the system harder to evolve safely.
@@ -65,6 +67,140 @@ class EmailService:
 class AuditService:
     def log_event(self, user, action): ...
 ```
+
+## Live Playground
+
+Experiment with the pattern below. In the before version, one `UserService` owns credentials, profile storage, the welcome email, and the audit trail. Marketing changes the email greeting, and that change breaks registration: the user is never saved and the audit entry is never written. In the after version, each concern is its own unit. The same template change is caught by a test that constructs only `EmailService`, and during registration the failure stays inside the notification step.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · Single Responsibility Principle"
+  entry="/after.ts"
+  files={{
+    "/before.ts": `// ── Before: one class, four reasons to change ─────────────
+// Credentials, profile storage, the welcome email and the audit
+// trail all live in UserService. A change requested by marketing
+// sits in the same method as the database write.
+
+interface User {
+  email: string;
+  displayName?: string;
+}
+
+class UserService {
+  private users: User[] = [];
+  private audit: string[] = [];
+
+  register(email: string, password: string, displayName?: string) {
+    const hash = 'h:' + password.split('').reverse().join('');  // auth concern
+    const user = { email, displayName };
+
+    // email concern, changed by marketing to personalise the greeting
+    const body = \`Welcome aboard, \${displayName!.toUpperCase()}!\`;
+    console.log(\`  sent: "\${body}"\`);
+
+    this.users.push(user);                                       // profile concern
+    this.audit.push(\`registered \${email} (\${hash.length} char hash)\`); // audit concern
+  }
+
+  report() {
+    console.log(\`  users: \${this.users.length}, audit entries: \${this.audit.length}\`);
+  }
+}
+
+const service = new UserService();
+
+console.log('── register ada (has a display name)');
+service.register('ada@example.com', 'pw-1', 'Ada');
+service.report();
+
+console.log('\\n── register grace (no display name)');
+try {
+  service.register('grace@example.com', 'pw-2');
+} catch (e) {
+  console.log(\`  registration failed: \${(e as Error).message}\`);
+}
+service.report();
+console.log('\\na template change stopped the user from being saved or audited');
+`,
+    "/after.ts": `// ── After: one unit per reason to change ──────────────────
+// Each service owns one concern. RegistrationFlow only decides
+// the order of steps and which of them are required.
+
+interface User {
+  email: string;
+  displayName?: string;
+}
+
+class AuthService {
+  hash(password: string) {
+    return 'h:' + password.split('').reverse().join('');
+  }
+}
+
+class UserProfileService {
+  readonly users: User[] = [];
+  save(user: User) { this.users.push(user); }
+}
+
+class EmailService {
+  // Owned by marketing: the only file their greeting change touches.
+  welcomeBody(user: User) {
+    return \`Welcome aboard, \${user.displayName!.toUpperCase()}!\`;
+  }
+}
+
+class AuditService {
+  readonly entries: string[] = [];
+  log(event: string) { this.entries.push(event); }
+}
+
+// ── 1. Unit test for the email concern alone ──────────────
+// No database, no hashing, no audit log to set up.
+console.log('── EmailService test');
+const email = new EmailService();
+for (const user of [{ email: 'a@x', displayName: 'Ada' }, { email: 'g@x' }]) {
+  try {
+    console.log(\`  pass: "\${email.welcomeBody(user)}"\`);
+  } catch (e) {
+    console.log(\`  FAIL for \${user.email}: \${(e as Error).message}\`);
+  }
+}
+
+// ── 2. Registration with the same unfixed template ────────
+class RegistrationFlow {
+  constructor(
+    private auth: AuthService,
+    private profiles: UserProfileService,
+    private mail: EmailService,
+    private audit: AuditService,
+  ) {}
+
+  register(email: string, password: string, displayName?: string) {
+    const hash = this.auth.hash(password);
+    const user = { email, displayName };
+    this.profiles.save(user);
+    this.audit.log(\`registered \${email} (\${hash.length} char hash)\`);
+    try {
+      console.log(\`  sent: "\${this.mail.welcomeBody(user)}"\`);
+    } catch {
+      console.log(\`  welcome email deferred for \${email}\`);
+    }
+  }
+}
+
+const profiles = new UserProfileService();
+const audit = new AuditService();
+const flow = new RegistrationFlow(new AuthService(), profiles, email, audit);
+
+console.log('\\n── register ada and grace');
+flow.register('ada@example.com', 'pw-1', 'Ada');
+flow.register('grace@example.com', 'pw-2');
+console.log(\`  users: \${profiles.users.length}, audit entries: \${audit.entries.length}\`);
+console.log('\\nthe template bug was caught in isolation and did not block registration');
+`,
+  }}
+/>
 
 ## When to Use
 
