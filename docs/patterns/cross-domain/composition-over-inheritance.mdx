@@ -7,6 +7,8 @@ summary: "Build complex behavior by combining small, focused components rather t
 draft: false
 ---
 
+import SandpackPlayground from '../../../src/components/SandpackPlayground'
+
 ## Summary
 
 Composition Over Inheritance is a design principle that favors assembling behavior from small, independent components over building deep inheritance hierarchies. Inherited behavior is implicit and hard to change; composed behavior is explicit, targeted, and independently testable.
@@ -83,6 +85,140 @@ flying_fish = FlyingFish(Swimmer(), Flier())
 ```
 
 Python's multiple inheritance can approximate composition via mixins, but it reintroduces the fragile base class problem the moment two mixins share a method name. Explicit composition avoids the ambiguity entirely — `FlyingFish` owns its collaborators rather than merging their namespaces.
+
+## Live Playground
+
+Experiment with the pattern below. In the before version, `FlyingFish` can extend only one base class, so it extends `SwimmingAnimal` and carries a copy of `fly()`. When a bug fix caps flight altitude in `FlyingAnimal`, the copy doesn't get it. `Penguin` extends `FlyingAnimal` because a penguin is a bird, so it has to override `fly()` to throw, and a loop over every `FlyingAnimal` crashes on it. In the after version, swimming and flying are small collaborators that each animal composes as it needs. The altitude fix lives in one `Flying` class and reaches every animal that uses it. `Penguin` never gets a `fly()` method, so the compiler keeps it out of the list of fliers.
+
+<SandpackPlayground
+  client:only="react"
+  title="Live example · Composition Over Inheritance"
+  entry="/after.ts"
+  files={{
+    "/before.ts": `// ── Before: behavior inherited through a single base ──────
+// Each animal gets its abilities from one parent class. Anything
+// that doesn't fit the hierarchy is copied or overridden.
+
+class Animal {
+  constructor(readonly name: string) {}
+}
+
+class SwimmingAnimal extends Animal {
+  swim(depth: number) {
+    return \`\${this.name} swims at \${depth} m\`;
+  }
+}
+
+class FlyingAnimal extends Animal {
+  // Bug fix shipped last sprint: altitude is capped at 50 m.
+  fly(altitude: number) {
+    return \`\${this.name} flies at \${Math.min(altitude, 50)} m\`;
+  }
+}
+
+// Only one base class is allowed, so flying is copied in from
+// the version that existed before the altitude fix.
+class FlyingFish extends SwimmingAnimal {
+  fly(altitude: number) {
+    return \`\${this.name} flies at \${altitude} m\`;
+  }
+}
+
+// A penguin is a bird, so it inherits fly() and has to disable it.
+// Swimming is copied from SwimmingAnimal.
+class Penguin extends FlyingAnimal {
+  fly(_altitude: number): string {
+    throw new Error(\`\${this.name} cannot fly\`);
+  }
+  swim(depth: number) {
+    return \`\${this.name} swims at \${depth} m\`;
+  }
+}
+
+const gull = new FlyingAnimal('gull');
+const exocoetus = new FlyingFish('flying fish');
+const penguin = new Penguin('penguin');
+
+console.log('── altitude fix (requested 120 m)');
+console.log(\`  \${gull.fly(120)}\`);
+console.log(\`  \${exocoetus.fly(120)}   <- copy missed the fix\`);
+
+console.log('\\n── fly every FlyingAnimal');
+const fliers: FlyingAnimal[] = [gull, penguin];
+for (const animal of fliers) {
+  try {
+    console.log(\`  \${animal.fly(30)}\`);
+  } catch (e) {
+    console.log(\`  crashed: \${(e as Error).message}\`);
+  }
+}
+console.log('\\nthe hierarchy made penguin a flier and left flying fish out of the fix');
+`,
+    "/after.ts": `// ── After: behavior composed from small collaborators ─────
+// Each ability is its own class. An animal holds the abilities it
+// needs and delegates to them.
+
+class Swimming {
+  swim(name: string, depth: number) {
+    return \`\${name} swims at \${depth} m\`;
+  }
+}
+
+class Flying {
+  // The altitude fix lives here once.
+  fly(name: string, altitude: number) {
+    return \`\${name} flies at \${Math.min(altitude, 50)} m\`;
+  }
+}
+
+interface CanSwim { name: string; swim(depth: number): string; }
+interface CanFly  { name: string; fly(altitude: number): string; }
+
+class Gull implements CanFly {
+  constructor(readonly name: string, private flier: Flying) {}
+  fly(altitude: number) { return this.flier.fly(this.name, altitude); }
+}
+
+class FlyingFish implements CanSwim, CanFly {
+  constructor(
+    readonly name: string,
+    private swimmer: Swimming,
+    private flier: Flying,
+  ) {}
+  swim(depth: number) { return this.swimmer.swim(this.name, depth); }
+  fly(altitude: number) { return this.flier.fly(this.name, altitude); }
+}
+
+// No fly() to override: penguins simply don't compose Flying.
+class Penguin implements CanSwim {
+  constructor(readonly name: string, private swimmer: Swimming) {}
+  swim(depth: number) { return this.swimmer.swim(this.name, depth); }
+}
+
+const swimming = new Swimming();
+const flying = new Flying();
+
+const gull = new Gull('gull', flying);
+const exocoetus = new FlyingFish('flying fish', swimming, flying);
+const penguin = new Penguin('penguin', swimming);
+
+console.log('── altitude fix (requested 120 m)');
+console.log(\`  \${gull.fly(120)}\`);
+console.log(\`  \${exocoetus.fly(120)}\`);
+
+console.log('\\n── fly every CanFly');
+// Adding penguin here is a compile error: it has no fly().
+const fliers: CanFly[] = [gull, exocoetus];
+for (const animal of fliers) console.log(\`  \${animal.fly(30)}\`);
+
+console.log('\\n── swim every CanSwim');
+const swimmers: CanSwim[] = [exocoetus, penguin];
+for (const animal of swimmers) console.log(\`  \${animal.swim(5)}\`);
+
+console.log('\\none Flying class carries the fix, and penguin is never asked to fly');
+`,
+  }}
+/>
 
 ## When to Use
 
