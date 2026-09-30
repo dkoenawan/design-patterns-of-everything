@@ -12,6 +12,10 @@ const pages = [
   { path: `${BASE}/anti-patterns`,                       title: /anti.?pattern/i,     heading: /anti.?pattern/i },
   { path: `${BASE}/case-studies/backend-api-redesign`,   title: /.+/,                 heading: /api|backend|redesign/i },
   { path: `${BASE}/case-studies/data-pipeline-migration`,title: /.+/,                 heading: /data|pipeline|migration/i },
+  { path: `${BASE}/case-studies/infra-platform-migration`,title: /.+/,                heading: /infrastructure|platform|migration/i },
+  { path: `${BASE}/case-studies/frontend-micro-frontend-migration`, title: /.+/,      heading: /micro.?frontend|migration/i },
+  { path: `${BASE}/case-studies/`,                       title: /case stud/i,         heading: /case stud/i },
+  { path: `${BASE}/patterns-catalog`,                    title: /catalog/i,           heading: /patterns catalog/i },
 ];
 
 for (const { path, title, heading } of pages) {
@@ -78,3 +82,44 @@ test('about page ProfileSheet is rendered', async ({ page }) => {
   const sheet = page.locator('[class*="profile"], [class*="proficiency"], [class*="skill"]').first();
   await expect(sheet).toBeVisible({ timeout: 5000 });
 });
+
+// Every pattern detail page renders its MDX body and hydrates the Sandpack
+// playground island. Waits on `load` rather than `networkidle` because the
+// Sandpack preview iframe keeps fetching from the remote bundler.
+const patternPages = [
+  'frontend/component-composition',
+  'frontend/state-management-patterns',
+  'frontend/micro-frontend-architecture',
+  'frontend/composition-over-inheritance',
+  'backend/hexagonal-architecture',
+  'backend/dependency-injection',
+  'backend/strategy-pattern',
+  'backend/cqrs',
+  'backend/single-responsibility',
+  'data/medallion-architecture',
+  'data/schema-driven-validation',
+  'data/pure-functions',
+  'data/batch-vs-streaming',
+  'infra/docker-port-mapping',
+  'infra/multi-database-orchestration',
+  'infra/infrastructure-as-code',
+];
+
+for (const slug of patternPages) {
+  test(`pattern page renders with playground: ${slug}`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (err) => errors.push(err.message));
+
+    const response = await page.goto(`${BASE}/patterns/${slug}`);
+    await page.waitForLoadState('load');
+
+    expect(response?.status()).toBeLessThan(400);
+    await expect(page.locator('h1.pattern-title')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.pattern-body h2').first()).toBeVisible();
+
+    // The client:only Sandpack island mounts and shows its label
+    await expect(page.getByText(/^Live example ·/)).toBeVisible({ timeout: 10000 });
+
+    expect(errors).toHaveLength(0);
+  });
+}
