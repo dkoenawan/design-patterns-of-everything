@@ -7,7 +7,8 @@ const H = 320;
 
 const BLUE_TINT   = '#7aa3d4'; // shell / MFE
 const ORANGE_TINT = '#c46a55'; // monolith (legacy, being strangled)
-const GOLD_TINT   = 'var(--gold)';
+const GOLD_TINT   = '#d4b15e'; // --gold; canvas cannot resolve CSS vars
+const INK         = '#e8dcb8'; // hex so the glow can append an alpha suffix
 const INK_DIM     = 'rgba(232,220,184,0.45)';
 const INK_FAINT   = 'rgba(232,220,184,0.14)';
 const BOX_BG      = 'rgba(14,20,42,0.80)';
@@ -185,7 +186,7 @@ export default function TrafficCutoverViz() {
           x: X_CLIENT,
           y: Y_MAIN,
           targetMfe: Math.random() < weight,
-          color: INK_DIM,
+          color: INK,
           size: 3,
           speed: 150 + Math.random() * 40,
           stage: 0,
