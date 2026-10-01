@@ -123,3 +123,22 @@ for (const slug of patternPages) {
     expect(errors).toHaveLength(0);
   });
 }
+
+// The social share image named by og:image / twitter:image must actually be
+// served — a missing file leaves every shared link without a preview.
+test('share image referenced by og:image is served', async ({ page, request }) => {
+  await page.goto(`${BASE}/backend`);
+
+  const ogImage = await page.locator('meta[property="og:image"]').getAttribute('content');
+  const twitterImage = await page.locator('meta[name="twitter:image"]').getAttribute('content');
+  expect(ogImage).toBeTruthy();
+  expect(twitterImage).toBe(ogImage);
+
+  // The tag carries the production origin; fetch the same path from this server
+  const response = await request.get(new URL(ogImage!).pathname);
+  expect(response.status()).toBe(200);
+  expect(response.headers()['content-type']).toContain('image/png');
+
+  await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute('content', '1200');
+  await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute('content', '630');
+});

@@ -21,6 +21,9 @@ const canonicalURL = new URL(Astro.url.pathname, siteOrigin).href;
 const ogImageURL = ogImage
   ? new URL(ogImage, siteOrigin).href
   : `${siteOrigin}${base}/og-default.png`;
+// Describes public/og-default.png (rendered by scripts/generate-og-image.mjs)
+const ogImageAlt =
+  'Design Patterns of Everything — a celestial atlas of architecture patterns across the Frontend, Backend, Data Pipeline and Infrastructure constellations.';
 ---
 
 <!DOCTYPE html>
@@ -41,6 +44,14 @@ const ogImageURL = ogImage
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={ogImageURL} />
+    {!ogImage && (
+      <>
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={ogImageAlt} />
+      </>
+    )}
     <meta property="og:site_name" content="Celestial Atlas" />
 
     <!-- Twitter Card -->
@@ -48,6 +59,7 @@ const ogImageURL = ogImage
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImageURL} />
+    {!ogImage && <meta name="twitter:image:alt" content={ogImageAlt} />}
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
