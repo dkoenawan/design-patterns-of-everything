@@ -6,7 +6,7 @@ import mdx from '@astrojs/mdx';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://su-sentinel.github.io',
+  site: 'https://dkoenawan.github.io',
   base: '/design-patterns-of-everything',
   integrations: [react(), mdx()]
 });
