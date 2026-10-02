@@ -17,7 +17,8 @@ const {
 
 const siteOrigin = 'https://dkoenawan.github.io';
 const base = '/design-patterns-of-everything';
-const canonicalURL = new URL(Astro.url.pathname, siteOrigin).href;
+// Trailing slash is the form GitHub Pages serves with a 200 (and sitemap.xml lists)
+const canonicalURL = new URL(Astro.url.pathname.replace(/\/?$/, '/'), siteOrigin).href;
 const ogImageURL = ogImage
   ? new URL(ogImage, siteOrigin).href
   : `${siteOrigin}${base}/og-default.png`;
@@ -37,6 +38,7 @@ const ogImageAlt =
 
     <!-- Canonical URL -->
     <link rel="canonical" href={canonicalURL} />
+    <link rel="sitemap" type="application/xml" href={`${base}/sitemap.xml`} />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />

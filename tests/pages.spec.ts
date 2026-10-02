@@ -124,6 +124,31 @@ for (const slug of patternPages) {
   });
 }
 
+// The sitemap must list every page covered above, each exactly once, in the
+// same trailing-slash form the pages declare as their canonical URL.
+test('sitemap lists every page under its canonical URL', async ({ page, request }) => {
+  await page.goto(`${BASE}/backend`);
+
+  const sitemapHref = await page.locator('link[rel="sitemap"]').getAttribute('href');
+  expect(sitemapHref).toBe(`${BASE}/sitemap.xml`);
+
+  const response = await request.get(sitemapHref!);
+  expect(response.status()).toBe(200);
+  expect(response.headers()['content-type']).toContain('xml');
+
+  const locs = [...(await response.text()).matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  const listed = locs.map((loc) => new URL(loc).pathname);
+
+  const expected = [
+    ...pages.map(({ path }) => path.replace(/\/?$/, '/')),
+    ...patternPages.map((slug) => `${BASE}/patterns/${slug}/`),
+  ];
+  expect([...listed].sort()).toEqual([...expected].sort());
+
+  const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
+  expect(locs).toContain(canonical);
+});
+
 // The social share image named by og:image / twitter:image must actually be
 // served — a missing file leaves every shared link without a preview.
 test('share image referenced by og:image is served', async ({ page, request }) => {
