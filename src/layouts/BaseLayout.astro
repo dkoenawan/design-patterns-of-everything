@@ -40,6 +40,10 @@ const ogImageAlt =
     <link rel="canonical" href={canonicalURL} />
     <link rel="sitemap" type="application/xml" href={`${base}/sitemap.xml`} />
 
+    <!-- Icons: browsers only probe /favicon.ico at the origin root, outside this project site, so the mark must be linked -->
+    <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+    <link rel="apple-touch-icon" href={`${base}/apple-touch-icon.png`} />
+
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalURL} />

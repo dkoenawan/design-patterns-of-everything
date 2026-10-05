@@ -167,3 +167,21 @@ test('share image referenced by og:image is served', async ({ page, request }) =
   await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute('content', '1200');
   await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute('content', '630');
 });
+
+// A project site lives under /design-patterns-of-everything/, where browsers do
+// not probe for /favicon.ico — the icons must be linked and actually served.
+test('favicon and touch icon are linked and served', async ({ page, request }) => {
+  await page.goto(`${BASE}/about`);
+
+  const icons = [
+    { selector: 'link[rel="icon"]', type: 'image/svg+xml' },
+    { selector: 'link[rel="apple-touch-icon"]', type: 'image/png' },
+  ];
+  for (const { selector, type } of icons) {
+    const href = await page.locator(selector).getAttribute('href');
+    expect(href).toBeTruthy();
+    const response = await request.get(href!);
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain(type);
+  }
+});
