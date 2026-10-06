@@ -7,12 +7,17 @@ interface Props {
   title?: string;
   description?: string;
   ogImage?: string;
+  ogType?: 'website' | 'article';
+  /** schema.org structured data, emitted as a JSON-LD script in the head */
+  jsonLd?: Record<string, unknown>;
 }
 
 const {
   title = 'Solution Architect Portfolio',
   description = 'Design patterns, architecture experience, and real-world case studies from a career in software architecture.',
   ogImage,
+  ogType = 'website',
+  jsonLd,
 } = Astro.props;
 
 const siteOrigin = 'https://dkoenawan.github.io';
@@ -25,6 +30,8 @@ const ogImageURL = ogImage
 // Describes public/og-default.png (rendered by scripts/generate-og-image.mjs)
 const ogImageAlt =
   'Design Patterns of Everything — a celestial atlas of architecture patterns across the Frontend, Backend, Data Pipeline and Infrastructure constellations.';
+// Escape `<` so a `</script>` inside any string value cannot close the tag early
+const jsonLdText = jsonLd && JSON.stringify(jsonLd).replace(/</g, '\\u003c');
 ---
 
 <!DOCTYPE html>
@@ -45,7 +52,7 @@ const ogImageAlt =
     <link rel="apple-touch-icon" href={`${base}/apple-touch-icon.png`} />
 
     <!-- Open Graph -->
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -72,6 +79,8 @@ const ogImageAlt =
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=JetBrains+Mono:wght@400;500&display=swap" />
 
     <title>{title}</title>
+
+    {jsonLdText && <script type="application/ld+json" is:inline set:html={jsonLdText} />}
   </head>
   <body>
     <SiteNav />

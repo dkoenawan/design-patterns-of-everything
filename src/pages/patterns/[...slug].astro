@@ -60,9 +60,45 @@ const diamonds = Array.from({ length: 5 }, (_, i) =>
 
 const title = frontmatter.title ?? pattern.name;
 const summary = frontmatter.summary ?? pattern.note;
+
+// schema.org structured data: the pattern as a TechArticle, plus the same
+// Atlas › Domain › Pattern trail the visible breadcrumb shows
+const atlasURL = new URL('/design-patterns-of-everything/', Astro.site).href;
+const domainURL = new URL(`${pattern.domain}/`, atlasURL).href;
+const pageURL = new URL(`${pattern.href!.replace(/^\//, '')}/`, atlasURL).href;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'TechArticle',
+      '@id': `${pageURL}#article`,
+      headline: title,
+      description: summary,
+      url: pageURL,
+      mainEntityOfPage: pageURL,
+      articleSection: domain.english,
+      keywords: Array.isArray(frontmatter.tags) ? frontmatter.tags.join(', ') : undefined,
+      inLanguage: 'en',
+      isPartOf: { '@type': 'WebSite', name: 'Design Patterns of Everything', url: atlasURL },
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Atlas', item: atlasURL },
+        { '@type': 'ListItem', position: 2, name: domain.name, item: domainURL },
+        { '@type': 'ListItem', position: 3, name: pattern.name, item: pageURL },
+      ],
+    },
+  ],
+};
 ---
 
-<BaseLayout title={`${title} — ${domain.english}`} description={summary}>
+<BaseLayout
+  title={`${title} — ${domain.english}`}
+  description={summary}
+  ogType="article"
+  jsonLd={jsonLd}
+>
   <AtlasBackdrop client:only="react" />
 
   <main class="pattern-page" data-domain={pattern.domain}>

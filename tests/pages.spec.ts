@@ -185,3 +185,24 @@ test('favicon and touch icon are linked and served', async ({ page, request }) =
     expect(response.headers()['content-type']).toContain(type);
   }
 });
+
+// Pattern pages describe themselves to search engines as a TechArticle with a
+// breadcrumb trail; the article URL must match the page's canonical URL.
+test('pattern pages emit TechArticle and BreadcrumbList structured data', async ({ request }) => {
+  for (const slug of patternPages) {
+    const html = await (await request.get(`${BASE}/patterns/${slug}/`)).text();
+    const script = html.match(/<script type="application\/ld\+json">([^<]*)<\/script>/);
+    expect(script, slug).toBeTruthy();
+    const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)![1];
+
+    const graph = JSON.parse(script![1])['@graph'];
+    const article = graph.find((node: any) => node['@type'] === 'TechArticle');
+    const breadcrumb = graph.find((node: any) => node['@type'] === 'BreadcrumbList');
+    expect(article.url, slug).toBe(canonical);
+    expect(article.headline, slug).toBeTruthy();
+    expect(article.description, slug).toBeTruthy();
+    expect(breadcrumb.itemListElement.map((item: any) => item.position)).toEqual([1, 2, 3]);
+    expect(breadcrumb.itemListElement[2].item, slug).toBe(canonical);
+    expect(html, slug).toContain('<meta property="og:type" content="article">');
+  }
+});
