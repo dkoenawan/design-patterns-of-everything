@@ -206,3 +206,31 @@ test('pattern pages emit TechArticle and BreadcrumbList structured data', async 
     expect(html, slug).toContain('<meta property="og:type" content="article">');
   }
 });
+
+// Case studies describe themselves as an Article with the visible
+// Atlas › Domain › Study breadcrumb; the article URL must match the canonical.
+test('case study pages emit Article and BreadcrumbList structured data', async ({ request }) => {
+  const studies = [
+    'backend-api-redesign',
+    'data-pipeline-migration',
+    'infra-platform-migration',
+    'frontend-micro-frontend-migration',
+  ];
+  for (const slug of studies) {
+    const html = await (await request.get(`${BASE}/case-studies/${slug}/`)).text();
+    const script = html.match(/<script type="application\/ld\+json">([^<]*)<\/script>/);
+    expect(script, slug).toBeTruthy();
+    const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)![1];
+    const description = html.match(/<meta name="description" content="([^"]+)"/)![1];
+
+    const graph = JSON.parse(script![1])['@graph'];
+    const article = graph.find((node: any) => node['@type'] === 'Article');
+    const breadcrumb = graph.find((node: any) => node['@type'] === 'BreadcrumbList');
+    expect(article.url, slug).toBe(canonical);
+    expect(article.headline, slug).toBeTruthy();
+    expect(article.description, slug).toBe(description);
+    expect(breadcrumb.itemListElement.map((item: any) => item.position)).toEqual([1, 2, 3]);
+    expect(breadcrumb.itemListElement[2].item, slug).toBe(canonical);
+    expect(html, slug).toContain('<meta property="og:type" content="article">');
+  }
+});

@@ -3,13 +3,29 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../../components/AtlasBackdrop';
 import Cartouche from '../../components/Cartouche.astro';
 import TrafficCutoverViz from '../../components/TrafficCutoverViz';
+import { caseStudyJsonLd } from '../../lib/case-study-jsonld';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const study = {
+  slug: 'frontend-micro-frontend-migration',
+  ref: 'FE-01',
+  title: 'Micro-Frontend Migration',
+  subtitle: 'Component Composition & Module Federation at Scale',
+  description:
+    'How component composition and micro-frontend architecture decoupled a monolithic React application into independently deployable UI domains — reducing release cycle time from fortnightly to on-demand.',
+  domainSlug: 'frontend',
+  domainName: 'Frontend',
+  keywords: ['Micro-Frontend Architecture', 'Component Composition', 'Module Federation'],
+};
+const jsonLd = caseStudyJsonLd(Astro.site!, study);
 ---
 
 <BaseLayout
   title="Case Study: Micro-Frontend Migration"
-  description="How component composition and micro-frontend architecture decoupled a monolithic React application into independently deployable UI domains — reducing release cycle time from fortnightly to on-demand."
+  description={study.description}
+  ogType="article"
+  jsonLd={jsonLd}
 >
   <AtlasBackdrop client:only="react" />
 

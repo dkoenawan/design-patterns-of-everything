@@ -3,13 +3,29 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../../components/AtlasBackdrop';
 import Cartouche from '../../components/Cartouche.astro';
 import MedallionFlowViz from '../../components/MedallionFlowViz';
+import { caseStudyJsonLd } from '../../lib/case-study-jsonld';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const study = {
+  slug: 'data-pipeline-migration',
+  ref: 'DP-01',
+  title: 'Data Pipeline Migration',
+  subtitle: 'Medallion Architecture & Schema-Driven Validation at Scale',
+  description:
+    'How Medallion Architecture and schema-driven validation transformed an unstable ETL monolith into an observable, contract-tested data platform — reducing pipeline failures by 94%.',
+  domainSlug: 'data',
+  domainName: 'Data Pipeline',
+  keywords: ['Medallion Architecture', 'Schema-Driven Validation', 'data contracts', 'ETL'],
+};
+const jsonLd = caseStudyJsonLd(Astro.site!, study);
 ---
 
 <BaseLayout
   title="Case Study: Data Pipeline Migration"
-  description="How Medallion Architecture and schema-driven validation transformed an unstable ETL monolith into an observable, contract-tested data platform — reducing pipeline failures by 94%."
+  description={study.description}
+  ogType="article"
+  jsonLd={jsonLd}
 >
   <AtlasBackdrop client:only="react" />
 

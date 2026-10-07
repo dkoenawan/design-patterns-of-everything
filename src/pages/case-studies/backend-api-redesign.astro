@@ -3,13 +3,29 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../../components/AtlasBackdrop';
 import Cartouche from '../../components/Cartouche.astro';
 import StranglerFigViz from '../../components/StranglerFigViz';
+import { caseStudyJsonLd } from '../../lib/case-study-jsonld';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const study = {
+  slug: 'backend-api-redesign',
+  ref: 'BE-01',
+  title: 'Backend API Redesign',
+  subtitle: 'Hexagonal Architecture & CQRS at Scale',
+  description:
+    'How hexagonal architecture and CQRS transformed a monolithic REST API into a maintainable, testable service — handling 10× traffic growth without rewrites.',
+  domainSlug: 'backend',
+  domainName: 'Backend',
+  keywords: ['Hexagonal Architecture', 'CQRS', 'Strangler Fig migration', 'API design'],
+};
+const jsonLd = caseStudyJsonLd(Astro.site!, study);
 ---
 
 <BaseLayout
   title="Case Study: Backend API Redesign"
-  description="How hexagonal architecture and CQRS transformed a monolithic REST API into a maintainable, testable service — handling 10× traffic growth without rewrites."
+  description={study.description}
+  ogType="article"
+  jsonLd={jsonLd}
 >
   <AtlasBackdrop client:only="react" />
 

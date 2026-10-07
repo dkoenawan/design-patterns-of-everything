@@ -3,13 +3,29 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../../components/AtlasBackdrop';
 import Cartouche from '../../components/Cartouche.astro';
 import TerraformConvergenceViz from '../../components/TerraformConvergenceViz';
+import { caseStudyJsonLd } from '../../lib/case-study-jsonld';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const study = {
+  slug: 'infra-platform-migration',
+  ref: 'INFRA-01',
+  title: 'Infrastructure Platform Migration',
+  subtitle: 'Infrastructure as Code & Container Orchestration at Scale',
+  description:
+    'How Infrastructure as Code and container orchestration eliminated snowflake servers and reduced deployment lead time from days to minutes across 14 production services.',
+  domainSlug: 'infra',
+  domainName: 'Infrastructure',
+  keywords: ['Infrastructure as Code', 'container orchestration', 'Kubernetes', 'GitOps'],
+};
+const jsonLd = caseStudyJsonLd(Astro.site!, study);
 ---
 
 <BaseLayout
   title="Case Study: Infrastructure Platform Migration"
-  description="How Infrastructure as Code and container orchestration eliminated snowflake servers and reduced deployment lead time from days to minutes across 14 production services."
+  description={study.description}
+  ogType="article"
+  jsonLd={jsonLd}
 >
   <AtlasBackdrop client:only="react" />
 
