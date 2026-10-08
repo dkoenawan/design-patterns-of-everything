@@ -234,3 +234,22 @@ test('case study pages emit Article and BreadcrumbList structured data', async (
     expect(html, slug).toContain('<meta property="og:type" content="article">');
   }
 });
+
+// The about page describes itself as a ProfilePage about the Person shown in
+// the identity cartouche, carrying the certifications listed on the page.
+test('about page emits ProfilePage and Person structured data', async ({ request }) => {
+  const html = await (await request.get(`${BASE}/about/`)).text();
+  const script = html.match(/<script type="application\/ld\+json">([^<]*)<\/script>/);
+  expect(script).toBeTruthy();
+  const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)![1];
+  const description = html.match(/<meta name="description" content="([^"]+)"/)![1];
+
+  const profile = JSON.parse(script![1]);
+  expect(profile['@type']).toBe('ProfilePage');
+  expect(profile.url).toBe(canonical);
+  expect(profile.description).toBe(description);
+  expect(profile.mainEntity['@type']).toBe('Person');
+  expect(profile.mainEntity.name).toBe('Daniel Koenawan');
+  expect(profile.mainEntity.hasCredential.length).toBeGreaterThan(0);
+  expect(html).toContain('<meta property="og:type" content="profile">');
+});

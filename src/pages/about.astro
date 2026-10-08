@@ -29,11 +29,48 @@ const principles = [
   'Automate the mundane; reserve judgement for the novel',
   'Complexity is always the enemy — even when you invited it in',
 ];
+
+const name = 'Daniel Koenawan';
+const description = 'Solution architect with experience across backend systems, data pipelines, cloud infrastructure, and frontend architecture.';
+
+// schema.org structured data: this page as a ProfilePage whose subject is the
+// Person shown in the identity cartouche, with the domains and certifications
+// listed further down the page.
+const atlasURL = new URL('/design-patterns-of-everything/', Astro.site!).href;
+const pageURL = new URL('about/', atlasURL).href;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ProfilePage',
+  '@id': `${pageURL}#page`,
+  url: pageURL,
+  name: `About ${name}`,
+  description,
+  inLanguage: 'en',
+  isPartOf: { '@type': 'WebSite', name: 'Design Patterns of Everything', url: atlasURL },
+  mainEntity: {
+    '@type': 'Person',
+    '@id': `${pageURL}#person`,
+    name,
+    jobTitle: 'Solution Architect',
+    description,
+    url: pageURL,
+    knowsAbout: domains.map((d) => d.label),
+    hasCredential: certifications.map((c) => ({
+      '@type': 'EducationalOccupationalCredential',
+      name: c.label,
+      identifier: c.code,
+      credentialCategory: 'certification',
+      dateCreated: c.issued,
+    })),
+  },
+};
 ---
 
 <BaseLayout
   title="About — Celestial Atlas"
-  description="Solution architect with experience across backend systems, data pipelines, cloud infrastructure, and frontend architecture."
+  description={description}
+  ogType="profile"
+  jsonLd={jsonLd}
 >
   <AtlasBackdrop client:only="react" />
 
@@ -45,7 +82,7 @@ const principles = [
         <div class="identity-inner">
           <div class="identity-glyph" aria-hidden="true">✦</div>
           <div class="identity-text">
-            <h1 class="identity-name">Daniel Koenawan</h1>
+            <h1 class="identity-name">{name}</h1>
             <p class="identity-role">Solution Architect · Systems Thinker · Pattern Collector</p>
             <p class="identity-bio">
               A decade mapping distributed systems, data flows, and cloud platforms.
