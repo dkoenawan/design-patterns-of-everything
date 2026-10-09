@@ -10,16 +10,22 @@ import EventDrivenViz from '../components/EventDrivenViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
+import { domainJsonLd } from '../lib/domain-jsonld';
 
 const base = import.meta.env.BASE_URL;
 
 const domain = domains.find((d) => d.id === 'backend')!;
 const domainPatterns = patterns.filter((p) => p.domain === 'backend');
+
+const description =
+  'Clean architecture, CQRS, hexagonal patterns, and API design principles for maintainable server-side systems.';
+const jsonLd = domainJsonLd(Astro.site!, domain, domainPatterns, description);
 ---
 
 <BaseLayout
   title="Backend Architecture"
-  description="Clean architecture, CQRS, hexagonal patterns, and API design principles for maintainable server-side systems."
+  description={description}
+  jsonLd={jsonLd}
 >
   <AtlasBackdrop client:only="react" />
 

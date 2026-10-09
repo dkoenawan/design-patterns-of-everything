@@ -10,16 +10,22 @@ import PureFunctionPipelineViz from '../components/PureFunctionPipelineViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
+import { domainJsonLd } from '../lib/domain-jsonld';
 
 const base = import.meta.env.BASE_URL;
 
 const domain = domains.find((d) => d.id === 'data')!;
 const domainPatterns = patterns.filter((p) => p.domain === 'data');
+
+const description =
+  'Medallion architecture, schema-driven validation, pure functional pipelines, and reliable data transformation patterns.';
+const jsonLd = domainJsonLd(Astro.site!, domain, domainPatterns, description);
 ---
 
 <BaseLayout
   title="Data Pipeline Architecture"
-  description="Medallion architecture, schema-driven validation, pure functional pipelines, and reliable data transformation patterns."
+  description={description}
+  jsonLd={jsonLd}
 >
   <AtlasBackdrop client:only="react" />
 

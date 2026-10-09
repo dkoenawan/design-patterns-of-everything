@@ -10,16 +10,22 @@ import RenderCycleViz from '../components/RenderCycleViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
+import { domainJsonLd } from '../lib/domain-jsonld';
 
 const base = import.meta.env.BASE_URL;
 
 const domain = domains.find((d) => d.id === 'frontend')!;
 const domainPatterns = patterns.filter((p) => p.domain === 'frontend');
+
+const description =
+  'Component patterns, state management strategies, micro-frontends, and scalable UI systems for complex frontend applications.';
+const jsonLd = domainJsonLd(Astro.site!, domain, domainPatterns, description);
 ---
 
 <BaseLayout
   title="Frontend Architecture"
-  description="Component patterns, state management strategies, micro-frontends, and scalable UI systems for complex frontend applications."
+  description={description}
+  jsonLd={jsonLd}
 >
   <AtlasBackdrop client:only="react" />
 

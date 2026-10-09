@@ -10,16 +10,22 @@ import GitOpsReconciliationViz from '../components/GitOpsReconciliationViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
 import { domains, patterns } from '../lib/atlas-data';
+import { domainJsonLd } from '../lib/domain-jsonld';
 
 const base = import.meta.env.BASE_URL;
 
 const domain = domains.find((d) => d.id === 'infra')!;
 const domainPatterns = patterns.filter((p) => p.domain === 'infra');
+
+const description =
+  'Microservices orchestration, container platforms, infrastructure as code, and CI/CD pipeline design for resilient production systems.';
+const jsonLd = domainJsonLd(Astro.site!, domain, domainPatterns, description);
 ---
 
 <BaseLayout
   title="Infrastructure & Platform"
-  description="Microservices orchestration, container platforms, infrastructure as code, and CI/CD pipeline design for resilient production systems."
+  description={description}
+  jsonLd={jsonLd}
 >
   <AtlasBackdrop client:only="react" />
 

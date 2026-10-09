@@ -235,6 +235,32 @@ test('case study pages emit Article and BreadcrumbList structured data', async (
   }
 });
 
+// Domain overview pages describe themselves as a CollectionPage listing the
+// domain's patterns, with the visible Atlas › Domain breadcrumb.
+test('domain pages emit CollectionPage and BreadcrumbList structured data', async ({ request }) => {
+  for (const domain of ['frontend', 'backend', 'data', 'infra']) {
+    const html = await (await request.get(`${BASE}/${domain}/`)).text();
+    const script = html.match(/<script type="application\/ld\+json">([^<]*)<\/script>/);
+    expect(script, domain).toBeTruthy();
+    const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)![1];
+    const description = html.match(/<meta name="description" content="([^"]+)"/)![1];
+
+    const graph = JSON.parse(script![1])['@graph'];
+    const collection = graph.find((node: any) => node['@type'] === 'CollectionPage');
+    const breadcrumb = graph.find((node: any) => node['@type'] === 'BreadcrumbList');
+    expect(collection.url, domain).toBe(canonical);
+    expect(collection.description, domain).toBe(description);
+    const items = collection.mainEntity.itemListElement;
+    expect(items.length, domain).toBeGreaterThan(0);
+    expect(collection.mainEntity.numberOfItems, domain).toBe(items.length);
+    for (const item of items) {
+      expect(item.url, domain).toMatch(new RegExp(`${BASE}/patterns/.+/$`));
+    }
+    expect(breadcrumb.itemListElement.map((item: any) => item.position)).toEqual([1, 2]);
+    expect(breadcrumb.itemListElement[1].item, domain).toBe(canonical);
+  }
+});
+
 // The about page describes itself as a ProfilePage about the Person shown in
 // the identity cartouche, carrying the certifications listed on the page.
 test('about page emits ProfilePage and Person structured data', async ({ request }) => {
