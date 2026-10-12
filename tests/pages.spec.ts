@@ -279,3 +279,25 @@ test('about page emits ProfilePage and Person structured data', async ({ request
   expect(profile.mainEntity.hasCredential.length).toBeGreaterThan(0);
   expect(html).toContain('<meta property="og:type" content="profile">');
 });
+
+// The home page describes the site itself as a WebSite authored by the same
+// Person the about page describes, so the two entities link by @id.
+test('home page emits WebSite structured data linked to the about Person', async ({ request }) => {
+  const html = await (await request.get(`${BASE}/`)).text();
+  const script = html.match(/<script type="application\/ld\+json">([^<]*)<\/script>/);
+  expect(script).toBeTruthy();
+  const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)![1];
+  const description = html.match(/<meta name="description" content="([^"]+)"/)![1];
+
+  const site = JSON.parse(script![1]);
+  expect(site['@type']).toBe('WebSite');
+  expect(site.url).toBe(canonical);
+  expect(site.description).toBe(description);
+  expect(site.about).toHaveLength(4);
+
+  const about = await (await request.get(`${BASE}/about/`)).text();
+  const person = JSON.parse(about.match(/<script type="application\/ld\+json">([^<]*)<\/script>/)![1]).mainEntity;
+  expect(site.author['@id']).toBe(person['@id']);
+  expect(site.author.name).toBe(person.name);
+  expect(html).toContain('<meta property="og:type" content="website">');
+});

@@ -2,9 +2,34 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../components/AtlasBackdrop';
 import AtlasMap from '../components/AtlasMap';
+import { domains } from '../lib/atlas-data';
+
+const description =
+  'An atlas of software architecture: design patterns, anti-patterns, and case studies across frontend, backend, data pipeline, and infrastructure.';
+
+// schema.org structured data: the site itself, authored by the Person
+// described on the about page, covering the four charted domains.
+const atlasURL = new URL('/design-patterns-of-everything/', Astro.site!).href;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  '@id': `${atlasURL}#website`,
+  name: 'Design Patterns of Everything',
+  alternateName: 'Celestial Atlas',
+  description,
+  url: atlasURL,
+  inLanguage: 'en',
+  about: domains.map((d) => d.english),
+  author: {
+    '@type': 'Person',
+    '@id': `${new URL('about/', atlasURL).href}#person`,
+    name: 'Daniel Koenawan',
+    url: new URL('about/', atlasURL).href,
+  },
+};
 ---
 
-<BaseLayout title="Design Patterns of Everything · Celestial Atlas">
+<BaseLayout title="Design Patterns of Everything · Celestial Atlas" description={description} jsonLd={jsonLd}>
   <AtlasBackdrop client:only="react" />
   <AtlasMap client:only="react" />
 </BaseLayout>
