@@ -9,14 +9,14 @@ interface Pattern {
   tags: string[];
   slug: string;
   summary: string;
+  href: string;
 }
 
 interface Props {
   patterns: Pattern[];
-  baseUrl: string;
 }
 
-const PatternsCatalogViz: React.FC<Props> = ({ patterns, baseUrl }) => {
+const PatternsCatalogViz: React.FC<Props> = ({ patterns }) => {
   const [selectedDomains, setSelectedDomains] = useState<Set<string>>(
     new Set(['backend', 'data', 'frontend', 'infra', 'cross-domain'])
   );
@@ -82,16 +82,6 @@ const PatternsCatalogViz: React.FC<Props> = ({ patterns, baseUrl }) => {
     setSelectedComplexities(updated);
   };
 
-  const patternUrl = (domain: string, slug: string) => {
-    const domainMap: Record<string, string> = {
-      backend: 'backend',
-      data: 'data',
-      frontend: 'frontend',
-      infra: 'infra',
-      'cross-domain': 'patterns/cross-domain',
-    };
-    return `${baseUrl}/${domainMap[domain]}/${slug.replace(/-/g, '-')}`;
-  };
 
   return (
     <div className="catalog-container">
@@ -160,7 +150,7 @@ const PatternsCatalogViz: React.FC<Props> = ({ patterns, baseUrl }) => {
             {filtered.map((pattern) => (
               <a
                 key={`${pattern.domain}-${pattern.slug}`}
-                href={patternUrl(pattern.domain, pattern.slug)}
+                href={pattern.href}
                 className="pattern-card"
               >
                 <div className="pattern-header">

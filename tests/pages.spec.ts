@@ -65,6 +65,19 @@ test('landing page domain cards link to domain pages', async ({ page }) => {
   }
 });
 
+// Every card in the patterns catalog must open a real pattern page — the cards
+// previously linked to /{domain}/{slug}, which does not exist.
+test('patterns catalog cards link to pattern pages', async ({ page, request }) => {
+  await page.goto(`${BASE}/patterns-catalog`);
+  const cards = page.locator('a.pattern-card');
+  await expect(cards).toHaveCount(16);
+
+  for (const href of await cards.evaluateAll((links) => links.map((a) => a.getAttribute('href')!))) {
+    expect(href).toMatch(new RegExp(`^${BASE}/patterns/.+/$`));
+    expect((await request.get(href)).status(), href).toBe(200);
+  }
+});
+
 test('anti-patterns page shows severity badges', async ({ page }) => {
   await page.goto(`${BASE}/anti-patterns`);
   await page.waitForLoadState('networkidle');
