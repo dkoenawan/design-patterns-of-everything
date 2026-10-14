@@ -12,7 +12,8 @@ interface CaseStudy {
   domain: string;
   domainLabel: string;
   domainHref: string;
-  href: string;
+  /** Page file name under src/pages/case-studies/ */
+  slug: string;
   context: string;
   outcome: string;
   tint: string;
@@ -27,7 +28,7 @@ const studies: CaseStudy[] = [
     domain: 'BE',
     domainLabel: 'Backend',
     domainHref: `${base}/backend`,
-    href: `${base}/case-studies/backend-api-redesign`,
+    slug: 'backend-api-redesign',
     context: 'FinTech platform · 1.2M active users · 10× traffic growth',
     outcome: 'Monolithic REST API → maintainable hexagonal service without rewrite',
     tint: 'var(--tint-backend)',
@@ -40,7 +41,7 @@ const studies: CaseStudy[] = [
     domain: 'DP',
     domainLabel: 'Data Pipeline',
     domainHref: `${base}/data`,
-    href: `${base}/case-studies/data-pipeline-migration`,
+    slug: 'data-pipeline-migration',
     context: 'E-commerce analytics · 40M events/day · 3 downstream consumers',
     outcome: 'ETL monolith → observable contract-tested platform · 94% failure reduction',
     tint: 'var(--tint-data)',
@@ -53,7 +54,7 @@ const studies: CaseStudy[] = [
     domain: 'INFRA',
     domainLabel: 'Infrastructure',
     domainHref: `${base}/infra`,
-    href: `${base}/case-studies/infra-platform-migration`,
+    slug: 'infra-platform-migration',
     context: '14 production services · snowflake servers · days-long deploy cycles',
     outcome: 'Hand-patched hosts → immutable IaC pipeline · deploy lead time: days → minutes',
     tint: 'var(--tint-infra)',
@@ -66,19 +67,55 @@ const studies: CaseStudy[] = [
     domain: 'FE',
     domainLabel: 'Frontend',
     domainHref: `${base}/frontend`,
-    href: `${base}/case-studies/frontend-micro-frontend-migration`,
+    slug: 'frontend-micro-frontend-migration',
     context: 'SaaS platform · 6 product teams · fortnightly release cadence',
     outcome: 'Monolithic React app → independently deployable UI domains · on-demand releases',
     tint: 'var(--tint-frontend)',
     plate: 'Plate ii-A',
   },
 ];
+
+const description =
+  'Four architecture case studies spanning Backend, Data Pipeline, Infrastructure, and Frontend domains — real problems, chosen patterns, and measured outcomes.';
+
+// schema.org structured data: the index as a CollectionPage whose ItemList is
+// the study register below, plus the visible Atlas › Case Studies trail.
+const atlasURL = new URL('/design-patterns-of-everything/', Astro.site!).href;
+const pageURL = new URL('case-studies/', atlasURL).href;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'CollectionPage',
+      '@id': `${pageURL}#page`,
+      name: 'Case Studies',
+      description,
+      url: pageURL,
+      inLanguage: 'en',
+      isPartOf: { '@type': 'WebSite', name: 'Design Patterns of Everything', url: atlasURL },
+      mainEntity: {
+        '@type': 'ItemList',
+        numberOfItems: studies.length,
+        itemListElement: studies.map((s, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: s.title,
+          url: new URL(`${s.slug}/`, pageURL).href,
+        })),
+      },
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Atlas', item: atlasURL },
+        { '@type': 'ListItem', position: 2, name: 'Case Studies', item: pageURL },
+      ],
+    },
+  ],
+};
 ---
 
-<BaseLayout
-  title="Case Studies — Celestial Atlas"
-  description="Four architecture case studies spanning Backend, Data Pipeline, Infrastructure, and Frontend domains — real problems, chosen patterns, and measured outcomes."
->
+<BaseLayout title="Case Studies — Celestial Atlas" description={description} jsonLd={jsonLd}>
   <AtlasBackdrop client:only="react" />
 
   <main class="index-page">
@@ -137,7 +174,7 @@ const studies: CaseStudy[] = [
             <div class="entry-body">
               <h2 class="entry-title" style={`color: ${s.tint}`}>
                 <span class="entry-glyph" aria-hidden="true">◈</span>
-                <a href={s.href} class="entry-link">{s.title}</a>
+                <a href={`${base}/case-studies/${s.slug}`} class="entry-link">{s.title}</a>
               </h2>
               <p class="entry-subtitle">{s.subtitle}</p>
 
@@ -153,7 +190,7 @@ const studies: CaseStudy[] = [
               </div>
 
               <div class="entry-footer">
-                <a href={s.href} class="read-link">Read study →</a>
+                <a href={`${base}/case-studies/${s.slug}`} class="read-link">Read study →</a>
                 <a href={s.domainHref} class="domain-link">{s.domainLabel} domain</a>
               </div>
             </div>

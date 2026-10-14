@@ -274,6 +274,35 @@ test('domain pages emit CollectionPage and BreadcrumbList structured data', asyn
   }
 });
 
+// The case-studies index describes itself as a CollectionPage listing every
+// study; each list item must match that study's own Article URL.
+test('case-studies index emits CollectionPage and BreadcrumbList structured data', async ({ request }) => {
+  const html = await (await request.get(`${BASE}/case-studies/`)).text();
+  const script = html.match(/<script type="application\/ld\+json">([^<]*)<\/script>/);
+  expect(script).toBeTruthy();
+  const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)![1];
+  const description = html.match(/<meta name="description" content="([^"]+)"/)![1];
+
+  const graph = JSON.parse(script![1])['@graph'];
+  const collection = graph.find((node: any) => node['@type'] === 'CollectionPage');
+  const breadcrumb = graph.find((node: any) => node['@type'] === 'BreadcrumbList');
+  expect(collection.url).toBe(canonical);
+  expect(collection.description).toBe(description);
+  const items = collection.mainEntity.itemListElement;
+  expect(items).toHaveLength(4);
+  expect(collection.mainEntity.numberOfItems).toBe(items.length);
+  for (const item of items) {
+    const study = await (await request.get(new URL(item.url).pathname)).text();
+    const studyGraph = JSON.parse(study.match(/<script type="application\/ld\+json">([^<]*)<\/script>/)![1])['@graph'];
+    const article = studyGraph.find((node: any) => node['@type'] === 'Article');
+    expect(item.url).toBe(article.url);
+    expect(item.name).toBe(article.headline);
+  }
+  expect(breadcrumb.itemListElement.map((item: any) => item.position)).toEqual([1, 2]);
+  expect(breadcrumb.itemListElement[1].item).toBe(canonical);
+  expect(html).toContain('<meta property="og:type" content="website">');
+});
+
 // The about page describes itself as a ProfilePage about the Person shown in
 // the identity cartouche, carrying the certifications listed on the page.
 test('about page emits ProfilePage and Person structured data', async ({ request }) => {
