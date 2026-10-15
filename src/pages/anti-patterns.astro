@@ -164,11 +164,53 @@ const antiPatterns: AntiPattern[] = [
 const severityLabel = ['', 'Minor', 'Low', 'Moderate', 'High', 'Critical'] as const;
 const severityDots = (s: number) =>
   Array.from({ length: 5 }, (_, i) => (i < s ? '◆' : '◇')).join('');
+
+const description =
+  'Common architectural anti-patterns across Backend, Data Pipeline, Infrastructure, and Frontend — what they look like, why they persist, and how to eliminate them.';
+
+// schema.org structured data: the catalog as a CollectionPage whose ItemList is
+// the hazard register below — each entry addressed by its on-page anchor — plus
+// the visible Atlas › Anti-Patterns trail.
+const atlasURL = new URL('/design-patterns-of-everything/', Astro.site!).href;
+const pageURL = new URL('anti-patterns/', atlasURL).href;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'CollectionPage',
+      '@id': `${pageURL}#page`,
+      name: 'Anti-Pattern Catalog',
+      description,
+      url: pageURL,
+      inLanguage: 'en',
+      isPartOf: { '@type': 'WebSite', name: 'Design Patterns of Everything', url: atlasURL },
+      mainEntity: {
+        '@type': 'ItemList',
+        numberOfItems: antiPatterns.length,
+        itemListElement: antiPatterns.map((ap, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: ap.name,
+          description: ap.symptom,
+          url: `${pageURL}#${ap.id}`,
+        })),
+      },
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Atlas', item: atlasURL },
+        { '@type': 'ListItem', position: 2, name: 'Anti-Patterns', item: pageURL },
+      ],
+    },
+  ],
+};
 ---
 
 <BaseLayout
   title="Anti-Pattern Catalog — Celestial Atlas"
-  description="Common architectural anti-patterns across Backend, Data Pipeline, Infrastructure, and Frontend — what they look like, why they persist, and how to eliminate them."
+  description={description}
+  jsonLd={jsonLd}
 >
   <AtlasBackdrop client:only="react" />
 
@@ -236,7 +278,7 @@ const severityDots = (s: number) =>
     <section class="entries-row">
       <Cartouche label="Hazard register — field observations">
         {antiPatterns.map((ap, i) => (
-          <article class="entry">
+          <article class="entry" id={ap.id}>
             <!-- Rail -->
             <div class="entry-rail">
               <span class="entry-domain" style={`color: ${ap.tint}`}>
@@ -433,6 +475,8 @@ const severityDots = (s: number) =>
     gap: 0;
     border-top: 0.5px solid var(--line-faint);
     padding: 36px 0;
+    /* Clear the 52px sticky SiteNav when an entry is opened by its anchor */
+    scroll-margin-top: 52px;
   }
 
   .entry:last-child {
