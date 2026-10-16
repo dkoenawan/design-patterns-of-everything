@@ -193,11 +193,51 @@ const catalog: Omit<Pattern, 'href'>[] = [
 
 // Link each entry to the route patterns/[...slug].astro generates for it, read
 // from atlas-data so the catalog cannot drift from the real pattern URLs.
-const patterns: Pattern[] = catalog.map((entry) => {
-  const href = atlasPatterns.find((p) => p.id === entry.slug)?.href;
-  if (!href) throw new Error(`patterns-catalog: no pattern page for "${entry.slug}"`);
-  return { ...entry, href: `${base}${href}/` };
+const patterns: (Pattern & { path: string })[] = catalog.map((entry) => {
+  const path = atlasPatterns.find((p) => p.id === entry.slug)?.href;
+  if (!path) throw new Error(`patterns-catalog: no pattern page for "${entry.slug}"`);
+  return { ...entry, path, href: `${base}${path}/` };
 });
+
+const description =
+  'Navigate all 16 architecture patterns across Frontend, Backend, Data Pipeline, and Infrastructure domains by complexity, tags, and domain.';
+
+// schema.org structured data: the catalog as a CollectionPage whose ItemList is
+// the pattern register below, plus the visible Atlas › Patterns trail.
+const atlasURL = new URL('/design-patterns-of-everything/', Astro.site!).href;
+const pageURL = new URL('patterns-catalog/', atlasURL).href;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'CollectionPage',
+      '@id': `${pageURL}#page`,
+      name: 'Patterns Catalog',
+      description,
+      url: pageURL,
+      inLanguage: 'en',
+      isPartOf: { '@type': 'WebSite', name: 'Design Patterns of Everything', url: atlasURL },
+      mainEntity: {
+        '@type': 'ItemList',
+        numberOfItems: patterns.length,
+        itemListElement: patterns.map((p, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: p.title,
+          description: p.summary,
+          url: new URL(`${p.path.replace(/^\//, '')}/`, atlasURL).href,
+        })),
+      },
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Atlas', item: atlasURL },
+        { '@type': 'ListItem', position: 2, name: 'Patterns', item: pageURL },
+      ],
+    },
+  ],
+};
 
 const complexityLabels = {
   fundamentals: 'Fundamentals',
@@ -224,7 +264,8 @@ const domainColors = {
 
 <BaseLayout
   title="Patterns Catalog — Celestial Atlas"
-  description="Navigate all 16 architecture patterns across Frontend, Backend, Data Pipeline, and Infrastructure domains by complexity, tags, and domain."
+  description={description}
+  jsonLd={jsonLd}
 >
   <AtlasBackdrop client:only="react" />
 
@@ -271,7 +312,7 @@ const domainColors = {
     <!-- ── Interactive catalog ─────────────────────────────────── -->
     <section class="catalog-row">
       <Cartouche label="Register — sortable by domain, complexity, tags">
-        <PatternsCatalogViz client:load patterns={patterns} />
+        <PatternsCatalogViz client:load patterns={patterns.map(({ path, ...p }) => p)} />
       </Cartouche>
     </section>
 

@@ -333,6 +333,37 @@ test('anti-patterns page emits CollectionPage and BreadcrumbList structured data
   expect(html).toContain('<meta property="og:type" content="website">');
 });
 
+// The patterns catalog describes itself as a CollectionPage listing every
+// pattern; each list item must match that pattern page's own TechArticle URL.
+test('patterns catalog emits CollectionPage and BreadcrumbList structured data', async ({ request }) => {
+  const html = await (await request.get(`${BASE}/patterns-catalog/`)).text();
+  const script = html.match(/<script type="application\/ld\+json">([^<]*)<\/script>/);
+  expect(script).toBeTruthy();
+  const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)![1];
+  const description = html.match(/<meta name="description" content="([^"]+)"/)![1];
+
+  const graph = JSON.parse(script![1])['@graph'];
+  const collection = graph.find((node: any) => node['@type'] === 'CollectionPage');
+  const breadcrumb = graph.find((node: any) => node['@type'] === 'BreadcrumbList');
+  expect(collection.url).toBe(canonical);
+  expect(collection.description).toBe(description);
+  const items = collection.mainEntity.itemListElement;
+  expect(items).toHaveLength(patternPages.length);
+  expect(collection.mainEntity.numberOfItems).toBe(items.length);
+  for (const item of items) {
+    const res = await request.get(new URL(item.url).pathname);
+    expect(res.status(), item.url).toBe(200);
+    const patternGraph = JSON.parse((await res.text()).match(/<script type="application\/ld\+json">([^<]*)<\/script>/)![1])['@graph'];
+    const article = patternGraph.find((node: any) => node['@type'] === 'TechArticle');
+    expect(item.url).toBe(article.url);
+    expect(item.name, item.url).toBeTruthy();
+    expect(item.description, item.url).toBeTruthy();
+  }
+  expect(breadcrumb.itemListElement.map((item: any) => item.position)).toEqual([1, 2]);
+  expect(breadcrumb.itemListElement[1].item).toBe(canonical);
+  expect(html).toContain('<meta property="og:type" content="website">');
+});
+
 // The about page describes itself as a ProfilePage about the Person shown in
 // the identity cartouche, carrying the certifications listed on the page.
 test('about page emits ProfilePage and Person structured data', async ({ request }) => {
