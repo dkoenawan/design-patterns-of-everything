@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../../components/AtlasBackdrop';
 import Cartouche from '../../components/Cartouche.astro';
 import { domains, patterns, type Pattern } from '../../lib/atlas-data';
+import { caseStudiesApplying } from '../../lib/case-studies';
 
 export async function getStaticPaths() {
   // Astro 5 deprecated Astro.glob — use import.meta.glob (eager) instead.
@@ -58,6 +59,8 @@ function typeGlyph(type: string) {
 const diamonds = Array.from({ length: 5 }, (_, i) =>
   i < pattern.complexity ? '◆' : '◇'
 ).join('');
+
+const appliedIn = caseStudiesApplying(pattern.id);
 
 const title = frontmatter.title ?? pattern.name;
 const summary = frontmatter.summary ?? pattern.note;
@@ -135,6 +138,21 @@ const jsonLd = {
     <article class="pattern-body">
       <Content />
     </article>
+
+    <!-- ── Case studies applying this pattern ──────────────────── -->
+    {appliedIn.length > 0 && (
+      <Cartouche label="Applied in case studies">
+        <ul class="applied-list">
+          {appliedIn.map((s) => (
+            <li>
+              <span class="applied-ref">{s.ref}</span>
+              <a href={`${base}case-studies/${s.slug}/`} class="applied-link">{s.title}</a>
+              <span class="applied-subtitle">{s.subtitle}</span>
+            </li>
+          ))}
+        </ul>
+      </Cartouche>
+    )}
 
     <!-- ── Footer row ──────────────────────────────────────────── -->
     <section class="footer-row">
@@ -325,6 +343,48 @@ const jsonLd = {
     font-size: 11px;
     letter-spacing: 1px;
     text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  /* ── Applied in case studies ── */
+  .applied-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .applied-list li {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    column-gap: 14px;
+    row-gap: 2px;
+    align-items: baseline;
+  }
+
+  .applied-ref {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--tint, var(--gold));
+  }
+
+  .applied-link {
+    font-size: 19px;
+    color: var(--gold);
+    text-decoration: none;
+  }
+
+  .applied-link:hover {
+    color: var(--gold-bright);
+  }
+
+  .applied-subtitle {
+    grid-column: 2;
+    font-size: 15px;
     color: var(--ink-dim);
   }
 

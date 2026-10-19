@@ -419,3 +419,36 @@ test('pattern page navigation links resolve', async ({ page, request }) => {
     }
   }
 });
+
+// Pattern pages link back to every case study whose "Patterns applied"
+// sidebar lists them, so the two directions of the cross-link cannot drift.
+test('pattern pages link back to the case studies that apply them', async ({ request }) => {
+  const studies = [
+    'backend-api-redesign',
+    'data-pipeline-migration',
+    'infra-platform-migration',
+    'frontend-micro-frontend-migration',
+  ];
+  const appliedBy = new Map<string, { href: string; headline: string }[]>();
+  for (const slug of studies) {
+    const href = `${BASE}/case-studies/${slug}/`;
+    const html = await (await request.get(href)).text();
+    const script = html.match(/<script type="application\/ld\+json">([^<]*)<\/script>/)![1];
+    const headline = JSON.parse(script)['@graph'].find((node: any) => node['@type'] === 'Article').headline;
+    for (const [, link] of html.matchAll(/<a href="([^"]+)" class="pattern-link"/g)) {
+      if (link.startsWith(`${BASE}/anti-patterns`)) continue;
+      const id = link.split('#')[1];
+      expect(id, `${slug}: ${link}`).toBeTruthy();
+      appliedBy.set(id, [...(appliedBy.get(id) ?? []), { href, headline }]);
+    }
+  }
+
+  for (const slug of patternPages) {
+    const html = await (await request.get(`${BASE}/patterns/${slug}/`)).text();
+    const links = [...html.matchAll(/<a href="([^"]+)" class="applied-link"[^>]*>([^<]+)<\/a>/g)]
+      .map(([, href, headline]) => ({ href, headline }));
+    const expected = appliedBy.get(slug.split('/')[1]) ?? [];
+    expect(links, slug).toEqual(expected);
+    expect(html.includes('Applied in case studies'), slug).toBe(expected.length > 0);
+  }
+});
