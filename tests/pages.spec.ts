@@ -404,3 +404,18 @@ test('home page emits WebSite structured data linked to the about Person', async
   expect(site.author.name).toBe(person.name);
   expect(html).toContain('<meta property="og:type" content="website">');
 });
+
+// The breadcrumb and footer links on each pattern page must open real pages.
+test('pattern page navigation links resolve', async ({ page, request }) => {
+  for (const slug of patternPages) {
+    await page.goto(`${BASE}/patterns/${slug}/`, { waitUntil: 'domcontentloaded' });
+    const hrefs = await page.locator('.breadcrumb a, .footer-row a').evaluateAll(
+      (links) => links.map((a) => a.getAttribute('href')!),
+    );
+    expect(hrefs, slug).toHaveLength(3);
+    for (const href of hrefs) {
+      expect(href, slug).toMatch(new RegExp(`^${BASE}/`));
+      expect((await request.get(href)).status(), `${slug}: ${href}`).toBe(200);
+    }
+  }
+});
