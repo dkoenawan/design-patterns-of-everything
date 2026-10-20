@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../../components/AtlasBackdrop';
 import Cartouche from '../../components/Cartouche.astro';
+import PatternLink from '../../components/PatternLink.astro';
 import { domains, patterns, type Pattern } from '../../lib/atlas-data';
 import { caseStudiesApplying } from '../../lib/case-studies';
 
@@ -136,7 +137,7 @@ const jsonLd = {
 
     <!-- ── MDX body ────────────────────────────────────────────── -->
     <article class="pattern-body">
-      <Content />
+      <Content components={{ a: PatternLink }} />
     </article>
 
     <!-- ── Case studies applying this pattern ──────────────────── -->

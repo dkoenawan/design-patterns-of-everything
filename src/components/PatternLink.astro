@@ -1,0 +1,21 @@
+---
+// Replaces `a` inside rendered pattern MDX. The MDX sources cross-link by file
+// path (`./cqrs.mdx`, `../backend/cqrs.mdx`) so the links work when browsing
+// docs/patterns/ in the repo; on the site those paths 404. Resolve them to the
+// generated page URL via the pattern's filename, which is its atlas-data `id`.
+import { patterns } from '../lib/atlas-data';
+
+const { href, ...rest } = Astro.props as { href?: string; [key: string]: unknown };
+// BASE_URL has no trailing slash (base: '/design-patterns-of-everything')
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+
+let resolved = href;
+const mdx = href?.match(/^(?:\.\.?\/)+(?:[\w-]+\/)*([\w-]+)\.mdx(#.*)?$/);
+if (mdx) {
+  const target = patterns.find((p) => p.id === mdx[1] && p.href);
+  if (!target) throw new Error(`Pattern MDX links to unknown pattern: ${href}`);
+  resolved = `${base}${target.href!.replace(/^\//, '')}/${mdx[2] ?? ''}`;
+}
+---
+
+<a href={resolved} {...rest}><slot /></a>

@@ -452,3 +452,17 @@ test('pattern pages link back to the case studies that apply them', async ({ req
     expect(html.includes('Applied in case studies'), slug).toBe(expected.length > 0);
   }
 });
+
+// Related-pattern links in the MDX bodies are written as source paths
+// (`./cqrs.mdx`) and must be rewritten to the generated pattern pages.
+test('pattern body cross-links resolve to pattern pages', async ({ request }) => {
+  for (const slug of patternPages) {
+    const html = await (await request.get(`${BASE}/patterns/${slug}/`)).text();
+    const body = html.match(/<article class="pattern-body"[^>]*>([\s\S]*?)<\/article>/)![1];
+    const hrefs = [...body.matchAll(/<a href="([^"]+)"/g)].map(([, href]) => href);
+    expect(hrefs.filter((href) => href.endsWith('.mdx')), slug).toEqual([]);
+    for (const href of hrefs.filter((href) => href.startsWith(`${BASE}/patterns/`))) {
+      expect((await request.get(href)).status(), `${slug}: ${href}`).toBe(200);
+    }
+  }
+});
