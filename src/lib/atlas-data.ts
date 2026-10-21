@@ -301,6 +301,17 @@ export const patterns: Pattern[] = [
   },
 ];
 
+/**
+ * Site URL of a pattern's detail page (with trailing slash), relative to the
+ * site root. Throws at build time if the id has no generated page.
+ */
+export function patternPageHref(id: string): string {
+  const target = patterns.find((p) => p.id === id && p.href);
+  if (!target) throw new Error(`No pattern page for id: ${id}`);
+  // BASE_URL has no trailing slash (base: '/design-patterns-of-everything')
+  return `${import.meta.env.BASE_URL.replace(/\/$/, '')}${target.href}/`;
+}
+
 // ── Connections ───────────────────────────────────────────────────────────────
 
 export const connections: Connection[] = [

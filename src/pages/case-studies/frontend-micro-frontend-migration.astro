@@ -4,6 +4,7 @@ import AtlasBackdrop from '../../components/AtlasBackdrop';
 import Cartouche from '../../components/Cartouche.astro';
 import TrafficCutoverViz from '../../components/TrafficCutoverViz';
 import { caseStudyJsonLd } from '../../lib/case-study-jsonld';
+import { patternPageHref } from '../../lib/atlas-data';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -108,19 +109,19 @@ const jsonLd = caseStudyJsonLd(Astro.site!, study);
               <ul class="sidebar-list">
                 <li>
                   <span class="pattern-bullet" aria-hidden="true">◈</span>
-                  <a href={base + '/frontend#micro-frontend-architecture'} class="pattern-link">
+                  <a href={patternPageHref('micro-frontend-architecture')} class="pattern-link">
                     Micro-Frontend Architecture
                   </a>
                 </li>
                 <li>
                   <span class="pattern-bullet" aria-hidden="true">◈</span>
-                  <a href={base + '/frontend#component-composition'} class="pattern-link">
+                  <a href={patternPageHref('component-composition')} class="pattern-link">
                     Component Composition
                   </a>
                 </li>
                 <li>
                   <span class="pattern-bullet" aria-hidden="true">◈</span>
-                  <a href={base + '/frontend#state-management-patterns'} class="pattern-link">
+                  <a href={patternPageHref('state-management-patterns')} class="pattern-link">
                     State Management Patterns
                   </a>
                 </li>

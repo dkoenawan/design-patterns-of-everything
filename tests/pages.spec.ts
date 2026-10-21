@@ -420,9 +420,10 @@ test('pattern page navigation links resolve', async ({ page, request }) => {
   }
 });
 
-// Pattern pages link back to every case study whose "Patterns applied"
-// sidebar lists them, so the two directions of the cross-link cannot drift.
-test('pattern pages link back to the case studies that apply them', async ({ request }) => {
+// Case-study "Patterns applied" sidebars link to the pattern pages, and pattern
+// pages link back to every study whose sidebar lists them, so the two
+// directions of the cross-link cannot drift.
+test('case studies and the patterns they apply link to each other', async ({ request }) => {
   const studies = [
     'backend-api-redesign',
     'data-pipeline-migration',
@@ -437,8 +438,9 @@ test('pattern pages link back to the case studies that apply them', async ({ req
     const headline = JSON.parse(script)['@graph'].find((node: any) => node['@type'] === 'Article').headline;
     for (const [, link] of html.matchAll(/<a href="([^"]+)" class="pattern-link"/g)) {
       if (link.startsWith(`${BASE}/anti-patterns`)) continue;
-      const id = link.split('#')[1];
+      const id = link.match(new RegExp(`^${BASE}/patterns/[\\w-]+/([\\w-]+)/$`))?.[1] ?? '';
       expect(id, `${slug}: ${link}`).toBeTruthy();
+      expect((await request.get(link)).status(), `${slug}: ${link}`).toBe(200);
       appliedBy.set(id, [...(appliedBy.get(id) ?? []), { href, headline }]);
     }
   }

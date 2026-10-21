@@ -4,6 +4,7 @@ import AtlasBackdrop from '../../components/AtlasBackdrop';
 import Cartouche from '../../components/Cartouche.astro';
 import MedallionFlowViz from '../../components/MedallionFlowViz';
 import { caseStudyJsonLd } from '../../lib/case-study-jsonld';
+import { patternPageHref } from '../../lib/atlas-data';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -108,25 +109,25 @@ const jsonLd = caseStudyJsonLd(Astro.site!, study);
               <ul class="sidebar-list">
                 <li>
                   <span class="pattern-bullet" aria-hidden="true">◈</span>
-                  <a href={base + '/data#medallion-architecture'} class="pattern-link">
+                  <a href={patternPageHref('medallion-architecture')} class="pattern-link">
                     Medallion Architecture
                   </a>
                 </li>
                 <li>
                   <span class="pattern-bullet" aria-hidden="true">◈</span>
-                  <a href={base + '/data#schema-driven-validation'} class="pattern-link">
+                  <a href={patternPageHref('schema-driven-validation')} class="pattern-link">
                     Schema-Driven Validation
                   </a>
                 </li>
                 <li>
                   <span class="pattern-bullet" aria-hidden="true">◈</span>
-                  <a href={base + '/data#pure-functions'} class="pattern-link">
+                  <a href={patternPageHref('pure-functions')} class="pattern-link">
                     Pure Functions
                   </a>
                 </li>
                 <li>
                   <span class="pattern-bullet" aria-hidden="true">◈</span>
-                  <a href={base + '/data#batch-vs-streaming'} class="pattern-link">
+                  <a href={patternPageHref('batch-vs-streaming')} class="pattern-link">
                     Batch vs Streaming
                   </a>
                 </li>

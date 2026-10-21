@@ -4,6 +4,7 @@ import AtlasBackdrop from '../../components/AtlasBackdrop';
 import Cartouche from '../../components/Cartouche.astro';
 import TerraformConvergenceViz from '../../components/TerraformConvergenceViz';
 import { caseStudyJsonLd } from '../../lib/case-study-jsonld';
+import { patternPageHref } from '../../lib/atlas-data';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -110,19 +111,19 @@ const jsonLd = caseStudyJsonLd(Astro.site!, study);
               <ul class="sidebar-list">
                 <li>
                   <span class="pattern-bullet" aria-hidden="true">◈</span>
-                  <a href={base + '/infra#infrastructure-as-code'} class="pattern-link">
+                  <a href={patternPageHref('infrastructure-as-code')} class="pattern-link">
                     Infrastructure as Code
                   </a>
                 </li>
                 <li>
                   <span class="pattern-bullet" aria-hidden="true">◈</span>
-                  <a href={base + '/infra#docker-port-mapping'} class="pattern-link">
+                  <a href={patternPageHref('docker-port-mapping')} class="pattern-link">
                     Container Isolation
                   </a>
                 </li>
                 <li>
                   <span class="pattern-bullet" aria-hidden="true">◈</span>
-                  <a href={base + '/infra#multi-database-orchestration'} class="pattern-link">
+                  <a href={patternPageHref('multi-database-orchestration')} class="pattern-link">
                     Multi-Database Orchestration
                   </a>
                 </li>

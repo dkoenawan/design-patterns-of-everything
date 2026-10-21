@@ -4,6 +4,7 @@ import AtlasBackdrop from '../../components/AtlasBackdrop';
 import Cartouche from '../../components/Cartouche.astro';
 import StranglerFigViz from '../../components/StranglerFigViz';
 import { caseStudyJsonLd } from '../../lib/case-study-jsonld';
+import { patternPageHref } from '../../lib/atlas-data';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -106,25 +107,25 @@ const jsonLd = caseStudyJsonLd(Astro.site!, study);
               <ul class="sidebar-list">
                 <li>
                   <span class="pattern-bullet" aria-hidden="true">◈</span>
-                  <a href={base + '/backend#hexagonal-architecture'} class="pattern-link">
+                  <a href={patternPageHref('hexagonal-architecture')} class="pattern-link">
                     Hexagonal Architecture
                   </a>
                 </li>
                 <li>
                   <span class="pattern-bullet" aria-hidden="true">◈</span>
-                  <a href={base + '/backend#cqrs'} class="pattern-link">
+                  <a href={patternPageHref('cqrs')} class="pattern-link">
                     CQRS
                   </a>
                 </li>
                 <li>
                   <span class="pattern-bullet" aria-hidden="true">◈</span>
-                  <a href={base + '/backend#dependency-injection'} class="pattern-link">
+                  <a href={patternPageHref('dependency-injection')} class="pattern-link">
                     Dependency Injection
                   </a>
                 </li>
                 <li>
                   <span class="pattern-bullet" aria-hidden="true">◈</span>
-                  <a href={base + '/backend#strategy-pattern'} class="pattern-link">
+                  <a href={patternPageHref('strategy-pattern')} class="pattern-link">
                     Strategy Pattern
                   </a>
                 </li>
