@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../components/AtlasBackdrop';
 import Cartouche from '../components/Cartouche.astro';
 import BlastRadiusViz from '../components/BlastRadiusViz';
+import { patterns, patternPageHref } from '../lib/atlas-data';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -16,6 +17,8 @@ interface AntiPattern {
   consequence: string;
   mitigation: string;
   tint: string;
+  /** Pattern ids (atlas-data) named in the mitigation, linked to their pages. */
+  remedies: string[];
 }
 
 const antiPatterns: AntiPattern[] = [
@@ -32,6 +35,7 @@ const antiPatterns: AntiPattern[] = [
     mitigation:
       'Apply Single Responsibility rigorously. Extract cohesive subsets into focused services. Use hexagonal boundaries to enforce dependency direction.',
     tint: 'var(--tint-backend)',
+    remedies: ['single-responsibility', 'hexagonal-architecture'],
   },
   {
     id: 'premature-generalisation',
@@ -46,6 +50,7 @@ const antiPatterns: AntiPattern[] = [
     mitigation:
       'Follow the Rule of Three: duplicate once, abstract on the third instance. Prefer composition over inheritance until the seam is proven stable.',
     tint: 'var(--gold)',
+    remedies: ['composition-over-inheritance'],
   },
   {
     id: 'pipeline-fan-out-without-backpressure',
@@ -60,6 +65,7 @@ const antiPatterns: AntiPattern[] = [
     mitigation:
       'Design backpressure into every fan-out: bounded queues with blocking or drop-with-alert semantics. Monitor queue depth as a first-class SLI. Apply schema-driven validation at ingest to reduce downstream volume early.',
     tint: 'var(--tint-data)',
+    remedies: ['schema-driven-validation'],
   },
   {
     id: 'snowflake-server',
@@ -74,6 +80,7 @@ const antiPatterns: AntiPattern[] = [
     mitigation:
       'Treat infrastructure as code from day one. Encode every configuration change in IaC (Terraform, Pulumi, or equivalent). Use immutable image builds — provision, never patch in place. Enforce drift detection in CI so any manual change surfaces as a diff.',
     tint: 'var(--tint-infra)',
+    remedies: ['infrastructure-as-code'],
   },
   {
     id: 'prop-drilling',
@@ -88,6 +95,7 @@ const antiPatterns: AntiPattern[] = [
     mitigation:
       'Push state down to the lowest component that owns it; lift it only when genuinely shared. For cross-cutting state, use context or a dedicated state atom — but prefer co-location first. Compound component patterns can eliminate drilling within a bounded family of components without reaching for global state.',
     tint: 'var(--tint-frontend)',
+    remedies: ['state-management-patterns', 'component-composition'],
   },
   {
     id: 'anemic-domain-model',
@@ -102,6 +110,7 @@ const antiPatterns: AntiPattern[] = [
     mitigation:
       'Move behaviour onto the objects that own the data it operates on. An order should know how to check itself out; a cart should know whether it can accept another item. Reserve services for orchestration across multiple aggregates, not for logic that belongs to a single one.',
     tint: 'var(--tint-backend)',
+    remedies: [],
   },
   {
     id: 'unmemoized-rerender-cascade',
@@ -116,6 +125,7 @@ const antiPatterns: AntiPattern[] = [
     mitigation:
       'Memoize expensive subtrees with the framework\'s memo primitive, and stabilise the props passed into them — hoist literals, memoize callbacks and derived objects. Push state down to the narrowest owner (pairs with Prop Drilling\'s fix) so updates only invalidate the subtree that actually needs them.',
     tint: 'var(--tint-frontend)',
+    remedies: ['state-management-patterns'],
   },
   {
     id: 'silent-schema-drift',
@@ -130,6 +140,7 @@ const antiPatterns: AntiPattern[] = [
     mitigation:
       'Enforce a schema contract at every trust boundary and fail closed on violation rather than coercing silently. Version schemas explicitly and require producers to bump the version on breaking changes. Pairs with Schema-Driven Validation: validate at ingest, not several stages downstream where the origin of a bad record is already lost.',
     tint: 'var(--tint-data)',
+    remedies: ['schema-driven-validation'],
   },
   {
     id: 'tightly-coupled-service-dependencies',
@@ -144,6 +155,7 @@ const antiPatterns: AntiPattern[] = [
     mitigation:
       'Design explicit service boundaries with versioned APIs; clients pin versions and decouple deployment timing. Prefer asynchronous messaging over direct calls where the dependency can tolerate latency. Publish interface contracts as code and validate them in CI. Track service dependencies as a first-class asset for blast-radius analysis.',
     tint: 'var(--tint-infra)',
+    remedies: [],
   },
   {
     id: 'shotgun-surgery',
@@ -158,8 +170,11 @@ const antiPatterns: AntiPattern[] = [
     mitigation:
       'Extract the piece of knowledge that ought to be singular into one place: a shared validation library, a codec, a schema definition. Move related behaviour together to eliminate the scatter. Apply Composition Over Inheritance and Single Responsibility to reduce the surface area that a single change touches.',
     tint: 'var(--gold)',
+    remedies: ['composition-over-inheritance', 'single-responsibility'],
   },
 ];
+
+const patternName = (id: string) => patterns.find((p) => p.id === id)!.name;
 
 const severityLabel = ['', 'Minor', 'Low', 'Moderate', 'High', 'Critical'] as const;
 const severityDots = (s: number) =>
@@ -317,6 +332,20 @@ const jsonLd = {
                 <h3 class="entry-section-label">Mitigation</h3>
                 <p class="entry-text entry-text--mitigation">{ap.mitigation}</p>
               </div>
+
+              {ap.remedies.length > 0 && (
+                <div class="entry-section">
+                  <h3 class="entry-section-label">Remedial patterns</h3>
+                  <ul class="remedy-list">
+                    {ap.remedies.map((id) => (
+                      <li>
+                        <span class="remedy-bullet" aria-hidden="true">◈</span>
+                        <a href={patternPageHref(id)} class="remedy-link">{patternName(id)}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </article>
         ))}
@@ -327,7 +356,7 @@ const jsonLd = {
     <section class="footer-row">
       <div class="footer-nav">
         <a href={`${base}/`} class="nav-link">← Atlas home</a>
-        <a href={`${base}/backend`} class="nav-link">Pattern catalog →</a>
+        <a href={`${base}/patterns-catalog/`} class="nav-link">Pattern catalog →</a>
       </div>
       <p class="footer-coord">Hazard register · Supplement I</p>
     </section>
@@ -577,6 +606,35 @@ const jsonLd = {
 
   .entry-text--mitigation {
     color: var(--ink);
+  }
+
+  .remedy-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 24px;
+  }
+
+  .remedy-bullet {
+    color: var(--gold);
+    font-size: 11px;
+    margin-right: 8px;
+  }
+
+  .remedy-link {
+    font-size: 16px;
+    font-family: var(--font-display);
+    font-style: italic;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 0.5px solid var(--paper-border);
+    transition: color 150ms, border-color 150ms;
+  }
+
+  .remedy-link:hover {
+    color: var(--gold-bright);
+    border-bottom-color: var(--gold-bright);
   }
 
   @media (max-width: 560px) {

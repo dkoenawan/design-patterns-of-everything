@@ -420,6 +420,28 @@ test('pattern page navigation links resolve', async ({ page, request }) => {
   }
 });
 
+// Each anti-pattern links the patterns its mitigation names; every link must
+// reach a pattern page, and the linked pattern must be one the mitigation cites.
+test('anti-pattern remedial links resolve to pattern pages named in the mitigation', async ({ page, request }) => {
+  await page.goto(`${BASE}/anti-patterns/`);
+  const links = page.locator('article.entry a.remedy-link');
+  expect(await links.count()).toBeGreaterThan(0);
+  for (const entry of await page.locator('article.entry').all()) {
+    const mitigation = (await entry.locator('.entry-text--mitigation').textContent())!.toLowerCase();
+    for (const link of await entry.locator('a.remedy-link').all()) {
+      const href = (await link.getAttribute('href'))!;
+      const name = (await link.textContent())!.trim();
+      expect(href, name).toMatch(new RegExp(`^${BASE}/patterns/[\\w-]+/[\\w-]+/$`));
+      expect((await request.get(href)).status(), href).toBe(200);
+      const keyword = name.toLowerCase().replace(/ (patterns|principle|architecture)$/, '');
+      expect(mitigation, `${name} not cited in mitigation`).toContain(keyword.split(' ')[0]);
+    }
+  }
+  const footer = page.locator('.footer-nav a', { hasText: 'Pattern catalog' });
+  expect((await request.get((await footer.getAttribute('href'))!)).status()).toBe(200);
+  await expect(footer).toHaveAttribute('href', `${BASE}/patterns-catalog/`);
+});
+
 // Case-study "Patterns applied" sidebars link to the pattern pages, and pattern
 // pages link back to every study whose sidebar lists them, so the two
 // directions of the cross-link cannot drift.
