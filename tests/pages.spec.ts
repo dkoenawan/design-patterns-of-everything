@@ -442,6 +442,31 @@ test('anti-pattern remedial links resolve to pattern pages named in the mitigati
   await expect(footer).toHaveAttribute('href', `${BASE}/patterns-catalog/`);
 });
 
+// Pattern pages link back to every anti-pattern whose remedial patterns list
+// them, so the two directions of the cross-link cannot drift.
+test('pattern pages link back to the anti-patterns they remedy', async ({ page, request }) => {
+  await page.goto(`${BASE}/anti-patterns/`);
+  const remediedBy = new Map<string, { href: string; name: string }[]>();
+  for (const entry of await page.locator('article.entry').all()) {
+    const id = (await entry.getAttribute('id'))!;
+    const name = (await entry.locator('h2.entry-name').textContent())!.replace('✗', '').trim();
+    for (const link of await entry.locator('a.remedy-link').all()) {
+      const pattern = (await link.getAttribute('href'))!.match(/\/([\w-]+)\/$/)![1];
+      remediedBy.set(pattern, [...(remediedBy.get(pattern) ?? []), { href: `${BASE}/anti-patterns/#${id}`, name }]);
+    }
+  }
+  expect(remediedBy.size).toBeGreaterThan(0);
+
+  for (const slug of patternPages) {
+    const html = await (await request.get(`${BASE}/patterns/${slug}/`)).text();
+    const links = [...html.matchAll(/<a href="([^"]+)" class="applied-link remedy-of-link"[^>]*>([^<]+)<\/a>/g)]
+      .map(([, href, name]) => ({ href, name }));
+    const expected = remediedBy.get(slug.split('/')[1]) ?? [];
+    expect(links, slug).toEqual(expected);
+    expect(html.includes('Remedies these anti-patterns'), slug).toBe(expected.length > 0);
+  }
+});
+
 // Case-study "Patterns applied" sidebars link to the pattern pages, and pattern
 // pages link back to every study whose sidebar lists them, so the two
 // directions of the cross-link cannot drift.

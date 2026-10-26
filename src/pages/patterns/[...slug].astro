@@ -5,6 +5,7 @@ import Cartouche from '../../components/Cartouche.astro';
 import PatternLink from '../../components/PatternLink.astro';
 import { domains, patterns, type Pattern } from '../../lib/atlas-data';
 import { caseStudiesApplying } from '../../lib/case-studies';
+import { antiPatternsRemediedBy, antiPatternRef } from '../../lib/anti-patterns';
 
 export async function getStaticPaths() {
   // Astro 5 deprecated Astro.glob — use import.meta.glob (eager) instead.
@@ -62,6 +63,7 @@ const diamonds = Array.from({ length: 5 }, (_, i) =>
 ).join('');
 
 const appliedIn = caseStudiesApplying(pattern.id);
+const remedies = antiPatternsRemediedBy(pattern.id);
 
 const title = frontmatter.title ?? pattern.name;
 const summary = frontmatter.summary ?? pattern.note;
@@ -149,6 +151,21 @@ const jsonLd = {
               <span class="applied-ref">{s.ref}</span>
               <a href={`${base}case-studies/${s.slug}/`} class="applied-link">{s.title}</a>
               <span class="applied-subtitle">{s.subtitle}</span>
+            </li>
+          ))}
+        </ul>
+      </Cartouche>
+    )}
+
+    <!-- ── Anti-patterns this pattern remedies ─────────────────── -->
+    {remedies.length > 0 && (
+      <Cartouche label="Remedies these anti-patterns">
+        <ul class="applied-list">
+          {remedies.map((ap) => (
+            <li>
+              <span class="applied-ref">{antiPatternRef(ap)}</span>
+              <a href={`${base}anti-patterns/#${ap.id}`} class="applied-link remedy-of-link">{ap.name}</a>
+              <span class="applied-subtitle">{ap.domainLabel}</span>
             </li>
           ))}
         </ul>
