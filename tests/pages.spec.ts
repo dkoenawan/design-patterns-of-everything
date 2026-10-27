@@ -442,6 +442,23 @@ test('anti-pattern remedial links resolve to pattern pages named in the mitigati
   await expect(footer).toHaveAttribute('href', `${BASE}/patterns-catalog/`);
 });
 
+// BlastRadiusViz reads the same register as the catalog, so its chart lists
+// exactly the catalog's entries with their severities.
+test('blast radius chart plots every catalog anti-pattern', async ({ page }) => {
+  await page.goto(`${BASE}/anti-patterns/`);
+  const entries = await page.locator('article.entry').all();
+  expect(entries.length).toBeGreaterThan(0);
+  const canvas = page.locator('.viz-canvas canvas[role="img"]');
+  await expect(canvas).toHaveAttribute('aria-label', new RegExp(`of ${entries.length} anti-patterns`));
+  const label = (await canvas.getAttribute('aria-label'))!;
+  for (const entry of entries) {
+    const name = (await entry.locator('h2.entry-name').textContent())!.replace('✗', '').trim();
+    const domain = (await entry.locator('.entry-domain').textContent())!.trim();
+    const severity = [...(await entry.locator('.entry-severity').textContent())!].filter((c) => c === '◆').length;
+    expect(label, name).toContain(`${name} (${domain}, severity ${severity})`);
+  }
+});
+
 // Pattern pages link back to every anti-pattern whose remedial patterns list
 // them, so the two directions of the cross-link cannot drift.
 test('pattern pages link back to the anti-patterns they remedy', async ({ page, request }) => {

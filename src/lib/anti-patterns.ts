@@ -1,5 +1,6 @@
-// The anti-pattern catalog's hazard register. anti-patterns.astro renders it;
-// pattern pages read `remedies` to link back to the anti-patterns they remedy.
+// The anti-pattern catalog's hazard register. anti-patterns.astro renders it,
+// BlastRadiusViz plots it, and pattern pages read `remedies` to link back to
+// the anti-patterns they remedy.
 
 export interface AntiPattern {
   id: string;

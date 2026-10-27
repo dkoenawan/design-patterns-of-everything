@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { antiPatterns } from '../lib/anti-patterns';
 
 const W = 620;
 const H = 380;
@@ -7,28 +8,29 @@ const ANTI        = '#c46a55';
 const INK_FAINT   = 'rgba(232,220,184,0.10)';
 const INK_DIM     = 'rgba(232,220,184,0.35)';
 
-interface Hazard {
-  label: string;
-  domainLabel: string;
-  tint: string;
-  severity: number; // 1–5
-}
+// Canvas cannot parse var(), and the glow colours append a hex alpha suffix,
+// so each domain's tint is the literal 6-digit hex of its --tint-* token.
+const DOMAIN_TINT: Record<string, string> = {
+  BE:    '#d49a7a',
+  FE:    '#7aa3d4',
+  DP:    '#9ec48a',
+  INFRA: '#c8a4d4',
+  XD:    '#d4b15e',
+};
 
+// One node per entry in the anti-pattern register, in register order.
 // Severity 5 sits nearest the blast core; 1 sits at the outer edge.
-const HAZARDS: Hazard[] = [
-  { label: 'God Object',            domainLabel: 'Backend',       tint: '#d49a7a', severity: 5 },
-  { label: 'Unbounded Fan-out',     domainLabel: 'Data Pipeline', tint: '#9ec48a', severity: 4 },
-  { label: 'Snowflake Server',      domainLabel: 'Infrastructure', tint: '#c8a4d4', severity: 4 },
-  { label: 'Premature Generalisation', domainLabel: 'Cross-Domain', tint: '#d4b15e', severity: 3 },
-  { label: 'Prop Drilling',         domainLabel: 'Frontend',      tint: '#7aa3d4', severity: 3 },
-  { label: 'Anemic Domain Model',   domainLabel: 'Backend',       tint: '#d49a7a', severity: 3 },
-  { label: 'Unmemoized Re-render Cascade', domainLabel: 'Frontend', tint: '#7aa3d4', severity: 2 },
-  { label: 'Silent Schema Drift',   domainLabel: 'Data Pipeline', tint: '#9ec48a', severity: 4 },
-  { label: 'Tightly-Coupled Service Dependencies', domainLabel: 'Infrastructure', tint: '#c8a4d4', severity: 4 },
-  { label: 'Shotgun Surgery',       domainLabel: 'Cross-Domain',  tint: '#d4b15e', severity: 3 },
-];
+const HAZARDS = antiPatterns.map((ap) => {
+  const tint = DOMAIN_TINT[ap.domain];
+  if (!tint) throw new Error(`BlastRadiusViz: no tint for domain "${ap.domain}" (${ap.id})`);
+  return { label: ap.name, domainLabel: ap.domainLabel, tint, severity: ap.severity };
+});
 
 const N = HAZARDS.length;
+
+const ARIA_LABEL =
+  `Blast radius chart of ${N} anti-patterns by severity: ` +
+  HAZARDS.map((h) => `${h.label} (${h.domainLabel}, severity ${h.severity})`).join('; ');
 
 function axisAngle(i: number): number {
   return -Math.PI / 2 + (i / N) * Math.PI * 2;
@@ -223,6 +225,8 @@ export default function BlastRadiusViz() {
     <div style={{ position: 'relative', width: '100%', aspectRatio: '620 / 380' }}>
       <canvas
         ref={canvasRef}
+        role="img"
+        aria-label={ARIA_LABEL}
         style={{
           position: 'absolute',
           inset: 0,
