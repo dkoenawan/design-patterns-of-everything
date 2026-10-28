@@ -1,6 +1,8 @@
 // The anti-pattern catalog's hazard register. anti-patterns.astro renders it,
-// BlastRadiusViz plots it, and pattern pages read `remedies` to link back to
-// the anti-patterns they remedy.
+// BlastRadiusViz plots it, pattern pages read `remedies` to link back to the
+// anti-patterns they remedy, and domain pages list the entries in their domain.
+
+import type { DomainId } from './atlas-data';
 
 export interface AntiPattern {
   id: string;
@@ -169,6 +171,8 @@ export const antiPatterns: AntiPattern[] = [
   },
 ];
 
+export const severityLabel = ['', 'Minor', 'Low', 'Moderate', 'High', 'Critical'] as const;
+
 /** Catalogue reference shown in the register, e.g. AP.001 */
 export function antiPatternRef(ap: AntiPattern): string {
   return `AP.${String(antiPatterns.indexOf(ap) + 1).padStart(3, '0')}`;
@@ -176,4 +180,17 @@ export function antiPatternRef(ap: AntiPattern): string {
 
 export function antiPatternsRemediedBy(patternId: string): AntiPattern[] {
   return antiPatterns.filter((ap) => ap.remedies.includes(patternId));
+}
+
+// Register domain codes for each atlas-data domain. Cross-Domain (XD) entries
+// belong to no single domain page.
+const DOMAIN_CODE: Record<DomainId, string> = {
+  frontend: 'FE',
+  backend: 'BE',
+  data: 'DP',
+  infra: 'INFRA',
+};
+
+export function antiPatternsInDomain(domain: DomainId): AntiPattern[] {
+  return antiPatterns.filter((ap) => ap.domain === DOMAIN_CODE[domain]);
 }

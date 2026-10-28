@@ -9,8 +9,10 @@ import StrategyPatternViz from '../components/StrategyPatternViz';
 import EventDrivenViz from '../components/EventDrivenViz';
 import PatternCard from '../components/PatternCard.astro';
 import SkillTree from '../components/SkillTree';
+import DomainHazards from '../components/DomainHazards.astro';
 import { domains, patterns } from '../lib/atlas-data';
 import { domainJsonLd } from '../lib/domain-jsonld';
+import { antiPatternsInDomain } from '../lib/anti-patterns';
 
 const base = import.meta.env.BASE_URL;
 
@@ -57,7 +59,7 @@ const jsonLd = domainJsonLd(Astro.site!, domain, domainPatterns, description);
             </div>
             <div class="meta-divider" aria-hidden="true"></div>
             <div class="meta-item">
-              <span class="meta-num">{domainPatterns.filter(p => p.type === 'anti').length}</span>
+              <span class="meta-num">{antiPatternsInDomain(domain.id).length}</span>
               <span class="meta-label">Anti-patterns</span>
             </div>
           </div>
@@ -356,6 +358,11 @@ const jsonLd = domainJsonLd(Astro.site!, domain, domainPatterns, description);
           />
         ))}
       </Cartouche>
+    </section>
+
+    <!-- ── Known hazards (anti-pattern register) ───────────────── -->
+    <section class="hazards-row">
+      <DomainHazards domain={domain} />
     </section>
 
     <!-- ── Footer row ──────────────────────────────────────────── -->

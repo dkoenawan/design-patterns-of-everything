@@ -532,3 +532,35 @@ test('pattern body cross-links resolve to pattern pages', async ({ request }) =>
     }
   }
 });
+
+// Each domain page lists the catalog entries in its domain, linked to their
+// on-page anchors, and its hero count matches — derived from the catalog page
+// so the two cannot drift.
+test('domain pages list the anti-patterns in their domain', async ({ page }) => {
+  await page.goto(`${BASE}/anti-patterns/`);
+  const byDomain = new Map<string, { href: string; name: string }[]>();
+  for (const entry of await page.locator('article.entry').all()) {
+    const id = (await entry.getAttribute('id'))!;
+    const name = (await entry.locator('h2.entry-name').textContent())!.replace('✗', '').trim();
+    const domain = (await entry.locator('.entry-domain').textContent())!.trim();
+    byDomain.set(domain, [...(byDomain.get(domain) ?? []), { href: `${BASE}/anti-patterns/#${id}`, name }]);
+  }
+
+  const domainPages = [
+    { path: 'frontend', label: 'Frontend' },
+    { path: 'backend', label: 'Backend' },
+    { path: 'data', label: 'Data Pipeline' },
+    { path: 'infra', label: 'Infrastructure' },
+  ];
+  for (const { path, label } of domainPages) {
+    await page.goto(`${BASE}/${path}`);
+    const expected = byDomain.get(label) ?? [];
+    expect(expected.length, label).toBeGreaterThan(0);
+    const links = await page.locator('a.hazard-link').evaluateAll((as) =>
+      as.map((a) => ({ href: a.getAttribute('href')!, name: a.textContent!.trim() })));
+    expect(links, label).toEqual(expected);
+    const count = page.locator('.meta-item', { hasText: 'Anti-patterns' }).locator('.meta-num');
+    await expect(count, label).toHaveText(String(expected.length));
+    await expect(page.locator('a.hazard-register-link')).toHaveAttribute('href', `${BASE}/anti-patterns/`);
+  }
+});

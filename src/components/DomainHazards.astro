@@ -1,0 +1,107 @@
+---
+// The anti-pattern register entries for one domain, each linked to its entry
+// in the catalog. Rendered near the foot of every domain overview page.
+import Cartouche from './Cartouche.astro';
+import type { Domain } from '../lib/atlas-data';
+import { antiPatternsInDomain, antiPatternRef, severityLabel } from '../lib/anti-patterns';
+
+interface Props {
+  domain: Domain;
+}
+
+const { domain } = Astro.props;
+const hazards = antiPatternsInDomain(domain.id);
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+{hazards.length > 0 && (
+  <Cartouche label={`Known hazards — ${domain.name}`}>
+    <ul class="hazard-list">
+      {hazards.map((ap) => (
+        <li>
+          <span class="hazard-ref">{antiPatternRef(ap)}</span>
+          <a href={`${base}/anti-patterns/#${ap.id}`} class="hazard-link">{ap.name}</a>
+          <span class="hazard-severity" style={ap.severity >= 4 ? 'color: var(--anti)' : ''}>
+            {severityLabel[ap.severity]}
+          </span>
+          <p class="hazard-symptom">{ap.symptom}</p>
+        </li>
+      ))}
+    </ul>
+    <a href={`${base}/anti-patterns/`} class="hazard-register-link">Full hazard register →</a>
+  </Cartouche>
+)}
+
+<style>
+  .hazard-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .hazard-list li {
+    display: grid;
+    grid-template-columns: 72px 1fr auto;
+    column-gap: 14px;
+    row-gap: 4px;
+    align-items: baseline;
+  }
+
+  .hazard-ref,
+  .hazard-severity {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .hazard-link {
+    font-size: 19px;
+    color: var(--gold);
+    text-decoration: none;
+  }
+
+  .hazard-link:hover {
+    color: var(--gold-bright);
+  }
+
+  .hazard-symptom {
+    grid-column: 2 / -1;
+    margin: 0;
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.55;
+  }
+
+  .hazard-register-link {
+    display: inline-block;
+    margin-top: 22px;
+    font-size: 15px;
+    color: var(--gold);
+    text-decoration: none;
+  }
+
+  .hazard-register-link:hover {
+    color: var(--gold-bright);
+  }
+
+  @media (max-width: 640px) {
+    .hazard-list li {
+      grid-template-columns: 1fr auto;
+    }
+
+    .hazard-ref {
+      grid-column: 1 / -1;
+    }
+
+    .hazard-symptom {
+      grid-column: 1 / -1;
+    }
+  }
+</style>
