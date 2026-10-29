@@ -519,6 +519,33 @@ test('case studies and the patterns they apply link to each other', async ({ req
   }
 });
 
+// Each case study's "Hazards resolved" sidebar links to catalog entries that
+// exist, under the names the catalog gives them.
+test('case studies link to the anti-patterns they resolved', async ({ page }) => {
+  await page.goto(`${BASE}/anti-patterns/`);
+  const entries = new Map<string, string>();
+  for (const entry of await page.locator('article.entry').all()) {
+    const name = (await entry.locator('h2.entry-name').textContent())!.replace('✗', '').trim();
+    entries.set(`${BASE}/anti-patterns/#${await entry.getAttribute('id')}`, name);
+  }
+
+  const studies = [
+    'backend-api-redesign',
+    'data-pipeline-migration',
+    'infra-platform-migration',
+    'frontend-micro-frontend-migration',
+  ];
+  for (const slug of studies) {
+    await page.goto(`${BASE}/case-studies/${slug}/`);
+    const links = await page.locator('a.resolved-link').evaluateAll((as) =>
+      as.map((a) => ({ href: a.getAttribute('href')!, name: a.textContent!.trim() })));
+    expect(links.length, slug).toBeGreaterThan(0);
+    for (const { href, name } of links) {
+      expect(entries.get(href), `${slug}: ${href}`).toBe(name);
+    }
+  }
+});
+
 // Related-pattern links in the MDX bodies are written as source paths
 // (`./cqrs.mdx`) and must be rewritten to the generated pattern pages.
 test('pattern body cross-links resolve to pattern pages', async ({ request }) => {

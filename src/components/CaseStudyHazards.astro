@@ -1,0 +1,85 @@
+---
+// The register anti-patterns a case study resolved, each linked to its entry
+// in the catalog. Rendered in every case study's sidebar.
+import Cartouche from './Cartouche.astro';
+import { caseStudies } from '../lib/case-studies';
+import { antiPatterns, antiPatternRef, severityLabel } from '../lib/anti-patterns';
+
+interface Props {
+  /** Page file name under src/pages/case-studies/ */
+  slug: string;
+}
+
+const { slug } = Astro.props;
+const study = caseStudies.find((s) => s.slug === slug);
+if (!study) throw new Error(`CaseStudyHazards: no case study with slug "${slug}"`);
+
+const hazards = study.resolves.map((id) => {
+  const ap = antiPatterns.find((a) => a.id === id);
+  if (!ap) throw new Error(`CaseStudyHazards: ${slug} resolves unknown anti-pattern "${id}"`);
+  return ap;
+});
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+{hazards.length > 0 && (
+  <Cartouche label="Hazards resolved">
+    <ul class="resolved-list">
+      {hazards.map((ap) => (
+        <li>
+          <span class="resolved-bullet" aria-hidden="true">✗</span>
+          <a href={`${base}/anti-patterns/#${ap.id}`} class="resolved-link">{ap.name}</a>
+          <span class="resolved-meta">{antiPatternRef(ap)} · {severityLabel[ap.severity]}</span>
+        </li>
+      ))}
+    </ul>
+  </Cartouche>
+)}
+
+<style>
+  .resolved-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .resolved-list li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 10px;
+    row-gap: 2px;
+    align-items: baseline;
+  }
+
+  .resolved-bullet {
+    color: var(--anti);
+    font-style: normal;
+    font-size: 12px;
+  }
+
+  .resolved-link {
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-dim);
+    text-decoration: none;
+    transition: color 150ms;
+  }
+
+  .resolved-link:hover {
+    color: var(--gold);
+  }
+
+  .resolved-meta {
+    grid-column: 2;
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+</style>

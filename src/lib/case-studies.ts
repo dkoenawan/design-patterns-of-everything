@@ -1,6 +1,8 @@
-// Which atlas patterns each case study applies. Pattern pages read this to
-// link back to the studies that use them; the ids mirror each study's
-// "Patterns applied" sidebar (tests/pages.spec.ts checks they stay in step).
+// Which atlas patterns each case study applies, and which register
+// anti-patterns it resolved. Pattern pages read `patterns` to link back to the
+// studies that use them; the ids mirror each study's "Patterns applied"
+// sidebar (tests/pages.spec.ts checks they stay in step). Each study's
+// "Hazards resolved" sidebar is rendered from `resolves`.
 
 export interface CaseStudyLink {
   /** Page file name under src/pages/case-studies/ */
@@ -11,6 +13,8 @@ export interface CaseStudyLink {
   subtitle: string;
   /** atlas-data pattern ids listed under "Patterns applied" */
   patterns: string[];
+  /** anti-patterns.ts ids the study's situation describes and its migration removed */
+  resolves: string[];
 }
 
 export const caseStudies: CaseStudyLink[] = [
@@ -20,6 +24,7 @@ export const caseStudies: CaseStudyLink[] = [
     title: 'Backend API Redesign',
     subtitle: 'Hexagonal Architecture & CQRS at Scale',
     patterns: ['hexagonal-architecture', 'cqrs', 'dependency-injection', 'strategy-pattern'],
+    resolves: ['god-object'],
   },
   {
     slug: 'data-pipeline-migration',
@@ -27,6 +32,7 @@ export const caseStudies: CaseStudyLink[] = [
     title: 'Data Pipeline Migration',
     subtitle: 'Medallion Architecture & Schema-Driven Validation at Scale',
     patterns: ['medallion-architecture', 'schema-driven-validation', 'pure-functions', 'batch-vs-streaming'],
+    resolves: ['silent-schema-drift'],
   },
   {
     slug: 'infra-platform-migration',
@@ -34,6 +40,7 @@ export const caseStudies: CaseStudyLink[] = [
     title: 'Infrastructure Platform Migration',
     subtitle: 'Infrastructure as Code & Container Orchestration at Scale',
     patterns: ['infrastructure-as-code', 'docker-port-mapping', 'multi-database-orchestration'],
+    resolves: ['snowflake-server'],
   },
   {
     slug: 'frontend-micro-frontend-migration',
@@ -41,6 +48,7 @@ export const caseStudies: CaseStudyLink[] = [
     title: 'Micro-Frontend Migration',
     subtitle: 'Component Composition & Module Federation at Scale',
     patterns: ['micro-frontend-architecture', 'component-composition', 'state-management-patterns'],
+    resolves: ['prop-drilling'],
   },
 ];
 

@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../../components/AtlasBackdrop';
 import Cartouche from '../../components/Cartouche.astro';
+import CaseStudyHazards from '../../components/CaseStudyHazards.astro';
 import MedallionFlowViz from '../../components/MedallionFlowViz';
 import { caseStudyJsonLd } from '../../lib/case-study-jsonld';
 import { patternPageHref } from '../../lib/atlas-data';
@@ -133,6 +134,8 @@ const jsonLd = caseStudyJsonLd(Astro.site!, study);
                 </li>
               </ul>
             </Cartouche>
+
+            <CaseStudyHazards slug="data-pipeline-migration" />
 
             <Cartouche label="Outcome metrics">
               <ul class="sidebar-metrics">
