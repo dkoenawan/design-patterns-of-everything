@@ -5,6 +5,7 @@ import Cartouche from '../components/Cartouche.astro';
 import BlastRadiusViz from '../components/BlastRadiusViz';
 import { patterns, patternPageHref } from '../lib/atlas-data';
 import { antiPatterns, antiPatternRef, severityLabel } from '../lib/anti-patterns';
+import { caseStudiesResolving } from '../lib/case-studies';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -174,6 +175,20 @@ const jsonLd = {
                       <li>
                         <span class="remedy-bullet" aria-hidden="true">◈</span>
                         <a href={patternPageHref(id)} class="remedy-link">{patternName(id)}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {caseStudiesResolving(ap.id).length > 0 && (
+                <div class="entry-section">
+                  <h3 class="entry-section-label">Resolved in case studies</h3>
+                  <ul class="remedy-list">
+                    {caseStudiesResolving(ap.id).map((study) => (
+                      <li>
+                        <span class="study-ref">{study.ref}</span>
+                        <a href={`${base}/case-studies/${study.slug}/`} class="study-link">{study.title}</a>
                       </li>
                     ))}
                   </ul>
@@ -455,7 +470,17 @@ const jsonLd = {
     margin-right: 8px;
   }
 
-  .remedy-link {
+  .study-ref {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--ink-faint);
+    margin-right: 8px;
+  }
+
+  .remedy-link,
+  .study-link {
     font-size: 16px;
     font-family: var(--font-display);
     font-style: italic;
@@ -465,7 +490,8 @@ const jsonLd = {
     transition: color 150ms, border-color 150ms;
   }
 
-  .remedy-link:hover {
+  .remedy-link:hover,
+  .study-link:hover {
     color: var(--gold-bright);
     border-bottom-color: var(--gold-bright);
   }

@@ -546,6 +546,36 @@ test('case studies link to the anti-patterns they resolved', async ({ page }) =>
   }
 });
 
+// Catalog entries link back to every study whose "Hazards resolved" sidebar
+// lists them, so the two directions of the cross-link cannot drift.
+test('catalog entries link back to the case studies that resolved them', async ({ page, request }) => {
+  const studies = [
+    'backend-api-redesign',
+    'data-pipeline-migration',
+    'infra-platform-migration',
+    'frontend-micro-frontend-migration',
+  ];
+  const resolvedBy = new Map<string, { href: string; headline: string }[]>();
+  for (const slug of studies) {
+    const href = `${BASE}/case-studies/${slug}/`;
+    const html = await (await request.get(href)).text();
+    const script = html.match(/<script type="application\/ld\+json">([^<]*)<\/script>/)![1];
+    const headline = JSON.parse(script)['@graph'].find((node: any) => node['@type'] === 'Article').headline;
+    for (const [, id] of html.matchAll(/<a href="[^"]*\/anti-patterns\/#([\w-]+)" class="resolved-link"/g)) {
+      resolvedBy.set(id, [...(resolvedBy.get(id) ?? []), { href, headline }]);
+    }
+  }
+  expect(resolvedBy.size).toBeGreaterThan(0);
+
+  await page.goto(`${BASE}/anti-patterns/`);
+  for (const entry of await page.locator('article.entry').all()) {
+    const id = (await entry.getAttribute('id'))!;
+    const links = await entry.locator('a.study-link').evaluateAll((as) =>
+      as.map((a) => ({ href: a.getAttribute('href')!, headline: a.textContent!.trim() })));
+    expect(links, id).toEqual(resolvedBy.get(id) ?? []);
+  }
+});
+
 // Related-pattern links in the MDX bodies are written as source paths
 // (`./cqrs.mdx`) and must be rewritten to the generated pattern pages.
 test('pattern body cross-links resolve to pattern pages', async ({ request }) => {

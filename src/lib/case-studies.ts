@@ -2,7 +2,8 @@
 // anti-patterns it resolved. Pattern pages read `patterns` to link back to the
 // studies that use them; the ids mirror each study's "Patterns applied"
 // sidebar (tests/pages.spec.ts checks they stay in step). Each study's
-// "Hazards resolved" sidebar is rendered from `resolves`.
+// "Hazards resolved" sidebar is rendered from `resolves`, and catalog entries
+// read it to link back to the studies that resolved them.
 
 export interface CaseStudyLink {
   /** Page file name under src/pages/case-studies/ */
@@ -54,4 +55,8 @@ export const caseStudies: CaseStudyLink[] = [
 
 export function caseStudiesApplying(patternId: string): CaseStudyLink[] {
   return caseStudies.filter((s) => s.patterns.includes(patternId));
+}
+
+export function caseStudiesResolving(antiPatternId: string): CaseStudyLink[] {
+  return caseStudies.filter((s) => s.resolves.includes(antiPatternId));
 }
