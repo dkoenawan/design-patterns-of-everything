@@ -621,3 +621,32 @@ test('domain pages list the anti-patterns in their domain', async ({ page }) => 
     await expect(page.locator('a.hazard-register-link')).toHaveAttribute('href', `${BASE}/anti-patterns/`);
   }
 });
+
+// Pattern pages list the neighbours the atlas map joins them to. A connection
+// is a line between two stars, so it must appear on both pages, and every page
+// is charted to at least one neighbour.
+test('pattern pages link to their charted connections in both directions', async ({ request }) => {
+  const linksBySlug = new Map<string, { slug: string; cross: boolean }[]>();
+  for (const slug of patternPages) {
+    const html = await (await request.get(`${BASE}/patterns/${slug}/`)).text();
+    const links = [...html.matchAll(
+      /<span class="applied-ref connection-line"[^>]*>([^<]+)<\/span>\s*<a href="([^"]+)" class="applied-link connection-link"[^>]*>/g,
+    )].map(([, line, href]) => ({ href, cross: line.includes('–') }));
+    expect(links.length, slug).toBeGreaterThan(0);
+
+    const resolved = [];
+    for (const { href, cross } of links) {
+      expect(href, slug).toMatch(new RegExp(`^${BASE}/patterns/[\\w-]+/[\\w-]+/$`));
+      expect((await request.get(href)).status(), href).toBe(200);
+      resolved.push({ slug: href.slice(`${BASE}/patterns/`.length, -1), cross });
+    }
+    linksBySlug.set(slug, resolved);
+  }
+
+  for (const [slug, links] of linksBySlug) {
+    for (const { slug: other, cross } of links) {
+      expect(linksBySlug.get(other), `${other} should link back to ${slug}`)
+        .toContainEqual({ slug, cross });
+    }
+  }
+});

@@ -3,7 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import AtlasBackdrop from '../../components/AtlasBackdrop';
 import Cartouche from '../../components/Cartouche.astro';
 import PatternLink from '../../components/PatternLink.astro';
-import { domains, patterns, type Pattern } from '../../lib/atlas-data';
+import { domains, patterns, connectedPatterns, patternPageHref, type Pattern } from '../../lib/atlas-data';
 import { caseStudiesApplying } from '../../lib/case-studies';
 import { antiPatternsRemediedBy, antiPatternRef } from '../../lib/anti-patterns';
 
@@ -63,6 +63,12 @@ const diamonds = Array.from({ length: 5 }, (_, i) =>
 ).join('');
 
 const appliedIn = caseStudiesApplying(pattern.id);
+const neighbours = connectedPatterns(pattern.id).map(({ pattern: p, cross }) => ({
+  name: p.name,
+  href: patternPageHref(p.id),
+  domainName: domains.find((d) => d.id === p.domain)!.name,
+  cross,
+}));
 const remedies = antiPatternsRemediedBy(pattern.id);
 
 const title = frontmatter.title ?? pattern.name;
@@ -141,6 +147,23 @@ const jsonLd = {
     <article class="pattern-body">
       <Content components={{ a: PatternLink }} />
     </article>
+
+    <!-- ── Neighbouring stars joined by a charted line on the atlas ── -->
+    {neighbours.length > 0 && (
+      <Cartouche label="Charted connections">
+        <ul class="applied-list">
+          {neighbours.map((n) => (
+            <li>
+              <span class="applied-ref connection-line" aria-hidden="true">{n.cross ? '– – –' : '———'}</span>
+              <a href={n.href} class="applied-link connection-link">{n.name}</a>
+              <span class="applied-subtitle">
+                {n.cross ? `Across to ${n.domainName}` : `Within ${n.domainName}`}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Cartouche>
+    )}
 
     <!-- ── Case studies applying this pattern ──────────────────── -->
     {appliedIn.length > 0 && (

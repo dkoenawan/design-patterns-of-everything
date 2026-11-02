@@ -342,3 +342,19 @@ export const connections: Connection[] = [
   { from: 'infrastructure-as-code', to: 'medallion-architecture', cross: true },
   { from: 'hexagonal-architecture', to: 'multi-database-orchestration', cross: true },
 ];
+
+/**
+ * The patterns joined to `id` by a charted connection on the atlas, in either
+ * direction, with whether the line crosses domains. Pattern pages render these
+ * so each detail chart links to the same neighbours the atlas map draws.
+ */
+export function connectedPatterns(id: string): { pattern: Pattern; cross: boolean }[] {
+  return connections
+    .filter((c) => c.from === id || c.to === id)
+    .map((c) => {
+      const otherId = c.from === id ? c.to : c.from;
+      const pattern = patterns.find((p) => p.id === otherId);
+      if (!pattern) throw new Error(`Connection from ${id} names unknown pattern: ${otherId}`);
+      return { pattern, cross: Boolean(c.cross) };
+    });
+}
