@@ -79,6 +79,45 @@ service = OrderService(InMemoryDatabase())
 
 Frameworks like `dependency-injector` or FastAPI's `Depends` automate this wiring, but the constructor-injection shape works with no framework at all.
 
+### The composition root
+
+Injection moves construction outward, so it has to stop somewhere. That place is the **composition root**: one module at the application's entry point (the `main`, the HTTP server bootstrap, the function handler) that constructs every concrete implementation and wires the object graph. It is the only code that knows `PostgresDatabase` exists; everything below it sees `Database`.
+
+```typescript
+// main.ts — the composition root
+const config = loadConfig(process.env);
+const pool = new PgPool(config.databaseUrl); // one pool per process
+const db: Database = new PostgresDatabase(pool);
+const mailer: Mailer = config.isProduction
+  ? new SmtpMailer(config.smtp)
+  : new ConsoleMailer();
+
+const orders = new OrderService(db, mailer);
+startHttpServer({ orders });
+```
+
+With all wiring in one place, switching an environment's implementation is a one-line change here, and a reviewer can read the whole dependency graph top to bottom. When `new` for infrastructure types starts appearing inside service code, the composition root is leaking.
+
+### Injection styles
+
+| Style | Shape | Use it for |
+|---|---|---|
+| Constructor injection | `new OrderService(db)` | Required dependencies — the default. The object cannot exist half-wired. |
+| Method injection | `report.export(orders, writer)` | A collaborator that varies per call, such as the output target for one request. |
+| Property injection | `service.logger = logger` | Optional dependencies with a safe default. Rarely needed: the object can be used before it is fully wired. |
+
+**Avoid the service locator.** A class that calls `container.resolve(Database)` inside its methods still depends on `Database` — and now on the container as well — but its constructor no longer says so. Tests must populate a global registry, and a missing registration fails on the first call at runtime instead of at startup. Resolve from the container only in the composition root.
+
+### Lifetimes
+
+Once construction is centralised, every dependency needs a lifetime:
+
+- **Singleton** — one instance per process: connection pools, HTTP clients, configuration. It must be safe for concurrent use and hold no per-request state.
+- **Scoped** — one instance per unit of work, usually an HTTP request or a consumed message: the database transaction, the authenticated-user context.
+- **Transient** — a new instance on every resolution: cheap, stateless services.
+
+The common lifetime defect is a **captive dependency**: a singleton injected with a scoped service keeps the first request's instance for the life of the process, so that request's transaction or user context leaks into every request after it. The rule is that a component must never depend on anything with a shorter lifetime than its own. ASP.NET Core's built-in container enforces this through scope validation in development; most TypeScript and Python containers do not check it, so it has to be enforced in review.
+
 ## When to Use
 
 - Any class that interacts with infrastructure (databases, HTTP clients, message brokers)
