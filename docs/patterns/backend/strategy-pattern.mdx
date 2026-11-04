@@ -79,6 +79,86 @@ express_total = OrderService(ExpressShipping()).get_total(order)
 
 `Protocol` gives structural typing — any class with a matching `calculate_cost` method satisfies `ShippingStrategy`, with no explicit inheritance required.
 
+### Selecting the strategy
+
+Taking the `if/else` out of `OrderService` does not remove the decision: some code still has to turn "the customer chose express" into `ExpressShipping`. Put that mapping in one place at the system boundary, as a registry keyed by the value the outside world sends, and resolve it once per request:
+
+```typescript
+type ShippingMethod = 'standard' | 'express' | 'overnight';
+
+const shippingStrategies: Record<ShippingMethod, ShippingStrategy> = {
+  standard: new StandardShipping(),
+  express: new ExpressShipping(),
+  overnight: new OvernightShipping(),
+};
+
+function resolveShipping(method: string): ShippingStrategy {
+  const strategy = shippingStrategies[method as ShippingMethod];
+  if (!strategy) throw new UnknownShippingMethodError(method);
+  return strategy;
+}
+
+// HTTP handler — the only place a method name becomes behaviour
+const shipping = resolveShipping(req.body.shippingMethod);
+const total = new OrderService(shipping).getTotal(order);
+```
+
+Because the registry is typed as `Record<ShippingMethod, ShippingStrategy>`, a method added to the union won't compile until a strategy is registered for it. An unknown value from a client fails at the boundary with a named error, not halfway through a price calculation. The registry can be a `switch` instead; what matters is that the selection happens once, at the edge, and is not repeated in every class that varies. The registry's instances are shared across requests, so strategies must hold no per-request state. Per-order data goes in through method arguments.
+
+### Strategies as functions
+
+When the interface has a single method and the strategy carries no configuration, a function type is all the strategy needs to be:
+
+```typescript
+type ShippingCost = (order: Order) => number;
+
+const standard: ShippingCost = (o) => o.weight * 2.5;
+const express: ShippingCost = (o) => o.weight * 5.0 + 10;
+
+class OrderService {
+  constructor(private shippingCost: ShippingCost) {}
+
+  getTotal(order: Order) {
+    return order.subtotal + this.shippingCost(order);
+  }
+}
+```
+
+In Python the equivalent is `Callable[[Order], float]`. Use a class instead when the strategy has more than one operation that must agree (`calculateCost` and `estimateDeliveryDate` for the same carrier), when it is configured through its constructor (a carrier API client, a rate table), or when it needs a name for logging and selection. A practical rule is to start with a function and promote it to an interface when a second method appears.
+
+### Composing strategies
+
+Because every strategy implements the same interface, one strategy can wrap another. This is the "composable" benefit in the trade-offs table below. A free-shipping promotion then becomes a decorator rather than a new branch inside every shipping class:
+
+```typescript
+class FreeOverThreshold implements ShippingStrategy {
+  constructor(
+    private inner: ShippingStrategy,
+    private threshold: number,
+  ) {}
+
+  calculateCost(order: Order) {
+    return order.subtotal >= this.threshold ? 0 : this.inner.calculateCost(order);
+  }
+}
+
+const shipping = new FreeOverThreshold(new ExpressShipping(), 150);
+```
+
+The promotion works with any shipping method, is tested once, and `OrderService` does not know it exists. When several wrappers are stacked, their order changes the result: a remote-area surcharge applied outside the free-shipping check still charges the surcharge on a free order, but applied inside it does not. Compose wrappers in the composition root, where the order is visible in one expression.
+
+### Strategy, State or Template Method?
+
+Three patterns vary behaviour behind a stable interface. They differ in who chooses the variant and how:
+
+| Pattern | Who chooses the behaviour | Mechanism | Choose it when |
+|---|---|---|---|
+| Strategy | The caller, from outside | Composition: an injected object | The variant is a choice made by configuration or by the request |
+| State | The object itself, as it transitions | Composition: the current state object hands over to the next | Behaviour follows a lifecycle (an order that is draft, paid, shipped) and each state decides what comes next |
+| Template Method | The subclass, at compile time | Inheritance: subclasses override steps of a fixed algorithm | The skeleton is fixed, only a few steps vary, and inheritance coupling is acceptable |
+
+Strategy and State have the same class diagram. The difference is who does the switching. A Template Method can usually be rewritten as a Strategy by passing the varying steps in as collaborators, which is the trade described in [Composition Over Inheritance](../cross-domain/composition-over-inheritance.mdx).
+
 ## Live Playground
 
 Experiment with the pattern below. The two tabs show a checkout flow before extraction, where shipping cost logic lives in an `if/else` chain inside `OrderService`, and the after version where each shipping method is its own `ShippingStrategy` implementation swapped in at runtime.
