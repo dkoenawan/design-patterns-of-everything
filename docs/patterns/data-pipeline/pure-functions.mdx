@@ -72,6 +72,77 @@ await writeOrders(db, highValue);
 
 `filterHighValue` takes no `db`, no `Date.now()`, no ambient state — every unit test supplies fixtures directly and asserts on the return value, with no mocks or fakes required.
 
+### Hidden inputs: time, randomness and configuration
+
+Removing the database call is the obvious step. The impurity that survives code review is usually a hidden *input* rather than a hidden output: the current time, a random number, an environment variable, or the machine's locale. A function that reads any of these returns different results on different runs even though its arguments did not change.
+
+```python
+# Impure — "now" is read inside the transformation
+def flag_overdue(invoices: list[dict]) -> list[dict]:
+    today = date.today()
+    return [{**i, "overdue": i["due_date"] < today} for i in invoices]
+
+# Pure — the reference date is an argument
+def flag_overdue(invoices: list[dict], as_of: date) -> list[dict]:
+    return [{**i, "overdue": i["due_date"] < as_of} for i in invoices]
+
+# The boundary decides what "now" means for this run
+flagged = flag_overdue(invoices, as_of=run_context.logical_date)
+```
+
+In a scheduled pipeline the right value for `as_of` is rarely the wall clock. It is the *logical date* of the run: the date the partition represents. A backfill of last March run today must compute last March's overdue flags, which the first version cannot do. The same rule covers randomness (pass a seed or a pre-generated sample), identifiers (pass them in, or derive them deterministically from the record's natural key), and configuration (pass thresholds as arguments rather than reading `os.environ` inside the function).
+
+### Do not mutate the input
+
+A function can return the right answer and still be impure because it changes the data it was given. In-place sorts, `append` on an argument list, and assigning to a field of an input record all alter state the caller still holds.
+
+```typescript
+// Impure — sorts the caller's array in place
+function topOrders(orders: Order[], n: number): Order[] {
+  return orders.sort((a, b) => b.total - a.total).slice(0, n);
+}
+
+// Pure — sorts a copy; the caller's array is unchanged
+function topOrders(orders: Order[], n: number): Order[] {
+  return [...orders].sort((a, b) => b.total - a.total).slice(0, n);
+}
+```
+
+The first version passes its own unit test. It breaks the *next* step that reads `orders` and expects arrival order. Because the two steps are only coupled through shared memory, this failure is hard to trace. `readonly Order[]` in TypeScript, or frozen dataclasses and tuples in Python, make the compiler or runtime reject the mutation instead of relying on review. Copying has a memory cost on large batches, which is why dataframe engines expose immutable, lazily evaluated operations instead of in-place updates.
+
+### Pure transformation, idempotent step
+
+Purity and idempotency are related, but they apply at different levels. The transformation is pure; the *pipeline step* that wraps it is idempotent only if its write is idempotent too. A pure transform followed by `INSERT INTO … SELECT` still duplicates rows when the step is retried.
+
+| Write strategy at the boundary | Retry of the same run | Idempotent? |
+|---|---|---|
+| Append rows to the target table | Rows written twice | No |
+| Overwrite the run's partition (`INSERT OVERWRITE … PARTITION (dt = …)`) | Partition replaced with identical content | Yes |
+| `MERGE` / upsert on a natural key | Existing rows updated in place with identical values | Yes |
+
+Pure transformations make the second and third strategies safe: because the same input partition always yields the same output, overwriting it on a retry or a backfill produces exactly the result of the first successful run. The pure function guarantees *what* is written; the write strategy guarantees it is written once.
+
+### Functional core, imperative shell
+
+At pipeline scale, the separation shown above becomes a structural rule: a **functional core** of pure transformations, wrapped in a thin **imperative shell** that reads inputs, resolves the run context (logical date, configuration, seeds), calls the core, and writes the result.
+
+```python
+# Imperative shell — the only code that touches I/O or the run context
+def run(ctx: RunContext) -> None:
+    raw = read_partition("bronze.orders", ctx.logical_date)
+    rates = read_table("reference.fx_rates", ctx.logical_date)
+    curated = build_curated_orders(raw, rates, as_of=ctx.logical_date)  # pure
+    overwrite_partition("silver.orders", ctx.logical_date, curated)
+
+# Functional core — composed from small pure functions
+def build_curated_orders(raw, rates, as_of):
+    valid = drop_invalid(raw)
+    converted = convert_currency(valid, rates)
+    return flag_overdue(converted, as_of=as_of)
+```
+
+Tests target the core directly with in-memory fixtures and cover every branch. The shell has no branching logic worth unit-testing, so a single integration test per job checks that it is wired correctly. When an engine such as Spark or Flink owns the execution, the same split applies: the job definition is the shell, and the functions passed to `map`, `filter` or a window operator are the core.
+
 ## Live Playground
 
 Experiment with the pattern below. The two tabs show an impure transform (`before.ts`) that mixes a fake "database read," a running total mutation, and filtering into one function, and a pure equivalent (`after.ts`) that separates I/O from computation.
