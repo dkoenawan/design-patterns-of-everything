@@ -83,8 +83,11 @@ set -euo pipefail
 
 compose_file="${1:-docker-compose.yml}"
 
-# Extract host-side ports from "host:container" mappings
-host_ports=$(grep -oP '"\K[0-9]+(?=:[0-9]+")' "$compose_file" | sort -u)
+# Read published ports from the rendered config rather than the raw file,
+# so ${VAR} substitutions, bind-address prefixes ("127.0.0.1:5433:5432")
+# and long-syntax entries are all resolved before checking.
+host_ports=$(docker compose -f "$compose_file" config --format json \
+  | jq -r '.services[].ports[]?.published // empty' | sort -u)
 
 conflicts=0
 for port in $host_ports; do
@@ -103,6 +106,84 @@ echo "No port conflicts detected across $(echo "$host_ports" | wc -l) mapped por
 ```
 
 Run it as a pre-flight gate: `./check-port-conflicts.sh docker-compose.yml && docker compose up -d`. This turns a runtime failure (a container that silently fails to bind) into a fast, explicit pre-flight error.
+
+### Bind to loopback, not every interface
+
+`"5433:5432"` does not mean "available on this machine". With no address in front, Docker publishes the port on every interface (`0.0.0.0` and `::`), so the development database is reachable from anything that can route to the host: the office network, a coffee-shop Wi-Fi, or the internet on a cloud VM. A host firewall is not a reliable backstop. Docker writes its own iptables rules for published ports, and on a typical Linux host those rules are evaluated before the rules that tools like `ufw` manage, so a port that looks closed in `ufw status` is still open.
+
+Put the bind address in the mapping, so the port is reachable only from the host itself:
+
+```yaml
+services:
+  project_b_db:
+    image: postgres:15
+    ports:
+      - "127.0.0.1:5433:5432"   # address:host:container — loopback only
+```
+
+Treat loopback as the default for databases, caches and admin consoles, and make any wider bind a deliberate, reviewed exception. The same applies to `docker run -p 127.0.0.1:5433:5432`.
+
+### Host ports are for the host; containers use the network
+
+Port mapping is for traffic that comes from outside Docker: a developer's `psql`, an IDE, a test runner on the host. Containers in the same Compose project share a network, and they reach each other by **service name on the internal port**. Host ports play no part in that traffic.
+
+```yaml
+services:
+  api:
+    build: .
+    environment:
+      # Service name + internal port. Not localhost:5433.
+      DATABASE_URL: postgres://admin:${PROJECT_B_DB_PASSWORD}@project_b_db:5432/project_b
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  project_b_db:
+    image: postgres:15
+    # No `ports:` needed if only `api` talks to it.
+```
+
+A common mistake is to point the application container at `localhost:5433` because that is what worked from the laptop. Inside a container, `localhost` is the container itself, so the connection is refused. The opposite mistake is to publish every service "just in case": each published port is one more host-port assignment to track and one more surface to secure. Publish a port only when something on the host needs it. A service that only other containers call needs no `ports:` entry. If you want to record which port it listens on, use `expose:`, which documents the port without publishing it.
+
+### Assign ports from configuration, not literals
+
+Hardcoded host ports in a shared compose file mean that two developers who already use 5433 for something else must edit a tracked file and remember not to commit it. Read the host side from the environment, with the documented assignment as the default:
+
+```yaml
+services:
+  project_b_db:
+    image: postgres:15
+    ports:
+      - "127.0.0.1:${PROJECT_B_DB_PORT:-5433}:5432"
+```
+
+```bash
+# .env (untracked) — local override only when the default collides
+PROJECT_B_DB_PORT=15433
+```
+
+The port register stays the source of truth for the defaults, and a local collision is solved in an untracked `.env` file instead of a diff. Keep the internal port a literal: it is part of the image's contract, and parameterising it gains nothing. This is also why the pre-flight script reads `docker compose config`, which resolves these substitutions, instead of reading the raw file.
+
+### Let Docker choose: ephemeral host ports for tests
+
+Fixed host ports are for things people connect to by hand. Automated tests do not need them, and fixed ports cause trouble there: two CI jobs on the same runner, or a test suite started while the development stack is up, collide on the same port. Publish only the container port and let Docker assign a free host port:
+
+```yaml
+services:
+  test_db:
+    image: postgres:16
+    ports:
+      - "127.0.0.1::5432"   # empty host port — Docker picks a free one
+```
+
+The test harness then asks Docker which port it got, rather than assuming one:
+
+```bash
+docker compose up -d test_db
+port=$(docker compose port test_db 5432 | cut -d: -f2)
+export DATABASE_URL="postgres://admin:${TEST_DB_PASSWORD}@127.0.0.1:${port}/app_test"
+```
+
+Container-based test libraries such as Testcontainers use the same approach: start the container with an unassigned host port, read back the mapping, and inject it into the test's configuration. Because no port is allocated in advance, parallel runs cannot collide, and the port register only has to cover the services people actually use by hand.
 
 ## Live Playground
 
@@ -227,6 +308,7 @@ console.log(\`\\n\${bound.length}/\${services.length} services started, zero con
 | Containers stay on service defaults — no internal reconfiguration | Host port assignments must be tracked manually |
 | Simple, well-understood Docker primitive | Port sprawl as the number of services grows |
 | Each container is independently startable and stoppable | Named volumes require cleanup discipline on teardown |
+| Ephemeral host ports remove collisions in automated test runs | Published ports bind every interface unless a loopback address is stated |
 
 ## Related Patterns
 
