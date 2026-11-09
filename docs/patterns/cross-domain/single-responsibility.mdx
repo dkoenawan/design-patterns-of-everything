@@ -68,6 +68,55 @@ class AuditService:
     def log_event(self, user, action): ...
 ```
 
+### A reason to change is a person, not a task
+
+"One reason to change" is easy to misread as "does one thing". A more useful reading: a unit should answer to **one actor**, meaning the group of people whose requests change it. Where two actors share code, a change one of them asks for can quietly alter behaviour the other relies on.
+
+```typescript
+class Employee {
+  calculatePay()  { ... }  // finance: payroll rules
+  reportHours()   { ... }  // operations: timesheet reports
+  save()          { ... }  // platform team: storage schema
+  private regularHours() { ... }  // used by calculatePay AND reportHours
+}
+```
+
+Finance asks for a change to how overtime counts towards regular hours. The developer edits `regularHours()`, the payroll tests pass, and the change ships. Operations' timesheet report now shows different numbers, and nobody on that team asked for it. The defect isn't in any single method. It comes from three actors sharing one class and one helper.
+
+The fix is to give each actor its own unit over a plain data record: `PayCalculator`, `HoursReporter` and `EmployeeRepository`, all reading `EmployeeData`. If payroll and reporting need the same calculation today, each keeps its own copy until someone confirms it is one rule with one owner (see below).
+
+### Cohesion, not size
+
+SRP doesn't mean one method per class. A `Money` type with `add`, `subtract`, `allocate` and `format` can grow to twenty methods and still have one reason to change, because every method serves the same concept and the same owner. Size alone is a weak signal. These are stronger ones:
+
+- **Disjoint state.** Groups of methods that each touch their own set of fields and never another group's.
+- **Unrelated imports.** An HTTP client, an SQL driver and a template engine imported by the same file.
+- **Per-group fixtures.** Tests that need a completely different setup depending on which method they cover.
+
+Splitting too far has its own signal. If two classes are always edited in the same commit, one responsibility has been spread across two files, and every change to it becomes a multi-file edit.
+
+### Let change history draw the seams
+
+You don't have to guess where a class divides. Version control records which files change together, and the commit messages record why:
+
+```bash
+# Files most often committed alongside user-service.ts in the last year
+git log --since="1 year ago" --format=%H -- src/users/user-service.ts |
+  xargs -I{} git show --name-only --format= {} |
+  sort | uniq -c | sort -rn | head
+
+# Who asked for each change: group the subjects by requester
+git log --since="1 year ago" --format='%ad %s' --date=short -- src/users/user-service.ts
+```
+
+If the subjects fall into clusters such as "welcome email copy", "password policy" and "audit retention", each cluster is a candidate unit, and the files that change with it show where it belongs. If every commit touches the same handful of methods for the same requester, the class has one responsibility, whatever its size.
+
+### Similar code, different reasons: when not to deduplicate
+
+SRP and "don't repeat yourself" sometimes point in opposite directions. Shipping-address and billing-address validation may contain identical postcode checks today. Logistics owns the first and the payments team owns the second, because card issuers impose the billing rules. Merging the two into one `validatePostcode()` couples those teams. The first time the card network changes its rules, the shared function either breaks shipping or grows a `mode` flag.
+
+Deduplicate **knowledge**, not text. If two pieces of code encode the same rule with the same owner, extract it. If they only look alike, keep them apart and leave a one-line comment naming each one's owner, so a later reviewer doesn't merge them back.
+
 ## Live Playground
 
 Experiment with the pattern below. In the before version, one `UserService` owns credentials, profile storage, the welcome email, and the audit trail. Marketing changes the email greeting, and that change breaks registration: the user is never saved and the audit entry is never written. In the after version, each concern is its own unit. The same template change is caught by a test that constructs only `EmailService`, and during registration the failure stays inside the notification step.
@@ -222,6 +271,7 @@ console.log('\\nthe template bug was caught in isolation and did not block regis
 | Each unit is independently testable | Increased coordination between components at call sites |
 | Clear ownership — one team/domain per component | Can lead to over-engineering if applied too early |
 | Code is easier to reason about in isolation | Requires good naming and organization to avoid confusion |
+| One actor's change cannot silently alter another actor's behaviour | Code that looks alike stays duplicated across owners, and reviewers need the reason recorded |
 
 ## Related Patterns
 
