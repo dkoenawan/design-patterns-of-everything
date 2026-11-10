@@ -122,6 +122,90 @@ use_case = PlaceOrderUseCase(InMemoryOrderRepository())
 
 Because `OrderRepository` is a `Protocol`, `PostgresOrderRepository` and `InMemoryOrderRepository` never need to declare the interface explicitly — the core depends on shape, not inheritance, keeping adapters free to evolve independently.
 
+### Ports speak the domain's language
+
+A port is named for what the core needs, not for how an adapter happens to provide it. `OrderRepository.save(order)` is a port. `OrderStore.executeQuery(sql, params)` only moves the database call behind an interface: the core still writes SQL, and swapping to a document store still means rewriting it.
+
+The same applies to the types in a port's signature. If a port accepts or returns a database row, an ORM entity, a `Pool` or an HTTP `Request`, the core now depends on that technology through the port, and the isolation is lost.
+
+```typescript
+// Leaks the adapter: the core must know about rows and SQL errors
+interface OrderRepository {
+  findById(id: string): Promise<QueryResult<OrderRow>>;
+}
+
+// Speaks the domain: the adapter maps rows to Order and errors to domain outcomes
+interface OrderRepository {
+  findById(id: OrderId): Promise<Order | null>;
+}
+```
+
+Translation is the adapter's job. It maps rows to domain objects on the way in and domain objects to rows on the way out, and it turns driver errors into something the core can act on, such as `null` for a missing record. Failures the core cannot act on, such as a lost connection, propagate as they are.
+
+### Driving adapters translate, then delegate
+
+On the inbound side, an HTTP controller, a CLI command or a queue consumer is an adapter too. Each one does the same three things: turn the transport input into a command, call the use case through its primary port, and turn the result or domain error back into the transport's terms.
+
+```typescript
+// Driving adapter — HTTP in, HTTP out, no business rules
+app.post("/orders", async (req, res) => {
+  const cmd = PlaceOrderCommand.parse(req.body);   // transport → command
+  try {
+    const orderId = await placeOrder.execute(cmd);  // primary port
+    res.status(201).json({ orderId });
+  } catch (err) {
+    if (err instanceof OutOfStockError) return res.status(409).json({ error: err.message });
+    throw err;
+  }
+});
+```
+
+The use case does not know it was called over HTTP, so a queue consumer for bulk imports can call the same `placeOrder.execute(cmd)` and map `OutOfStockError` to a dead-letter message instead of a 409. If a rule such as "orders over 50 items need approval" ends up in the controller, the queue consumer will skip it. Rules belong in the core, where every driving adapter goes through them.
+
+### Enforce the dependency rule with tooling
+
+"The core never imports adapters" is the rule the whole pattern depends on, and code review alone will not keep it. One `import { pool } from "../adapters/postgres"` added under deadline pressure works, passes its tests, and makes the core depend on Postgres again.
+
+Make the boundary visible in the directory layout and check it in CI:
+
+```
+src/
+  core/        # domain model, use cases, port interfaces — imports nothing from adapters/
+  adapters/    # postgres/, http/, queue/ — import from core/
+  main.ts      # composition root — the only file that imports both to wire them
+```
+
+In TypeScript, an ESLint `no-restricted-imports` rule scoped to `src/core/**` or a dependency-cruiser rule can fail the build when the core imports from `adapters/` or from infrastructure packages such as `pg` or `express`. In Python, import-linter contracts do the same. A violation then fails the build when it is introduced, instead of being found months later.
+
+### Test every adapter against the same port contract
+
+The in-memory adapter that makes core tests fast can also make them misleading. If `InMemoryOrderRepository.save` accepts two orders with the same id while Postgres rejects the second with a unique-constraint error, the core's tests pass against behaviour production does not have.
+
+Write the port's expected behaviour once, as a contract test suite, and run it against every adapter:
+
+```typescript
+function orderRepositoryContract(name: string, make: () => Promise<OrderRepository>) {
+  describe(`${name} satisfies OrderRepository`, () => {
+    it("returns null for an unknown id", async () => {
+      const repo = await make();
+      expect(await repo.findById(OrderId.of("missing"))).toBeNull();
+    });
+
+    it("returns what was saved", async () => {
+      const repo = await make();
+      const order = Order.create(["Widget"], "C-1");
+      await repo.save(order);
+      expect(await repo.findById(order.id)).toEqual(order);
+    });
+  });
+}
+
+orderRepositoryContract("InMemory", async () => new InMemoryOrderRepository());
+orderRepositoryContract("Postgres", async () => new PostgresOrderRepository(await testDatabase()));
+```
+
+The in-memory run is part of the fast unit suite. The Postgres run belongs to the integration suite against a real database container. When the two disagree, fix the in-memory adapter, so the fast tests stay a faithful stand-in for production.
+
 ## When to Use
 
 - Applications with complex business logic that must be unit-tested in isolation
