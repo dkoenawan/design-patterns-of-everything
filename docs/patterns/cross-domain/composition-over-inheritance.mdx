@@ -86,6 +86,77 @@ flying_fish = FlyingFish(Swimmer(), Flier())
 
 Python's multiple inheritance can approximate composition via mixins, but it reintroduces the fragile base class problem the moment two mixins share a method name. Explicit composition avoids the ambiguity entirely — `FlyingFish` owns its collaborators rather than merging their namespaces.
 
+### The fragile base class, concretely
+
+A subclass that overrides a method depends not only on what the parent does but on *how* it does it. Consider a collection that counts every item ever added:
+
+```typescript
+class ItemStore<T> {
+  protected items: T[] = [];
+  add(item: T) { this.items.push(item); }
+  addAll(items: T[]) { for (const item of items) this.add(item); }
+}
+
+class CountingStore<T> extends ItemStore<T> {
+  added = 0;
+  add(item: T) { this.added++; super.add(item); }
+  addAll(items: T[]) { this.added += items.length; super.addAll(items); }
+}
+
+const store = new CountingStore<string>();
+store.addAll(["a", "b", "c"]);
+store.added; // 6, not 3 — the parent's addAll calls the overridden add
+```
+
+The bug is not in either class on its own. It lives in an undocumented detail: `ItemStore.addAll` happens to call `add`. Remove the `addAll` override to fix it, and the count is correct until someone optimises the parent to push the whole array at once. Then bulk additions silently stop being counted. The subclass is coupled to the parent's implementation, and the parent's author has no way to know which details are now load-bearing.
+
+The composed version wraps a store instead of extending one. It sees only the public contract, so internal changes to the store cannot reach it:
+
+```typescript
+interface Store<T> { add(item: T): void; addAll(items: T[]): void; }
+
+class CountingStore<T> implements Store<T> {
+  added = 0;
+  constructor(private inner: Store<T>) {}
+  add(item: T) { this.added++; this.inner.add(item); }
+  addAll(items: T[]) { this.added += items.length; this.inner.addAll(items); }
+}
+```
+
+### Stacking behaviour instead of multiplying subclasses
+
+Inheritance handles one axis of variation well and several axes badly. An HTTP client that can optionally retry, cache and log needs a subclass for every combination it supports: `RetryingClient`, `CachingRetryingClient`, `LoggingCachingRetryingClient`, up to eight classes for three features, each one fixing the order the features run in. Composition needs one class per feature, all implementing the same interface, wrapped in whatever order the call site needs:
+
+```typescript
+interface HttpClient { get(url: string): Promise<Response>; }
+
+const client: HttpClient =
+  new Logging(
+    new Caching(
+      new Retrying(new FetchClient(), { attempts: 3 }),
+      { ttlSeconds: 60 },
+    ),
+  );
+```
+
+Order is now an explicit decision at the composition root. Here the cache sits outside the retry, so a cache hit never triggers a network call or a retry. Tests can wrap a fake `HttpClient` in a single decorator and check that feature on its own. This is the Decorator pattern, and middleware pipelines in Express, ASP.NET Core and gRPC interceptors follow the same shape.
+
+### Forward a narrow interface, not the whole class
+
+The usual objection to composition is forwarding boilerplate. A wrapper that mirrors forty methods of the class it holds is tedious and goes stale whenever the inner class grows. The fix is to depend on less. Define the interface the caller actually needs (often two or three methods) and forward only those. A short interface is easier to fake in tests and documents exactly which capability a class depends on.
+
+Avoid "automatic" forwarding that hides the surface. Python's `__getattr__` delegation, or a JavaScript `Proxy` that passes every call through, removes the boilerplate but also removes the visible contract. Callers can reach any method of the inner object, type checkers cannot follow the calls, and the wrapper quietly becomes a subclass again without the compiler's help.
+
+### Where inheritance still earns its place
+
+Composition is the default, not a ban. Inheritance is the right tool when the subtype keeps every promise the parent makes, which is the Liskov substitution test. A `Penguin` whose `fly()` throws fails it: code written against the parent breaks when handed the child. Three cases usually pass:
+
+- **Implementing an interface or a stateless abstract type.** No implementation is inherited, so there is nothing fragile to depend on.
+- **A base class designed for extension.** A template method whose documented hooks (`protected abstract validate()`) are the only extension points, with the algorithm itself closed to overrides.
+- **Framework extension points.** Exception hierarchies and test fixture base classes, where the framework defines and documents the contract.
+
+For everything else, design and document a class for inheritance or prohibit it. Kotlin classes are final unless marked `open`, and C# offers `sealed`. TypeScript has no keyword for this, so state it in the doc comment and prefer exporting an interface plus a factory over exporting the concrete class.
+
 ## Live Playground
 
 Experiment with the pattern below. In the before version, `FlyingFish` can extend only one base class, so it extends `SwimmingAnimal` and carries a copy of `fly()`. When a bug fix caps flight altitude in `FlyingAnimal`, the copy doesn't get it. `Penguin` extends `FlyingAnimal` because a penguin is a bird, so it has to override `fly()` to throw, and a loop over every `FlyingAnimal` crashes on it. In the after version, swimming and flying are small collaborators that each animal composes as it needs. The altitude fix lives in one `Flying` class and reaches every animal that uses it. `Penguin` never gets a `fly()` method, so the compiler keeps it out of the list of fliers.
@@ -240,6 +311,7 @@ console.log('\\none Flying class carries the fix, and penguin is never asked to 
 | Capabilities are independently testable and reusable | Can require more files and interfaces |
 | No fragile base class problem — changes are localized | Requires discipline to avoid deep composition chains |
 | Runtime behavior can be varied without subclassing | Discoverability can be harder than method inheritance |
+| Orthogonal features stack as decorators instead of multiplying subclasses | Wrapper order becomes a decision someone must make and document |
 
 ## Related Patterns
 
