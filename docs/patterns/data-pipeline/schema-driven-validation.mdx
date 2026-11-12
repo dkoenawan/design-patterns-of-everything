@@ -79,6 +79,66 @@ function validateBatch(records: unknown[]): ValidationResult {
 
 `OrderSchema` is the single source of truth: the type `Order` is inferred from it rather than kept in sync by hand, and `safeParse` turns validation into a data transformation — bad records are routed to `rejected` instead of throwing mid-pipeline.
 
+### Validate once at the boundary, then trust the type
+
+A schema check is most useful when it changes what the rest of the code is allowed to assume. Validate where data enters the system (the ingestion job, the API handler, the queue consumer) and hand downstream code the parsed result, not the raw input. A transform that accepts `Order` cannot be called with something that skipped the gate; a transform that accepts `unknown` or `dict` invites another round of defensive `if` checks.
+
+```typescript
+// Boundary: the only place raw input is touched
+const { valid, rejected } = validateBatch(rawRecords);
+await quarantine.write(rejected);
+
+// Interior: no re-checking, the type already carries the guarantee
+function revenueByStatus(orders: Order[]): Map<Order["status"], number> {
+  const totals = new Map<Order["status"], number>();
+  for (const o of orders) totals.set(o.status, (totals.get(o.status) ?? 0) + o.total);
+  return totals;
+}
+```
+
+Two failure modes signal the boundary has slipped. The first is validation repeated in the interior "just in case", which means some path reaches the interior without passing the gate; find that path and close it. The second is a schema that is checked but whose output is thrown away (`schema.validate(df)` followed by working on the original `df`), so coercions such as string-to-date never reach the code that relies on them.
+
+### Decide what happens to columns the schema does not name
+
+Schema drift usually arrives as something the schema says nothing about: an upstream team adds a column, or renames one so the old name disappears and a new one appears. A missing required column already fails. What happens to an *unexpected* one is a choice each boundary has to make on purpose:
+
+| Policy | Pandera | Zod | Use when |
+|---|---|---|---|
+| Reject | `DataFrameSchema(..., strict=True)` | `z.object({...}).strict()` | The contract is closed and a new column means an unannounced upstream change worth stopping for |
+| Drop | `strict="filter"` | default `z.object` (unknown keys stripped) | Downstream should see only the agreed columns, and extra ones are harmless noise |
+| Keep | default (`strict=False`) | `.passthrough()` | Raw landing zones (Bronze) where nothing should be discarded before it is stored |
+
+A common split in a Medallion pipeline is *keep* at Bronze, so the raw record is preserved for replay, and *reject* or *drop* at the Silver gate. Whichever policy is chosen, log the unexpected column names: a renamed column under a *drop* policy looks exactly like a column that was always null, and the log line is often the only early warning.
+
+### Collect every failure, then decide on the batch
+
+Stopping at the first error tells you one thing is wrong with one record. For a batch, you need every failure so you can quarantine the bad rows, let the good ones through, and tell the producer the full extent of the problem. Pandera's lazy mode collects all failures into a single report instead of raising on the first:
+
+```python
+import pandera as pa
+
+try:
+    validated_df = order_schema.validate(raw_df, lazy=True)
+except pa.errors.SchemaErrors as err:
+    failures = err.failure_cases          # one row per failed check: column, check, failure_case, index
+    bad_rows = failures["index"].dropna().unique()
+    quarantine(raw_df.loc[bad_rows], failures)
+    validated_df = order_schema.validate(raw_df.drop(index=bad_rows))
+```
+
+In Zod the equivalent is to keep the whole `result.error.issues` array rather than only `issues[0]` as in the example above; each issue carries a `path`, so the rejected-record log can say *which* field failed.
+
+Quarantine needs a ceiling. A run where 0.1% of rows are rejected is a data-quality report; a run where 40% are rejected is almost always an upstream change, and promoting the surviving 60% publishes a partial table that looks complete. Set a reject-rate threshold per source and fail the run when it is exceeded, so the problem is investigated rather than silently thinned out.
+
+### Version the contract and check compatibility before release
+
+Once a schema is shared with producers, changing it becomes an interface change, and the useful question is whether old and new versions can coexist. Classify each change before shipping it:
+
+- **Compatible for readers:** adding an optional field, or one with a default; widening an enum that consumers already handle with a fallback.
+- **Breaking:** removing or renaming a field, making an optional field required, narrowing a type or range (`total > 0` becoming `total >= 1`), removing an enum value that existing data still contains.
+
+Streaming platforms enforce this mechanically. A schema registry for Avro or Protobuf topics (for example Confluent Schema Registry) rejects a new schema version that violates the topic's compatibility mode: `BACKWARD` (the default: consumers on the new schema can read data written with the previous one), `FORWARD`, `FULL`, or their `_TRANSITIVE` variants, which check against every earlier version rather than only the latest. For batch contracts without a registry, the same check can run in the producer's CI: validate a sample of the producer's output against the consumer's published schema, so a breaking change fails the producer's build instead of the consumer's nightly run.
+
 ## Live Playground
 
 Experiment with the pattern below. The two tabs show an imperative validator (`before.ts`) with scattered `if` checks that silently drop context on failure, and a schema-driven equivalent (`after.ts`) where a single Zod schema is both the type source and the validation contract.
@@ -227,6 +287,7 @@ console.log('Rejected:', rejected);
 | Violations surface immediately with structured error detail | Strict schemas can break on legitimate upstream changes |
 | Schemas serve as documentation and contracts | Teams must align on schema governance process |
 | Enables automated quality reporting | Adds a validation step to pipeline runtime |
+| Quarantine lets good rows through while bad ones are investigated | Without a reject-rate ceiling, a partial table can be published as if it were complete |
 
 ## Related Patterns
 
