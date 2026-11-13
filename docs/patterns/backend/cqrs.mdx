@@ -96,6 +96,85 @@ class OrderSummaryQuery:
         )
 ```
 
+### Separate models first, separate databases only if needed
+
+CQRS describes a separation of models, not of infrastructure. Each step along the spectrum below adds operational cost, so a system should move along it only when the previous step fails a measured requirement:
+
+| Level | Write side | Read side | Consistency | Move further when |
+|---|---|---|---|---|
+| 1. Separate code paths | Domain model over normalized tables | Query handlers run hand-written SQL against the same tables | Immediate | Read queries need joins or aggregates that are too slow at request time |
+| 2. Separate read tables, same database | Same | Projection tables updated in the same transaction as the write | Immediate | Projection updates make write transactions too slow, or several read shapes compete |
+| 3. Separate read store | Same | Search index, document store or cache fed by events | Eventual | — |
+
+Most systems get the main benefit, a domain model free of reporting concerns, at level 1. Level 3 is justified by a different read technology (full-text search, a graph, a key-value cache) or read load that the write database cannot carry. The rest of this section applies once projections are asynchronous.
+
+### Commands acknowledge; queries do not mutate
+
+A command handler returns at most what the caller needs to refer to the change: the new aggregate's id and its version. It does not return a read DTO. Once a command returns the order summary, the write side has to build a read shape, and the two models are coupled again. The reverse rule applies to queries: a query that records "last viewed", increments a counter or lazily creates a missing row is a command, and it will be cached, retried and load-balanced as if it were safe to repeat.
+
+```typescript
+type CommandResult = { id: string; version: number };
+
+class PlaceOrderHandler {
+  async handle(cmd: PlaceOrderCommand): Promise<CommandResult> {
+    const cart = await this.cartRepo.findById(cmd.cartId);
+    const order = cart.checkout(cmd.paymentMethod);
+    await this.orderRepo.save(order);          // version incremented on save
+    return { id: order.id, version: order.version };
+  }
+}
+```
+
+The returned version is what makes read-your-own-writes possible later.
+
+### Publish events with the write, not after it
+
+The handler in the example above saves the order and then publishes its events. Those are two separate systems, so a crash, timeout or broker outage between the two calls commits the order without ever publishing the event. The read model never shows that order, and nothing retries it. Reversing the order is no better: an event can be published for a write that is then rolled back.
+
+The **transactional outbox** removes the dual write. The handler inserts the events into an `outbox` table in the same database transaction as the aggregate, and a separate relay reads the outbox and publishes:
+
+```typescript
+await this.db.transaction(async (tx) => {
+  await this.orderRepo.save(order, tx);
+  await tx.insert('outbox', order.pullDomainEvents().map((e) => ({
+    aggregate_id: order.id,
+    version: e.version,
+    type: e.type,
+    payload: JSON.stringify(e),
+  })));
+});
+
+// Relay (separate process): poll, publish, then mark as sent
+const pending = await db.query(
+  `SELECT * FROM outbox WHERE sent_at IS NULL ORDER BY id LIMIT 100`
+);
+for (const row of pending) {
+  await broker.publish(row.type, row.payload);
+  await db.query(`UPDATE outbox SET sent_at = now() WHERE id = $1`, [row.id]);
+}
+```
+
+Change-data-capture tools such as Debezium can replace the polling relay by reading the outbox table from the database log. Either way the relay can crash after publishing and before marking the row as sent, so delivery is **at-least-once**. Every consumer must tolerate duplicates, which is the projection's job.
+
+### Projections must be idempotent, ordered and rebuildable
+
+A projection consumes events and updates a read model. Three properties keep it correct under redelivery, reordering and change:
+
+- **Idempotent.** The projection stores the last applied version per aggregate and skips any event at or below it. A redelivered `OrderShipped` then has no effect, instead of shipping the order twice in the read model.
+- **Ordered per aggregate.** Events for one aggregate must be applied in version order. Partition the event stream by aggregate id (a Kafka partition key, an SQS FIFO message group). If an event arrives with a version gap, stop and retry rather than applying it out of order.
+- **Rebuildable.** A read model is derived data. When its shape changes or a bug corrupts it, build a new table from event history or the write store, switch reads to it, then drop the old one. A read model that cannot be rebuilt has become a second source of truth.
+
+```sql
+-- Idempotent upsert: applies only if the event is newer than what is stored
+INSERT INTO order_summaries (id, status, total, version)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (id) DO UPDATE
+  SET status = EXCLUDED.status, total = EXCLUDED.total, version = EXCLUDED.version
+  WHERE order_summaries.version < EXCLUDED.version;
+```
+
+**Read-your-own-writes.** Once projections are asynchronous, a user who places an order and is redirected to "My orders" may not see it. Do not hide this with a fixed sleep. Use the version returned by the command: the client sends it with the next query, and the query handler waits briefly until the read model has reached that version, or answers from the write side for that one aggregate. For lists, the UI can insert the confirmed item itself and reconcile when the read model catches up. In all cases, measure **projection lag** (now minus the timestamp of the last applied event) and alert when it exceeds the staleness the product has agreed to.
+
 ## Live Playground
 
 Experiment with the pattern below. The two tabs show a monolithic service (`before.ts`) where commands and queries are tangled, and the CQRS-refactored equivalent (`after.ts`) with separate command and query handlers.
@@ -264,6 +343,7 @@ console.log('Summary:', querySummary.execute('ORD-101'));
 | Write side free of reporting concerns | Synchronization logic between stores adds complexity |
 | Enables Event Sourcing as a natural extension | Debugging across split stores is harder |
 | Clear audit trail when combined with domain events | Higher initial setup cost than a single repository |
+| Read models can be rebuilt or reshaped from history without touching the write side | At-least-once event delivery forces an outbox on the write side and idempotent projections on the read side |
 
 ## Related Patterns
 
