@@ -79,6 +79,139 @@ For tightly related UI families (tabs, accordions, form fields), expose a parent
 
 The `Tabs` parent owns state; `Tab` and `Panel` children consume it via context. Each component is individually testable, and the caller controls the shape of the UI.
 
+### Children for content, props for behaviour
+
+Use `children` for a component's main region, and named `ReactNode` props (`header`, `footer`, `actions`) when it has more than one distinct region. Keep ordinary props for the component's own behaviour: `size`, `disabled`, `onClose`. If a prop picks between pieces of content the component builds itself (`showFollowButton`, `withIcon`, `badgeCount`), that is a region the caller should fill. Every such flag added to the monolithic `UserCard` above is a slot that was left unopened.
+
+Do not let a parent inspect or rewrite its children. `React.Children.map`, `cloneElement` to inject props, and `child.type === Tab` checks stop working as soon as a caller wraps a child in a fragment, a conditional or their own wrapper component. React documents these APIs as legacy for that reason. When a parent needs to pass state to descendants it does not render directly, use context, as the compound components below do.
+
+### Implementing compound components
+
+The `Tabs` example above shows the consumer API. Three decisions in the implementation determine whether the family is safe to ship in a design system:
+
+```tsx
+type TabsState = { selected: string; select: (id: string) => void; baseId: string };
+
+// 1. No default value: a Tab outside <Tabs> fails loudly instead of rendering unselected
+const TabsContext = createContext<TabsState | null>(null);
+
+function useTabs(): TabsState {
+  const ctx = useContext(TabsContext);
+  if (!ctx) throw new Error('<Tabs.Tab> and <Tabs.Panel> must be rendered inside <Tabs>');
+  return ctx;
+}
+
+// 2. Controlled when `value` is passed, uncontrolled with `defaultTab` otherwise
+function Tabs({ value, defaultTab, onChange, children }: TabsProps) {
+  const [internal, setInternal] = useState(defaultTab);
+  const selected = value ?? internal;
+  const select = (id: string) => {
+    if (value === undefined) setInternal(id);
+    onChange?.(id);
+  };
+  const baseId = useId();
+  return (
+    <TabsContext.Provider value={{ selected, select, baseId }}>{children}</TabsContext.Provider>
+  );
+}
+
+// 3. The family owns the accessibility wiring, so every consumer gets it for free
+function Tab({ id, children }: { id: string; children: React.ReactNode }) {
+  const { selected, select, baseId } = useTabs();
+  return (
+    <button
+      role="tab"
+      id={`${baseId}-tab-${id}`}
+      aria-selected={selected === id}
+      aria-controls={`${baseId}-panel-${id}`}
+      tabIndex={selected === id ? 0 : -1}
+      onClick={() => select(id)}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Panel({ id, children }: { id: string; children: React.ReactNode }) {
+  const { selected, baseId } = useTabs();
+  return (
+    <div role="tabpanel" id={`${baseId}-panel-${id}`}
+         aria-labelledby={`${baseId}-tab-${id}`} hidden={selected !== id}>
+      {children}
+    </div>
+  );
+}
+
+Tabs.List = ({ children }: { children: React.ReactNode }) => <div role="tablist">{children}</div>;
+Tabs.Tab = Tab;
+Tabs.Panel = Panel;
+```
+
+- **Fail outside the provider.** If the context has a usable default, a `Tab` rendered outside `<Tabs>` shows up looking unselected and does nothing when clicked. The throwing hook turns that into an error with the component's name in it.
+- **Support both control modes.** Most screens are happy for `Tabs` to track its own selection. A screen that syncs the active tab to the URL needs `value` and `onChange`. If you offer only one mode, the other group of callers ends up forking the component.
+- **Keep the ARIA wiring in the family.** `useId` gives stable, collision-free ids, so the `aria-controls` / `aria-labelledby` pairs stay correct when a page renders two tab sets. Panels stay mounted and use `hidden`, so every `aria-controls` points at an element that exists. Arrow-key focus movement between tabs (a roving `tabIndex`) belongs in `Tabs.List` for the same reason.
+
+The context value is a new object on every render, so every `Tab` and `Panel` re-renders when the parent does. That costs nothing in a family of five components. For larger families (a data grid's cells, a menu with hundreds of items), memoise the value or split the state and the actions into separate contexts.
+
+### Pass elements down instead of drilling data
+
+Prop drilling, listed in the hazard register, usually comes from intermediate components that render their children's content themselves. When an outer component renders the inner element and passes it down, the layers in between stop carrying data:
+
+```tsx
+// ❌ Drilling: Layout and Sidebar accept `user` only to hand it on
+<Layout user={user} />                  // → <Sidebar user={user} /> → <UserMenu user={user} />
+
+// ✅ Composition: the page that owns `user` renders the menu itself
+<Layout sidebar={<Sidebar footer={<UserMenu user={user} />} />} />
+```
+
+`Layout` and `Sidebar` no longer import the `User` type, so renaming one of its fields touches only the page and `UserMenu`. There is also a performance benefit. When `Layout` re-renders because of its own state (for example, a collapsed sidebar toggle), the `sidebar` element it received is the same object as before, so React skips re-rendering it.
+
+Try this before you add context. Context is the right tool when many distant components read the same value, such as theme, locale or the signed-in user across a whole app. It is the wrong tool for getting one value past two layouts.
+
+### Share behaviour with hooks, structure with components
+
+Choose the composition technique by what you are sharing:
+
+| Need | Technique | Example |
+|---|---|---|
+| One open content region | `children` | `<Modal>…</Modal>` |
+| Several distinct regions | Named `ReactNode` props | `<Card header={…} footer={…} />` |
+| Parent decides *which* items render; caller decides *how* | Render prop | `<VirtualList renderItem={(row) => …} />` |
+| A family sharing implicit state | Compound components | `<Tabs>`, `<Accordion>`, `<Menu>` |
+| Behaviour with no fixed markup | Custom hook (headless) | `useDisclosure()`, `useCombobox()` |
+
+Since hooks arrived, render props are mostly needed only when the parent controls what exists, such as a virtualised list that mounts only the visible rows. For behaviour reused across components that look different, a *headless* hook returns state and prop getters, and the caller owns all the markup:
+
+```tsx
+function useDisclosure(initialOpen = false) {
+  const [open, setOpen] = useState(initialOpen);
+  const contentId = useId();
+  return {
+    open,
+    getTriggerProps: () => ({
+      'aria-expanded': open,
+      'aria-controls': contentId,
+      onClick: () => setOpen((o) => !o),
+    }),
+    getContentProps: () => ({ id: contentId, hidden: !open }),
+  };
+}
+
+// The same behaviour drives an FAQ row, a nav submenu and a filter panel
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  const { getTriggerProps, getContentProps } = useDisclosure();
+  return (
+    <div>
+      <button {...getTriggerProps()}>{question}</button>
+      <p {...getContentProps()}>{answer}</p>
+    </div>
+  );
+}
+```
+
+Downshift, React Aria hooks and TanStack Table are built this way. The cost is that every consumer must spread the getters onto the right elements. Leave out `getTriggerProps()` and the toggle loses its `aria-expanded` state silently. A design system therefore usually ships both layers: the headless hook for unusual layouts, and a styled compound component built on it for the common case.
+
 ## When to Use
 
 - Any component that must support multiple visual variants without a prop explosion (`size`, `variant`, `withIcon`, `withBadge`, …)
@@ -99,6 +232,7 @@ The `Tabs` parent owns state; `Tab` and `Panel` children consume it via context.
 | Structural changes to the parent don't ripple into content | Prop drilling risk if context is not used for deep trees |
 | Each piece is independently testable and reusable | Over-composing trivial UI creates unnecessary indirection |
 | Design system consumers can extend without forking | Compound component context adds internal complexity |
+| Headless hooks let each consumer own markup and styling | Every consumer must apply the prop getters correctly, or accessibility state is lost silently |
 
 ## Live Playground
 
