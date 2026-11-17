@@ -94,73 +94,169 @@ import pulumi_aws as aws
 config = pulumi.Config()
 environment = pulumi.get_stack()
 api_replica_count = config.get_int("api_replica_count") or 1
-private_subnets = config.get("private_subnets").split(",")
+private_subnets = config.require("private_subnets").split(",")
+api_image = config.require("api_image")
+security_group_id = config.require("api_security_group_id")
+target_group_arn = config.require("api_target_group_arn")
 
-# Create ECS cluster with Container Insights enabled
 api_cluster = aws.ecs.Cluster("api",
     name=f"{environment}-api-cluster",
-    settings=[
-        aws.ecs.ClusterSettingArgs(
-            name="containerInsights",
-            value="enabled",
-        )
-    ]
+    settings=[aws.ecs.ClusterSettingArgs(name="containerInsights", value="enabled")],
 )
 
-# Create ECS task definition
+# Declared before the task definition that references it
+logs_group = aws.cloudwatch.LogGroup("api-logs", retention_in_days=30)
+
 task_def = aws.ecs.TaskDefinition("api",
-    family="api",
+    family=f"{environment}-api",
     network_mode="awsvpc",
     requires_compatibilities=["FARGATE"],
     cpu="256",
     memory="512",
-    container_definitions=pulumi.Output.all(api_cluster.arn).apply(
-        lambda args: pulumi.json.dumps([{
-            "name": "api",
-            "image": "myregistry.azurecr.io/api:latest",
-            "portMappings": [{"containerPort": 8080}],
-            "essential": True,
-            "logConfiguration": {
-                "logDriver": "awslogs",
-                "options": {
-                    "awslogs-group": logs_group.name,
-                    "awslogs-region": "us-east-1",
-                    "awslogs-stream-prefix": "api",
-                }
-            }
-        }])
-    )
+    # The log group name is only known after creation, so the container
+    # definitions are an Output serialised once that value resolves
+    container_definitions=pulumi.Output.json_dumps([{
+        "name": "api",
+        "image": api_image,
+        "portMappings": [{"containerPort": 8080}],
+        "essential": True,
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": logs_group.name,
+                "awslogs-region": aws.get_region().name,
+                "awslogs-stream-prefix": "api",
+            },
+        },
+    }]),
 )
 
-# Create CloudWatch log group
-logs_group = aws.cloudwatch.LogGroup("api_logs",
-    retention_in_days=30
-)
-
-# Create ECS service with load balancing
 api_service = aws.ecs.Service("api",
     cluster=api_cluster.arn,
     task_definition=task_def.arn,
     desired_count=api_replica_count,
     launch_type="FARGATE",
-    network_configuration={
-        "subnets": private_subnets,
-        "security_groups": [security_group.id],
-        "assign_public_ip": False,
-    },
-    load_balancers=[{
-        "target_group_arn": target_group.arn,
-        "container_name": "api",
-        "container_port": 8080,
-    }],
-    opts=pulumi.ResourceOptions(depends_on=[logs_group])
+    network_configuration=aws.ecs.ServiceNetworkConfigurationArgs(
+        subnets=private_subnets,
+        security_groups=[security_group_id],
+        assign_public_ip=False,
+    ),
+    load_balancers=[aws.ecs.ServiceLoadBalancerArgs(
+        target_group_arn=target_group_arn,
+        container_name="api",
+        container_port=8080,
+    )],
 )
 
-# Export service endpoint
-pulumi.export("service_endpoint", target_group.arn)
+pulumi.export("service_name", api_service.name)
 ```
 
 This Pulumi example mirrors the Terraform definition but in Python. The workflow remains identical: version control, code review, CI/CD apply — but the programmatic approach enables conditional logic and modularity that pure declarative DSLs cannot easily express.
+
+### Split state by blast radius and rate of change
+
+One state file for everything makes every plan slow and every apply risky: a change to a log retention setting is planned in the same run as the VPC and the production database, and a lock held by one engineer blocks everyone else. Split state along two lines, **environment** and **layer**, so that each apply can only touch what it is meant to change.
+
+| Layer | Example resources | Changes |
+|---|---|---|
+| Foundation | VPC, subnets, DNS zones, IAM baselines | Rarely, reviewed by the platform team |
+| Data | Databases, buckets, queues | Occasionally, with `prevent_destroy` on stateful resources |
+| Services | ECS services, task definitions, load balancer rules | Daily, by the owning team |
+
+```
+infrastructure/
+  foundation/   backend key: production/foundation.tfstate
+  data/         backend key: production/data.tfstate
+  services/api/ backend key: production/services/api.tfstate
+```
+
+Lower layers publish what higher layers need, such as subnet IDs and the database endpoint, and higher layers read it. Prefer publishing through a parameter store (AWS SSM Parameter Store, read with an `aws_ssm_parameter` data source) over `terraform_remote_state`: reading remote state requires access to the whole state file, and state stores every attribute in plain text, **including generated passwords and secret values**. Restrict the state bucket to the CI role and encrypt it. Keep production in its own cloud account where possible, so that a credential for staging cannot reach production state at all.
+
+Terraform 1.11 and later can lock state with S3 itself (`use_lockfile = true` in the backend block); the DynamoDB lock table shown above still works but is deprecated.
+
+### Plan once in CI, apply exactly that plan
+
+A plan posted to the pull request is only a promise if the apply executes the same plan. Running `terraform apply` again at merge time computes a new plan against whatever has changed since review. Save the plan as an artifact and apply the saved file:
+
+```bash
+# Pull request job
+terraform init -lockfile=readonly          # fail if providers differ from .terraform.lock.hcl
+terraform plan -out=tfplan -var-file=environments/production.tfvars
+terraform show -json tfplan > plan.json
+conftest test plan.json                     # policy checks: no public buckets, required tags, ...
+
+# Apply job, after approval, using the same tfplan artifact
+terraform apply tfplan
+```
+
+If state has changed since the plan was made, Terraform rejects the saved plan as stale instead of applying something no one reviewed. Pin provider versions in `required_providers` and commit `.terraform.lock.hcl`, so that the plan and the apply run against the same provider code.
+
+Read every plan for **replacements**, not only additions. A line marked `-/+` (destroy and then create replacement) on a database, a load balancer or a DNS record means data loss or downtime, often caused by changing an attribute the provider cannot update in place. Have CI count `delete` actions in `plan.json` and require a second approval when the count is not zero.
+
+### Detect drift on a schedule, then decide which side is right
+
+Drift is any difference between the code and the account: a security group rule added during an incident, a parameter changed in the console. It is only visible when someone runs a plan, so run one on a schedule:
+
+```bash
+# Nightly, read-only credentials
+terraform plan -detailed-exitcode -lock=false -var-file=environments/production.tfvars
+# exit 0: no changes   exit 1: error   exit 2: drift (or unapplied code) — alert the owning team
+```
+
+Each drift report needs a decision. Either the code is right, and the next apply reverts the manual change, or the manual change was right, and it is codified in a pull request before anything else is applied. Applying unrelated changes on top of unreviewed drift silently reverts a fix someone made during an incident.
+
+Some attributes are legitimately changed by other systems. The ECS service above sets `desired_count`; once Application Auto Scaling manages the service, every apply would reset the replica count to the declared value. Declare the starting value and hand ownership to the scaler:
+
+```hcl
+resource "aws_ecs_service" "api" {
+  # ...
+  desired_count = var.api_replica_count
+
+  lifecycle {
+    ignore_changes = [desired_count]   # owned by the autoscaler after creation
+  }
+}
+```
+
+Use `ignore_changes` only for attributes another system owns. Using it to hide drift nobody has explained removes the only signal that something was changed by hand. Make console access read-only by default and keep write access as an audited break-glass role, so that drift becomes the exception it should be.
+
+### Refactor and adopt without destroying
+
+Terraform identifies a resource by its **address** (`aws_ecs_service.api`), not by its cloud ID. Renaming a resource, or moving it into a module, therefore plans a destroy of the old address and a create of the new one. Declare the move in code, so that it is reviewed like any other change instead of being run as a manual `terraform state mv`:
+
+```hcl
+# Terraform 1.1+: rename or move into a module without recreating
+moved {
+  from = aws_ecs_service.api
+  to   = module.api.aws_ecs_service.this
+}
+
+# Terraform 1.5+: adopt a resource that was created by hand
+import {
+  to = aws_s3_bucket.reports
+  id = "company-reports-production"
+}
+
+# Terraform 1.7+: stop managing a resource without deleting it
+removed {
+  from = aws_sqs_queue.legacy
+  lifecycle {
+    destroy = false
+  }
+}
+
+# Refuse any plan that would destroy the production database
+resource "aws_db_instance" "orders" {
+  # ...
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+```
+
+`terraform plan -generate-config-out=generated.tf` writes a first draft of the configuration for each `import` block. Treat the draft as a starting point: remove the defaults it spells out and replace hardcoded IDs with references. An import is complete when the plan shows **no changes** for the imported resource. Any remaining difference is either a mistake in the code or drift that has to be resolved before the first apply. Adopting an existing environment this way, one layer at a time, avoids the rebuild that a team cannot afford.
+
+Pulumi has the same concepts under different names: `aliases` in resource options for renames, the `import` resource option, and `protect=True` in place of `prevent_destroy`.
 
 ## Live Playground
 
@@ -302,6 +398,7 @@ console.log(\`\\n\${actual.size} resources in the account, matching \${desired.l
 | Full audit trail via git blame and PR history | Refactoring resource names/identifiers requires state manipulation |
 | Parameterized environments — same code for dev and prod | Initial IaC adoption on an existing environment requires import of existing resources |
 | Drift detection catches unauthorized manual changes | Plan/apply cycle adds latency compared to clicking in a console |
+| Split state limits the blast radius of each apply | Cross-layer outputs and apply order must be managed explicitly |
 
 ## Related Patterns
 
