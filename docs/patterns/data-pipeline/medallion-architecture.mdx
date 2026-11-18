@@ -175,6 +175,113 @@ def aggregate_to_gold(silver: list[SilverOrder]) -> list[GoldDailyRevenue]:
     return list(by_date.values())
 ```
 
+### Keep Bronze append-only, with the metadata to replay it
+
+Bronze is only useful as a replay source if it holds every record exactly once per delivery, and records where each one came from. Land each record with ingestion columns next to the payload, and never update or delete rows during normal operation:
+
+| Column | Purpose |
+|---|---|
+| `_source_file` / `_source_offset` | Find the original delivery when a value looks wrong |
+| `_batch_id` | Reprocess or delete exactly one load |
+| `_ingested_at` | Partition Bronze and set retention; never use it to order business events |
+| `_rescued_data` | Fields that did not match the expected shape, kept instead of lost |
+
+Land fields as strings, or as a raw JSON column, so that a source that changes a type does not fail ingestion. Databricks Auto Loader does this with `cloudFiles.schemaEvolutionMode = "rescue"`, which puts unexpected fields in `_rescued_data`. Converting types is Silver's job.
+
+Append-only also matters to the jobs that read Bronze. A Delta Lake streaming read fails when its source table has an update or delete commit, because it cannot tell downstream which rows changed. The one exception is a legal erasure request. Delete the subject's rows from every layer, run `VACUUM` so the old data files are removed after the retention period (seven days by default), and start the Bronze stream with `skipChangeCommits` so it ignores the delete commit. The delete then has to be applied to Silver and Gold explicitly. If erasure requests are routine, store personal fields encrypted with a key per subject and delete the key instead. This is known as crypto-shredding, and it leaves Bronze append-only.
+
+### Promote to Silver incrementally, with an idempotent merge
+
+The `promoteToSilver` example above removes duplicates with an in-memory `Set`. That only catches duplicates within one run: when the source redelivers `ORD-1` tomorrow, a second copy is appended to Silver. The example also keeps the first copy it sees, when the copy that should win is the latest change at the source. In production, Silver is a table keyed on the business key and updated with a `MERGE`:
+
+```sql
+MERGE INTO silver.orders AS t
+USING (
+  SELECT order_id, customer_id, total, placed_at, source_updated_at
+  FROM (
+    SELECT *,
+           ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY source_updated_at DESC) AS rn
+    FROM bronze_increment_valid
+  )
+  WHERE rn = 1                         -- MERGE fails if two source rows match one target row
+) AS s
+ON t.order_id = s.order_id
+WHEN MATCHED AND s.source_updated_at > t.source_updated_at THEN UPDATE SET *
+WHEN NOT MATCHED THEN INSERT *
+```
+
+Order by the source's own change timestamp or sequence number, never by `_ingested_at`. A redelivered or late file carries a later ingestion time but older data, and the `WHEN MATCHED AND ...` guard stops it from overwriting a newer row. Running the same batch twice gives the same table, so a failed run can simply be retried.
+
+Process only the Bronze rows added since the last successful run. A Structured Streaming read with `trigger(availableNow=True)` does this as a scheduled batch job: the checkpoint records which Bronze commits have been processed, and `foreachBatch` runs the merge for each new increment:
+
+```python
+(spark.readStream.table("bronze.orders")
+    .writeStream
+    .foreachBatch(validate_and_merge)          # quarantine rejects, then run the MERGE above
+    .option("checkpointLocation", "/checkpoints/silver_orders")
+    .trigger(availableNow=True)
+    .start())
+```
+
+To rebuild Silver after a logic change, run the same code against all of Bronze with a new checkpoint and a new target table, compare the two, then switch readers to the new one.
+
+### Quarantine rejected rows instead of dropping them
+
+The page's Silver step drops a malformed row without a trace. Nobody learns that `ORD-3` was rejected, so a source that starts sending totals as strings shows up as falling revenue, not as a data quality fault. Write each rejected row to a quarantine table with the reason and its Bronze lineage, and keep only valid rows for the merge:
+
+```python
+from pyspark.sql import functions as F
+
+typed = bronze_batch.select(
+    "*",
+    F.expr("try_cast(total AS DECIMAL(12,2))").alias("total_typed"),
+    F.expr("try_to_timestamp(placed_at)").alias("placed_at_typed"),
+)
+
+reason = (F.when(F.col("order_id").isNull(), "missing_order_id")
+           .when(F.col("total_typed").isNull(), "invalid_total")
+           .when(F.col("placed_at_typed").isNull(), "invalid_placed_at"))
+
+checked = typed.withColumn("reject_reason", reason)   # null when every check passes
+
+(checked.filter(F.col("reject_reason").isNotNull())
+    .select("order_id", "reject_reason", "_source_file", "_batch_id",
+            F.current_timestamp().alias("_rejected_at"))
+    .write.mode("append").saveAsTable("quarantine.orders"))
+
+valid = checked.filter(F.col("reject_reason").isNull())
+```
+
+`try_cast` and `try_to_timestamp` return null instead of failing the job, so one bad value cannot stop the batch. Decimal is used for money because floating-point sums drift. Fix the cause at the source or in the Silver logic, then replay the quarantined rows from Bronze using their `_batch_id`. A per-source ceiling on the reject rate turns a mass failure into a failed run instead of a thin Silver table; [Schema-Driven Validation](./schema-driven-validation.mdx) covers that check. Declarative tools build the same mechanism in: Lakeflow Declarative Pipelines (formerly Delta Live Tables) has `expect_or_drop` and `expect_or_fail` expectations, and dbt has tests with `severity` and `error_if` thresholds.
+
+### Shape Gold for one consumer, and recompute only what changed
+
+A Gold table answers one consumer's question: daily revenue for finance, a customer feature table for the churn model. Give each one a named owner and a documented definition, and build it from Silver only. Gold that reads Bronze repeats the cleaning logic and gives a different answer from Gold built on Silver.
+
+Be explicit about the business day. The examples above group on the UTC date (`toISOString().slice(0, 10)`), so an order placed at 9 p.m. in New York is counted in the next day's revenue. Convert to the reporting time zone before taking the date.
+
+Late and corrected orders change days that have already been aggregated. Rebuilding all of Gold on every run is simple but becomes slow as history grows, and appending new totals double-counts. Instead, find the dates touched by this run's Silver changes and overwrite only those partitions:
+
+```python
+dates = [r.order_date for r in changed_orders
+         .select(F.to_date(F.from_utc_timestamp("placed_at", "America/New_York")).alias("order_date"))
+         .distinct().collect()]
+
+if dates:
+    daily = (spark.table("silver.orders")
+        .withColumn("order_date", F.to_date(F.from_utc_timestamp("placed_at", "America/New_York")))
+        .filter(F.col("order_date").isin(dates))
+        .groupBy("order_date")
+        .agg(F.count("*").alias("order_count"), F.sum("total").alias("total_revenue")))
+
+    predicate = "order_date IN ({})".format(", ".join(f"DATE'{d}'" for d in dates))
+    (daily.write.format("delta").mode("overwrite")
+        .option("replaceWhere", predicate)      # replace these dates, leave the rest untouched
+        .saveAsTable("gold.daily_revenue"))
+```
+
+Each touched date is recomputed from all of its Silver rows, so the result is correct however many times the job runs. Delta's Change Data Feed (`delta.enableChangeDataFeed = true`) gives `changed_orders` without a full scan of Silver. On Apache Iceberg, `MERGE INTO` and `INSERT OVERWRITE` with dynamic partition overwrite do the same job.
+
 ## Live Playground
 
 Experiment with the pattern below. The two tabs show a monolithic transform (`before.ts`) that cleans and aggregates raw events in one pass, and the Medallion-refactored equivalent (`after.ts`) with distinct Bronze, Silver, and Gold stages.
@@ -321,6 +428,7 @@ console.log('Gold (business aggregate):', gold);
 | Quality enforced at well-defined checkpoints | Latency added by multi-stage processing |
 | Gold layer trusted by all consumers without re-derivation | Schema evolution must be managed across all layers |
 | Failures isolated to a layer — Bronze intact even if Silver fails | Requires disciplined ownership of layer boundaries |
+| Idempotent merges and partition overwrites make every run safe to retry | Each layer needs a business key, a source change timestamp and a checkpoint to maintain |
 
 ## Related Patterns
 
