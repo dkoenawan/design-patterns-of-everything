@@ -38,7 +38,7 @@ Data Sources
      │         Trigger: fixed short interval (seconds to minutes)
      │         Input: small bounded windows
      │         Output: incremental result
-     │         Tools: Spark Structured Streaming, Delta Live Tables
+     │         Tools: Spark Structured Streaming, Lakeflow Declarative Pipelines
      │
      └──► [ Streaming Pipeline ]
                Trigger: event arrival
@@ -49,7 +49,7 @@ Data Sources
 
 **Batch** — Load a complete snapshot, apply transformations, write results. Failures are cheap to retry; compute is predictable; joins across large datasets are straightforward.
 
-**Micro-batch** — Process small time windows on a tight schedule (seconds to minutes). Most of batch's simplicity, most of streaming's freshness. Spark Structured Streaming and Delta Live Tables operate this way. The right default for most latency requirements between one minute and fifteen minutes.
+**Micro-batch** — Process small time windows on a tight schedule (seconds to minutes). Most of batch's simplicity, most of streaming's freshness. Spark Structured Streaming and Lakeflow Declarative Pipelines (formerly Delta Live Tables) operate this way. The right default for most latency requirements between one minute and fifteen minutes.
 
 **Streaming (event-driven)** — Process each event or small group as it arrives. Requires explicit handling of windowing, watermarks, late data, and state management. Justified when latency must be sub-minute or when the pipeline itself is the product (e.g., real-time fraud scoring).
 
@@ -79,13 +79,19 @@ Session Window (gap-based):
 Streaming pipelines must define a **watermark** — the maximum tolerated event-time delay. Events arriving later than the watermark are either dropped, routed to a side-output, or trigger a window correction depending on the engine and business requirement.
 
 ```python
-# Apache Flink — 10-second watermark tolerance
-stream
-  .assign_timestamps_and_watermarks(
+# Apache Flink (PyFlink) — 10-second watermark tolerance
+from pyflink.common import Duration, WatermarkStrategy
+from pyflink.common.watermark_strategy import TimestampAssigner
+
+class EventTimeAssigner(TimestampAssigner):
+    def extract_timestamp(self, value, record_timestamp):
+        return value.event_time  # epoch millis, assigned by the producer
+
+stream = stream.assign_timestamps_and_watermarks(
     WatermarkStrategy
-      .for_bounded_out_of_orderness(Duration.of_seconds(10))
-      .with_timestamp_assigner(lambda event, _: event.event_time)
-  )
+        .for_bounded_out_of_orderness(Duration.of_seconds(10))
+        .with_timestamp_assigner(EventTimeAssigner())
+)
 ```
 
 The same tolerance-window idea holds in a TypeScript consumer that has no framework-level watermark support — event time is compared against a rolling maximum, and anything past the tolerance is routed to a side-output instead of the main aggregation:
@@ -124,6 +130,112 @@ function partitionByWatermark(events: DomainEvent[]) {
 ```
 
 `WatermarkGate` tracks the highest event time seen so far as a proxy for "now" in event time, rather than trusting wall-clock arrival order — the same principle Flink's `WatermarkStrategy` applies internally, made explicit for pipelines built on plain Kafka consumers.
+
+### A watermark trades latency for completeness
+
+A window can only emit its final result once the watermark passes the window's end. With a 10-second tolerance, the window `[12:00, 12:05)` closes only after an event stamped 12:05:10 or later arrives. The tolerance is therefore added to every result's latency. A larger tolerance accepts more late events, but results arrive later and the engine holds more open windows in state. Choose the value from the measured lateness of the source, for example the 99th percentile of arrival time minus event time. Don't guess it.
+
+In Spark Structured Streaming the watermark is declared on the event-time column, and the output mode decides when results leave the window:
+
+```python
+from pyspark.sql import functions as F
+
+per_five_minutes = (events
+    .withWatermark("event_time", "10 minutes")
+    .groupBy(F.window("event_time", "5 minutes"), "merchant_id")
+    .agg(F.sum("amount").alias("amount")))
+
+(per_five_minutes.writeStream
+    .outputMode("append")      # one final row per window, after the watermark passes
+    .option("checkpointLocation", "/checkpoints/merchant_5m")
+    .toTable("silver.merchant_amount_5m"))
+```
+
+Append mode writes each window once, when it is complete. That is the right mode for a table that other jobs read. Update mode writes a partial result on every trigger and revises it as events arrive. That suits a live dashboard, but not a sink that cannot apply updates. Spark guarantees that it keeps any event within the delay. An event later than the delay may be dropped.
+
+Two failure modes are not visible in the page's `WatermarkGate` example:
+
+- **A stalled watermark.** Flink tracks a watermark per parallel source instance, and an operator moves forward at the minimum of its inputs. One Kafka partition that stops receiving data holds every downstream window open, and output stops while the job looks healthy. Add `.with_idleness(Duration.of_minutes(1))` to the strategy so an idle partition is ignored until it sends data again. Spark keeps one global watermark, which by default is the minimum across input streams.
+- **A watermark that jumps ahead.** `WatermarkGate` trusts the producer's clock. One event stamped a day in the future moves the watermark forward a day, and every correct event after it is classified as late. Reject or quarantine any event whose event time is later than the processing time plus a small allowance for clock skew, before it reaches the watermark.
+
+For events that arrive after the watermark, Flink offers two options per window. `allowed_lateness` keeps the window's state for longer and emits a corrected result when a late event arrives. `side_output_late_data` sends the late events to a separate stream, where a correction job can reconcile them. Either way, choose a policy. Dropping late events silently is also a policy, and it is the default.
+
+### Exactly-once is a property of the whole pipeline
+
+After a failure, a streaming engine restarts from its last checkpoint and re-reads the source from the offsets stored there. Every event since that checkpoint is processed a second time. The engine's own state is correct after a restart, but any write to a system outside the checkpoint happens again. Effectively-once output needs three parts working together: a source that can be replayed (Kafka, a Delta or Iceberg table), checkpointed state, and a sink that is either idempotent or transactional.
+
+In Spark, `foreachBatch` passes a batch id that does not change when a batch is retried. Delta Lake uses it to skip a write it has already committed:
+
+```python
+APP_ID = "orders_silver_v1"   # change this whenever the checkpoint changes
+
+def write_batch(batch_df, batch_id):
+    (batch_df.write.format("delta")
+        .option("txnAppId", APP_ID)
+        .option("txnVersion", batch_id)   # a retried batch with the same id is skipped
+        .mode("append")
+        .saveAsTable("silver.order_events"))
+
+(events.writeStream
+    .foreachBatch(write_batch)
+    .option("checkpointLocation", "/checkpoints/orders_silver_v1")
+    .trigger(processingTime="1 minute")
+    .start())
+```
+
+The pair must change together. A new checkpoint starts batch ids again at 0. If `APP_ID` stays the same, Delta treats every new batch as already written and skips it without an error. If `foreachBatch` writes to two tables, each write needs these options.
+
+Flink reaches the same result with transactions. A `KafkaSink` with `DeliveryGuarantee.EXACTLY_ONCE` and a transactional id prefix commits its Kafka transaction only when a checkpoint completes. A consumer reading with `isolation.level=read_committed` sees nothing until that commit, so output latency can't be lower than the checkpoint interval. The transaction timeout must be longer than the checkpoint interval plus the time a restart takes. It must also stay under the broker's `transaction.max.timeout.ms`, which is 15 minutes by default. Kafka Streams applications get the same guarantee from `processing.guarantee=exactly_once_v2`.
+
+No engine covers side effects outside its sinks. Examples are a payment API call, an email or a webhook. Derive an idempotency key from the event id, send it with the request, and let the receiving system reject the second attempt.
+
+### Bound the state, or it bounds you
+
+Every streaming aggregation, deduplication and join keeps state per key. With keys such as user ids or order ids, that state grows for as long as the job runs, unless something removes old entries. The job then gets slower at every checkpoint and eventually fails with out-of-memory errors weeks after it was deployed.
+
+Deduplication is the usual source. `dropDuplicates(["event_id"])` on a stream keeps every event id it has ever seen. With a watermark, Spark 3.5 and later can drop ids once they are older than the delay:
+
+```python
+deduped = (events
+    .withWatermark("event_time", "30 minutes")
+    .dropDuplicatesWithinWatermark(["event_id"]))
+```
+
+The delay is now the dedupe horizon. A duplicate that arrives more than 30 minutes after the original gets through. Choose the delay from how long the producer retries, and if a duplicate is never acceptable, make the sink idempotent on `event_id` as well.
+
+Joins between two streams follow the same rule. Without a watermark on both sides and an event-time condition, for example a payment matched to an order only within 1 hour of `placed_at`, Spark keeps both inputs in state indefinitely. For outer joins between streams, both are required: an unmatched row can only be emitted once the engine knows no match can still arrive. In Flink, keyed state that no watermark removes needs a `StateTtlConfig`.
+
+Large state belongs in RocksDB, not on the JVM heap. In Spark, set `spark.sql.streaming.stateStore.providerClass` to the `RocksDBStateStoreProvider`. In Flink, use the RocksDB state backend with incremental checkpoints. Plan for upgrades as well, because state is tied to the shape of the query. Spark rejects some changes when a query restarts from an existing checkpoint, such as different grouping keys or an added stateful operator. Such a change needs a new checkpoint and a replay of the source. Flink maps saved state to operators by their `uid`. Set an explicit `uid` on every stateful operator from the first release, so a savepoint can still be restored after the code changes.
+
+### Write the logic once, then choose the trigger
+
+On a lakehouse, batch and streaming are mostly a scheduling decision, not two different pipelines. Spark runs the same streaming query on any of these triggers:
+
+| Trigger | Runs | Compute | Fits |
+|---|---|---|---|
+| `availableNow=True`, started by a scheduler | All new input since the checkpoint, then stops | Only while running | Hourly or daily freshness, or every 10 to 15 minutes on a small table |
+| `processingTime="1 minute"` | A micro-batch every minute | Always on | SLAs of one to fifteen minutes |
+| Flink, Kafka Streams | Each event on arrival | Always on, with state | Sub-minute SLAs |
+
+Because the checkpoint records progress, `availableNow` gets the incremental behaviour of streaming at batch cost. Changing to `processingTime` later is a one-line change that keeps the checkpoint. Start with the cheapest trigger that meets the SLA. A 15-minute freshness target that a job started every 10 minutes can meet doesn't need a cluster that runs all the time.
+
+Keep the transformation in a function from DataFrame to DataFrame, with no reads or writes inside it. The same function then runs in the stream, in a backfill and in a unit test, as described in [Pure Functions](./pure-functions.mdx):
+
+```python
+def enrich(orders):   # DataFrame -> DataFrame, no I/O
+    return (orders
+        .withColumn("total", F.col("total").cast("decimal(12,2)"))
+        .filter(F.col("status") != "test"))
+
+(enrich(spark.readStream.table("bronze.orders"))
+    .writeStream
+    .option("checkpointLocation", "/checkpoints/orders_enriched")
+    .trigger(availableNow=True)            # started every 15 minutes by the scheduler
+    # .trigger(processingTime="1 minute")  # when the SLA tightens
+    .toTable("silver.orders_enriched"))
+```
+
+Reprocessing is where the two models used to split. A Lambda architecture runs a batch path and a streaming path side by side, written in two codebases that slowly drift apart and give different answers. A Kappa architecture keeps one path and reprocesses by replaying the log. Replay needs history, and Kafka deletes it after 7 days by default (`retention.ms`). Keep the full history in an append-only Bronze table, as [Medallion Architecture](./medallion-architecture.mdx) describes. To reprocess, run the same query against that table with a new checkpoint into a new target table, compare the results, then switch readers to the new table.
 
 ## Live Playground
 
@@ -251,7 +363,8 @@ console.log('Late (side-output):', late.map((e) => e.payload));
 | Batch: full dataset available for joins and aggregations | Peak compute demand; resource spikes at schedule time |
 | Streaming: sub-second to sub-minute latency | Stateful processing, watermarks, and late-data logic required |
 | Streaming: continuous output; no scheduled delays | Operational complexity; harder to debug and test |
-| Micro-batch: latency/simplicity balance | Window boundaries introduce artificial delay; still not true event-time |
+| Micro-batch: latency/simplicity balance | Latency floor of one trigger interval plus batch duration; a cluster kept up between triggers costs as much as streaming |
+| Effectively-once output via checkpoints and idempotent or transactional sinks | Output visible only after a commit; every sink and side effect needs its own idempotency key |
 
 ## Related Patterns
 
