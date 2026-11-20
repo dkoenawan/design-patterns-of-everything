@@ -34,9 +34,11 @@ services:
     image: postgres:16
     container_name: project_a_db
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"   # loopback only; see Docker Port Mapping
     volumes:
       - project_a_data:/var/lib/postgresql/data
+    networks: [project_a]
+    shm_size: 256m
     environment:
       POSTGRES_DB: project_a
       POSTGRES_USER: admin
@@ -46,6 +48,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     deploy:
       resources:
         limits:
@@ -57,9 +60,11 @@ services:
     image: postgres:15
     container_name: project_b_db
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"   # loopback only; see Docker Port Mapping
     volumes:
       - project_b_data:/var/lib/postgresql/data
+    networks: [project_b]
+    shm_size: 256m
     environment:
       POSTGRES_DB: project_b
       POSTGRES_USER: admin
@@ -69,6 +74,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     deploy:
       resources:
         limits:
@@ -80,9 +86,11 @@ services:
     image: postgres:16
     container_name: project_c_db
     ports:
-      - "5434:5432"
+      - "127.0.0.1:5434:5432"   # loopback only; see Docker Port Mapping
     volumes:
       - project_c_data:/var/lib/postgresql/data
+    networks: [project_c]
+    shm_size: 256m
     environment:
       POSTGRES_DB: project_c
       POSTGRES_USER: admin
@@ -92,6 +100,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     deploy:
       resources:
         limits:
@@ -103,6 +112,11 @@ volumes:
   project_a_data:
   project_b_data:
   project_c_data:
+
+networks:
+  project_a:
+  project_b:
+  project_c:
 ```
 
 ### Key mechanics
@@ -133,82 +147,179 @@ DATABASE_URL=postgresql://admin:password@host:5434/project_c
 While Docker Compose defines the infrastructure, applications need to connect, verify readiness, and manage lifecycle. Python's Docker SDK allows programmatic container management and health checks:
 
 ```python
+import os
+import time
+
 import docker
 import psycopg2
-import time
-from typing import Optional
+from psycopg2.extensions import connection as PgConnection
+
 
 class DatabaseCluster:
     """Manages multiple database containers and their connections."""
-    
-    def __init__(self, compose_file: str = "docker-compose.yml"):
+
+    def __init__(self):
         self.client = docker.from_env()
-        self.compose_file = compose_file
+        # project -> (container name, host port, database name)
         self.databases = {
-            "project_a": ("project_a_db", "5432", "project_a"),
-            "project_b": ("project_b_db", "5433", "project_b"),
-            "project_c": ("project_c_db", "5434", "project_c"),
+            "project_a": ("project_a_db", 5432, "project_a"),
+            "project_b": ("project_b_db", 5433, "project_b"),
+            "project_c": ("project_c_db", 5434, "project_c"),
         }
-    
+
     def wait_for_readiness(self, project: str, timeout: int = 30) -> bool:
-        """Poll until a database is accepting connections."""
-        container_name, port, db_name = self.databases[project]
+        """Poll the container's health check until it reports healthy."""
+        container_name, _, _ = self.databases[project]
         container = self.client.containers.get(container_name)
-        
-        start = time.time()
-        while time.time() - start < timeout:
-            health = container.attrs["State"]["Health"]["Status"]
+
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            container.reload()  # attrs is a snapshot; refresh it every poll
+            health = container.attrs["State"].get("Health", {}).get("Status")
             if health == "healthy":
                 return True
             time.sleep(1)
         return False
-    
-    def connect(self, project: str) -> Optional[psycopg2.connection]:
-        """Establish a connection to an orchestrated database."""
-        container_name, port, db_name = self.databases[project]
-        
+
+    def connect(self, project: str) -> PgConnection:
+        """Connect to an orchestrated database once it is healthy."""
+        _, port, db_name = self.databases[project]
+
         if not self.wait_for_readiness(project):
             raise RuntimeError(f"{project} failed health check")
-        
+
         return psycopg2.connect(
-            host="localhost",
-            port=int(port),
-            user="admin",
-            password="password",  # load from env
-            database=db_name,
+            host="127.0.0.1",
+            port=port,
+            user=os.environ[f"{project.upper()}_DB_USER"],
+            password=os.environ[f"{project.upper()}_DB_PASSWORD"],
+            dbname=db_name,
         )
-    
+
     def resource_usage(self, project: str) -> dict:
-        """Inspect CPU and memory usage for a database container."""
+        """CPU and memory for one container, computed the way `docker stats` does."""
         container_name, _, _ = self.databases[project]
-        container = self.client.containers.get(container_name)
-        stats = container.stats(stream=False)
-        
-        memory_usage = stats["memory_stats"]["usage"] / (1024 ** 2)  # MB
+        stats = self.client.containers.get(container_name).stats(stream=False)
+
+        mem = stats["memory_stats"]
+        # Page cache the kernel can reclaim is not pressure on the limit.
+        cache = mem.get("stats", {}).get("inactive_file", 0)
+        memory_mb = (mem["usage"] - cache) / 1024 ** 2
+
+        # Counters are cumulative; usage is the delta since the previous sample.
+        cpu, pre = stats["cpu_stats"], stats["precpu_stats"]
+        cpu_delta = cpu["cpu_usage"]["total_usage"] - pre["cpu_usage"]["total_usage"]
+        system_delta = cpu["system_cpu_usage"] - pre.get("system_cpu_usage", 0)
         cpu_percent = (
-            stats["cpu_stats"]["cpu_usage"]["total_usage"] /
-            stats["cpu_stats"]["system_cpu_usage"] * 100
+            cpu_delta / system_delta * cpu["online_cpus"] * 100
+            if system_delta > 0 else 0.0
         )
-        
-        return {"memory_mb": memory_usage, "cpu_percent": cpu_percent}
+
+        return {
+            "memory_mb": round(memory_mb, 1),
+            "memory_limit_mb": round(mem["limit"] / 1024 ** 2),
+            "cpu_percent": round(cpu_percent, 1),
+        }
+
 
 # Usage: connect to each database, verify health, and monitor resource isolation
 cluster = DatabaseCluster()
-for project in ["project_a", "project_b", "project_c"]:
+for project in cluster.databases:
     conn = cluster.connect(project)
     print(f"{project}: connected, using {cluster.resource_usage(project)}")
     conn.close()
 ```
 
-The Docker SDK replaces manual shell scripting: health checks become callable methods, resource limits are verified programmatically, and lifecycle operations (start/stop/inspect) integrate naturally into application initialization and monitoring loops.
+The Docker SDK replaces manual shell scripting: health checks become callable methods, resource limits are verified programmatically, and lifecycle operations (start/stop/inspect) integrate naturally into application initialization and monitoring loops. Two details matter. A container object's `attrs` is a snapshot taken when it was fetched, so a readiness loop that does not call `reload()` reads the same `starting` status until it times out. And Docker's CPU and memory counters are cumulative: CPU usage is the change since the previous sample (`precpu_stats`), scaled by the number of CPUs, and memory usage includes page cache that the kernel can reclaim, so subtract `inactive_file` to get the figure `docker stats` reports.
+
+### Size PostgreSQL to its container, not to the host
+
+A container memory limit does not slow a query down. It is a cgroup ceiling, and the kernel's OOM killer enforces it by sending `SIGKILL` to whichever process crosses it. When that process is a PostgreSQL backend, the postmaster cannot know whether shared memory was corrupted, so it terminates every other session on the instance and runs crash recovery. The limit keeps the fault inside one project, but inside that project it is an outage. PostgreSQL's own limits should make a query fail before the cgroup has to step in.
+
+Set the memory settings from the container's limit. The worst case is roughly `shared_buffers + max_connections × work_mem × hash_mem_multiplier + maintenance_work_mem`, and that should fit under the limit with room to spare. A single query can use `work_mem` once for each sort or hash node, so leave a wide margin. Then set limits on time and disk too:
+
+```yaml
+  project_a_db:
+    # ...as above, with memory: 512M
+    shm_size: 256m
+    command:
+      - postgres
+      - -c
+      - shared_buffers=128MB        # ~25% of the container limit
+      - -c
+      - max_connections=40          # PgBouncer in front, not 100 direct clients
+      - -c
+      - work_mem=4MB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - statement_timeout=30s       # a runaway query is cancelled, not OOM-killed
+      - -c
+      - idle_in_transaction_session_timeout=60s
+      - -c
+      - temp_file_limit=2GB         # spills to disk are bounded too
+```
+
+`statement_timeout` applies to every session, including migrations and `pg_dump`. Set a stricter value for the application role (`ALTER ROLE app SET statement_timeout = '5s'`) and a looser one for the maintenance role, rather than one compromise for both.
+
+Docker gives each container a 64 MB `/dev/shm` by default, and PostgreSQL puts the dynamic shared memory used by parallel queries there. A parallel hash join on a container with the default fails with `could not resize shared memory segment ... No space left on device`. The `shm_size` line in the compose file is there to prevent that. Set it to cover the parallel workers you allow, or set `max_parallel_workers_per_gather = 0` on very small instances.
+
+### Isolate the network, not just the port
+
+Without a `networks` key, every service in a compose file joins one default network, so project A's application can resolve and connect to `project_b_db`. Separate host ports do not prevent this, because containers on the same network do not use host ports. A separate network for each project does: an application container joins only its own project's network and reaches its database by service name on the internal port.
+
+```yaml
+  project_a_api:
+    image: project-a/api:latest
+    networks: [project_a]
+    environment:
+      DATABASE_URL: postgresql://app@project_a_db:5432/project_a   # service name, container port
+    depends_on:
+      project_a_db:
+        condition: service_healthy
+```
+
+The host ports exist only for clients that run on the host itself, such as `psql`, migrations run from a laptop over SSH, or the backup job. That is why the compose file binds them to `127.0.0.1`. A bare `"5432:5432"` publishes the database on every interface, and Docker's own iptables rules are evaluated before a host firewall such as ufw. [Docker Port Mapping](./docker-port-mapping.mdx) covers both rules in more detail.
+
+### The data volume outlives the configuration
+
+The official image initialises a database only when the data directory is empty. On the first start it reads `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` and runs the scripts in `/docker-entrypoint-initdb.d`. After that, the volume holds the state and these inputs are ignored. Three things follow from this:
+
+- **Changing `POSTGRES_PASSWORD` in `.env` changes nothing.** The old password remains valid and the application's new one fails. Rotate a password with `ALTER ROLE ... PASSWORD` inside the database, then update the secret. To keep passwords out of `docker inspect`, use `POSTGRES_PASSWORD_FILE` with a compose `secrets:` entry instead of a plain environment variable.
+- **The bootstrap user is a superuser.** Use it for administration only. Create a separate login role for the application in an init script, with privileges only on its own schema, so that an injection flaw in one project's application cannot `DROP` tables, read server files or create new roles. Since PostgreSQL 15, ordinary roles can no longer create objects in the `public` schema by default, so grant that privilege on purpose.
+- **A major version is a property of the volume.** If you change `image: postgres:15` to `postgres:16` on an existing volume, the server refuses to start because the data directory was initialised by an incompatible version. Minor releases (16.3 → 16.4) share the on-disk format and need only a restart. A major upgrade is a migration: start a new service on a new volume, copy the data across (`docker exec project_b_db pg_dumpall -U admin | docker exec -i project_b_db_16 psql -U admin -d postgres`, or `pg_upgrade` for large databases), point the application at it, and keep the old volume until the new one has been verified. Pin the major version in the image tag so that a routine `docker compose pull` cannot start this migration by accident. The `postgres:18` image also moved its data directory to a version-specific path under `/var/lib/postgresql`, so the volume mount in the compose file above has to change for that version.
+
+### A backup is a restore you have rehearsed
+
+`pg_dump` takes a consistent logical snapshot of one database. Run it in custom format, so that it is compressed and can be restored selectively or in parallel with `pg_restore`. Copy it off the server, because a backup kept on the same disk as the volume is lost with it:
+
+```bash
+# No -t: a pseudo-TTY rewrites newlines and corrupts binary output.
+docker exec project_a_db pg_dump -U admin -Fc project_a > "project_a_$(date +%F).dump"
+
+# Roles and their passwords are cluster-wide and not in pg_dump.
+docker exec project_a_db pg_dumpall -U admin --globals-only > "project_a_globals_$(date +%F).sql"
+```
+
+A backup that has never been restored has not been tested. Schedule a job that restores the latest dump into a throwaway container and checks the result:
+
+```bash
+docker run -d --name restore_check -e POSTGRES_PASSWORD=check postgres:16
+until docker exec restore_check pg_isready -U postgres; do sleep 1; done
+docker exec restore_check createdb -U postgres project_a
+docker exec -i restore_check pg_restore -U postgres -d project_a --no-owner --exit-on-error \
+  < "project_a_$(date +%F).dump"
+docker exec restore_check psql -U postgres -d project_a -tAc "SELECT count(*) FROM orders"
+docker rm -f restore_check
+```
+
+Alert when the restore fails, and when the row count falls outside its expected range. Both mean the backup cannot be trusted.
+
+A nightly `pg_dump` means you can lose up to a day of data, and restoring a large logical dump can take hours. If a project needs a smaller loss window than the dump interval, add continuous WAL archiving with a tool such as pgBackRest or WAL-G. They take periodic base backups and archive each WAL segment as it completes, which allows point-in-time recovery to any moment. At that point, compare the effort of running them against the cost of the managed service described below.
 
 ### Production readiness checklist
 
-**Backups** — Schedule per-database backups using `pg_dump` executed inside each container:
-
-```bash
-docker exec project_a_db pg_dump -U admin project_a > backup_a_$(date +%F).sql
-```
+**Backups** — A scheduled `pg_dump -Fc` per database, copied off the server, with a restore checked automatically. See [A backup is a restore you have rehearsed](#a-backup-is-a-restore-you-have-rehearsed).
 
 **Connection pooling** — For production workloads, add PgBouncer as a sidecar container per database or as a shared pooler to manage connection limits and reduce PostgreSQL backend pressure.
 
@@ -364,7 +475,9 @@ console.log(\`\\n\${healthy}/\${cluster.length} instances healthy; the fault nev
 | Independent lifecycle — spin up/down without side effects | Port and resource allocation must be tracked and managed |
 | Version flexibility across projects | More Docker images to pull and maintain |
 | Reproducible via a single compose file | No built-in high availability or automatic failover |
-| Simple per-database backups | Backup scheduling and rotation is your responsibility |
+| Simple per-database backups | Backup scheduling, rotation and restore testing are your responsibility |
+| A memory limit keeps a fault inside one project | PostgreSQL must be tuned to each limit, or the OOM killer restarts the whole instance |
+| Each database can be upgraded on its own schedule | Major version upgrades are a dump-and-restore migration, not an image tag change |
 
 ## Related Patterns
 
