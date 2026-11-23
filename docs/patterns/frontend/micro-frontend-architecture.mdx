@@ -37,20 +37,29 @@ new ModuleFederationPlugin({
   exposes: {
     './RecommendationPanel': './src/RecommendationPanel',
   },
-  shared: { react: { singleton: true }, 'react-dom': { singleton: true } },
+  shared: {
+    react: { singleton: true, requiredVersion: '^18.2.0' },
+    'react-dom': { singleton: true, requiredVersion: '^18.2.0' },
+  },
 });
 
 // Shell: webpack.config.js
 new ModuleFederationPlugin({
   name: 'shell',
+  // A static URL is fine for a first spike, but it fixes the remote's
+  // location at the shell's build time. Production shells resolve it
+  // from a manifest instead (see "Resolve remotes from a manifest").
   remotes: {
-    recommendations: 'recommendations@https://cdn.example.com/remoteEntry.js',
+    recommendations: 'recommendations@https://cdn.example.com/recommendations/remoteEntry.js',
   },
-  shared: { react: { singleton: true }, 'react-dom': { singleton: true } },
+  shared: {
+    react: { singleton: true, requiredVersion: '^18.2.0' },
+    'react-dom': { singleton: true, requiredVersion: '^18.2.0' },
+  },
 });
 ```
 
-The shell lazy-loads the remote on demand:
+The shell lazy-loads the remote on demand. The error boundary catches both a remote that throws while rendering and a `remoteEntry.js` that fails to download, so either failure degrades one panel rather than the page:
 
 ```tsx
 // Shell: lazy-loading a remote component with error isolation
@@ -58,7 +67,7 @@ const RecommendationPanel = React.lazy(
   () => import('recommendations/RecommendationPanel')
 );
 
-function ProductPage() {
+function ProductPage({ productId }: { productId: string }) {
   return (
     <main>
       <ProductDetails />
@@ -78,22 +87,149 @@ Micro-frontends must communicate without tight coupling. Three mechanisms, in or
 
 **1. URL / routing** — the most durable contract. If a navigation event carries all required state in the URL, remotes need no shared runtime.
 
-**2. Shared event bus** — a lightweight pub/sub on `window` or a singleton module that both shell and remotes import:
+**2. Shared event bus** — a lightweight pub/sub on `window` or a singleton module that both shell and remotes import. Event names and payload shapes are the contract, so they live in one typed map that every team imports, and `on` returns an unsubscribe function the remote calls when it unmounts — otherwise each remount adds another listener and the handler fires twice, then three times:
 
 ```typescript
-// Thin event bus — no direct import between remotes
-const bus = {
-  emit: (event: string, payload: unknown) =>
-    window.dispatchEvent(new CustomEvent(event, { detail: payload })),
-  on: (event: string, handler: (payload: unknown) => void) =>
-    window.addEventListener(event, (e) => handler((e as CustomEvent).detail)),
+// contracts/events.ts: published as a small versioned package
+export type BusEvents = {
+  'cart:item-added': { sku: string; quantity: number };
+  'auth:signed-out': Record<string, never>;
 };
 
-// Cart remote emits; checkout remote listens — they never import each other
+// Thin event bus: no direct import between remotes
+export const bus = {
+  emit<K extends keyof BusEvents>(event: K, payload: BusEvents[K]) {
+    window.dispatchEvent(new CustomEvent(event, { detail: payload }));
+  },
+  on<K extends keyof BusEvents>(event: K, handler: (payload: BusEvents[K]) => void) {
+    const listener = (e: Event) => handler((e as CustomEvent<BusEvents[K]>).detail);
+    window.addEventListener(event, listener);
+    return () => window.removeEventListener(event, listener);
+  },
+};
+
+// Cart remote emits; checkout remote listens. They never import each other.
 bus.emit('cart:item-added', { sku, quantity });
+
+// Checkout remote, inside a component
+useEffect(() => bus.on('cart:item-added', refreshSummary), []);
 ```
 
+Events are not stored. A remote that mounts after an event fired never sees it, so the bus carries notifications ("something changed, re-read it") and never the state itself. A late-loading remote reads current state from the URL, from its own API or from the shared store below.
+
 **3. Shared store module** — a singleton Zustand or Redux store exposed as a shared module. Use only for high-frequency shared state (e.g., auth session, cart count in the header). Treat it as a strict API contract: breaking changes require versioning.
+
+### Cut along business capabilities, not page regions
+
+The decomposition decides whether the pattern pays off. The tempting split follows the screen: a header team, a sidebar team, a main-content team. Every feature then needs a change in two or three remotes, released in order, which brings back the release train the split was meant to remove. Split vertically instead. A team owns a business capability (search, product detail, checkout, account) from its routes and UI down to the backend-for-frontend it calls, and a typical change lands in one remote.
+
+Two composition levels follow from that:
+
+- **Route-level composition** is the default. The shell maps a URL prefix to a remote (`/checkout/*` → checkout) and hands over the whole page. The remote owns everything below its prefix, including its internal routes, and nothing else renders inside it. Most remotes should only ever be composed this way.
+- **Fragment-level composition** is for the few capabilities that appear on other teams' pages, such as a recommendations strip on product detail or a mini-cart in the header. A fragment takes a narrow, typed props contract (`productId`, never the host page's state object) and must render something useful on its own if the host passes nothing optional.
+
+A useful test of the boundaries: trace the five most common user journeys and count how many remotes each one touches and how many events cross between them. A journey that ping-pongs events between two remotes on every interaction is one capability split in two, and those remotes should merge. One team can own several remotes. One remote should never have two owning teams.
+
+### Treat shared dependencies as a versioned contract
+
+Module Federation's `shared` setting decides what the shell and remotes load once and what each brings in its own copy. React has to be a singleton, because two copies on one page give two hook dispatchers and the first hook in a remote fails with "Invalid hook call". But `singleton: true` alone is lenient. When a remote declares `requiredVersion: '^19.0.0'` and the share scope already holds React 18, webpack logs a console warning and the remote runs against React 18 anyway, so the failure appears later as a missing API in production. Adding `strictVersion: true` turns the mismatch into a rejected import, which the shell's error boundary catches at load time:
+
+```javascript
+shared: {
+  react: { singleton: true, strictVersion: true, requiredVersion: '^18.2.0' },
+  'react-dom': { singleton: true, strictVersion: true, requiredVersion: '^18.2.0' },
+  '@acme/design-tokens': { singleton: true, requiredVersion: '^3.0.0' },
+  '@acme/contracts': { singleton: true, requiredVersion: '^2.0.0' },
+},
+```
+
+Keep the shared list short: the framework runtime, the design-system tokens and primitives, and the contracts package holding the bus event map and fragment prop types. Each shared library is a dependency every team must upgrade together, so every entry gives back some of the independence that motivated the split. Lodash or a date library does not belong there; let each remote bundle its own.
+
+The singleton framework also limits the "different framework per remote" benefit. A remote that really runs a different framework, or a different major version, cannot share React components with the shell. It exposes a framework-neutral lifecycle instead, and the shell treats it as a black box:
+
+```typescript
+// contracts/mount.ts: the only interface a non-React remote exposes
+export interface MountableRemote<P> {
+  mount(el: HTMLElement, props: P): { update(props: P): void; unmount(): void };
+}
+```
+
+Wrapping that lifecycle in a Web Component (`<acme-recommendations product-id="sku-42">`) gives the same contract to any host. Framework upgrades then happen one remote at a time, because each remote bundles its own runtime, at the cost of shipping that runtime twice during the migration.
+
+### Resolve remotes from a manifest, and cache by content
+
+Independent deployment depends on how `remoteEntry.js` is cached. The entry file is a small loader that names the remote's content-hashed chunks. If the CDN serves it with a long `max-age`, users keep loading last week's remote for days after a deploy. If the chunks are not content-hashed, a new entry file can load old chunks from a browser cache, and the two halves of one remote disagree. The rule that works:
+
+| Asset | URL | Cache-Control |
+|---|---|---|
+| Manifest (`/mf-manifest.json`) | stable | `no-cache` (revalidate on every boot) |
+| `remoteEntry.js` | versioned path, e.g. `/recommendations/4.12.0/remoteEntry.js` | `public, max-age=31536000, immutable` |
+| Chunks | content-hashed file names | `public, max-age=31536000, immutable` |
+
+Only the manifest is mutable. A deploy uploads a new versioned directory, which changes nothing for users yet, and then rewrites one line in the manifest. A rollback rewrites the line back, so it takes seconds and needs no rebuild of the shell or the remote. The manifest is also where canary releases go: the shell can choose the entry URL per user from a flag. The shell loads remotes from it with webpack's runtime container API instead of the static `remotes` map:
+
+```typescript
+declare const __webpack_init_sharing__: (scope: string) => Promise<void>;
+declare const __webpack_share_scopes__: { default: unknown };
+
+type Container = {
+  init(scope: unknown): Promise<void>;
+  get(module: string): Promise<() => any>;
+};
+
+const containers = new Map<string, Promise<Container>>();
+
+function loadContainer(scope: string, url: string): Promise<Container> {
+  // Memoised: init() must run once per container, and concurrent
+  // slots asking for the same remote must share one script tag.
+  if (!containers.has(scope)) {
+    containers.set(scope, new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = url;
+      script.onerror = () => {
+        containers.delete(scope); // allow a retry on next navigation
+        reject(new Error(`remote ${scope} failed to load from ${url}`));
+      };
+      script.onload = async () => {
+        try {
+          await __webpack_init_sharing__('default');
+          const container = (window as any)[scope] as Container;
+          await container.init(__webpack_share_scopes__.default);
+          resolve(container);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      document.head.appendChild(script);
+    }));
+  }
+  return containers.get(scope)!;
+}
+
+export async function loadRemoteModule(scope: string, module: string) {
+  const manifest = await fetch('/mf-manifest.json', { cache: 'no-cache' }).then((r) => r.json());
+  const container = await loadContainer(scope, manifest[scope]);
+  const factory = await container.get(module);
+  return factory();
+}
+
+// Shell usage. A rejected promise surfaces in the slot's error boundary.
+const RecommendationPanel = React.lazy(() =>
+  loadRemoteModule('recommendations', './RecommendationPanel'),
+);
+```
+
+Runtime resolution adds a request waterfall (manifest, entry file, chunks), and it falls on the critical path. Fetch the manifest once at boot, then add `<link rel="preload" as="script">` for the entry files of the remotes the current route will need, so they download in parallel with the shell's own bundle. Give each remote a performance budget in its own CI, because no single team sees the total page weight.
+
+### Isolate styles and globals, share tokens
+
+Remotes run in one document, so anything global becomes a shared, unowned dependency between teams. Three kinds of leak cause most incidents:
+
+- **CSS.** Global selectors from one remote (`.button`, `h2`, a reset stylesheet) restyle every other remote on the page, and whichever stylesheet loads last wins, so the result changes with network timing. Scope every remote's styles with CSS Modules or a build-time prefix (`.reco-…`), and never ship a reset from a remote; only the shell owns base styles. Web-Component remotes get stronger isolation from Shadow DOM.
+- **Design tokens.** Share appearance through CSS custom properties that the shell defines on `:root` (`--color-surface`, `--space-3`), not through shared class names. Custom properties are inherited into shadow roots, so one token set themes isolated and non-isolated remotes alike, and a rebrand is one shell change.
+- **Runtime globals.** Only one router can own `history`. The shell owns it, and each remote receives its base path and a `navigate` function through props or the mount contract. It never creates its own browser router. Polyfills, `window` patches, global error handlers and analytics initialisation also belong to the shell, which injects them. A remote that patches `fetch` for its own logging has patched it for everyone else as well.
+
+A lint rule per remote (no element selectors or `:global` outside the shell, no `window.history` or `createBrowserRouter` imports) catches most of these leaks before they reach integration.
 
 ### Deployment Contract
 
@@ -140,6 +276,8 @@ Each remote publishes a `remoteEntry.js` at a stable URL. The shell resolves rem
 | Teams can adopt different frameworks or versions per domain | Testing the integrated product requires a full composition environment |
 | Legacy monolith can be extracted incrementally | Cross-remote debugging is harder: stack traces cross bundle boundaries |
 | Scales team autonomy without scaling coordination overhead | Shared state contracts between remotes must be versioned as APIs |
+| Rollback is a one-line manifest change, with no rebuild | The manifest, entry-file caching and preload hints become infrastructure someone must own |
+| Strict shared versions turn skew into a caught load error | Every shared library is an upgrade all teams must take together |
 
 ## Live Playground
 
