@@ -61,7 +61,7 @@ function counterReducer(state: number, action: Action): number {
 
 For state shared across multiple components, choose the mechanism based on update frequency:
 
-**React Context** is appropriate for low-frequency state — theme, locale, current user identity — that rarely changes after mount. Frequent updates through context re-render all consumers.
+**React Context** is appropriate for low-frequency state — theme, locale, current user identity — that rarely changes after mount. Context is a dependency-injection mechanism, not a store: every consumer re-renders whenever the provider's `value` changes identity, and there is no way to subscribe to part of it.
 
 ```tsx
 const ThemeContext = createContext<'light' | 'dark'>('dark');
@@ -72,14 +72,49 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 }
 ```
 
+A primitive value like `theme` is safe. An object literal is not: `value={{ user, signOut }}` is a new object on every render of the provider, so every consumer re-renders even when nothing it reads has changed. Memoise object values, and when some consumers only *write*, give them a separate context that never changes:
+
+```tsx
+const SessionContext  = createContext<Session | null>(null);
+const SessionActions  = createContext<SessionCommands | null>(null);
+
+export function SessionProvider({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+
+  // Stable for the provider's lifetime: components that only sign out never re-render
+  const actions = useMemo<SessionCommands>(() => ({
+    signIn: async (creds) => setSession(await api.signIn(creds)),
+    signOut: () => setSession(null),
+  }), []);
+
+  return (
+    <SessionActions.Provider value={actions}>
+      <SessionContext.Provider value={session}>{children}</SessionContext.Provider>
+    </SessionActions.Provider>
+  );
+}
+```
+
 **A lightweight store** (Zustand, Jotai, Signals) is appropriate for high-frequency or granular state where you need selective subscriptions — only the components that subscribe to a specific slice re-render.
 
 ```tsx
+type SortOrder = 'asc' | 'desc';
+
+interface FilterState {
+  selectedTags: string[];
+  sortOrder: SortOrder;
+  addTag: (tag: string) => void;
+  removeTag: (tag: string) => void;
+  setSortOrder: (order: SortOrder) => void;
+}
+
 // Zustand store — fine-grained subscriptions prevent cascade re-renders
-const useFilterStore = create<FilterState>((set) => ({
+const useFilterStore = create<FilterState>()((set) => ({
   selectedTags: [],
   sortOrder: 'asc',
-  addTag: (tag) => set((s) => ({ selectedTags: [...s.selectedTags, tag] })),
+  addTag: (tag) => set((s) =>
+    s.selectedTags.includes(tag) ? s : { selectedTags: [...s.selectedTags, tag] },
+  ),
   removeTag: (tag) => set((s) => ({
     selectedTags: s.selectedTags.filter((t) => t !== tag),
   })),
@@ -100,18 +135,123 @@ API data is not application state. It is a cache of remote truth. Treat it separ
 ```tsx
 // ✅ Server state — declarative fetching with automatic caching and invalidation
 function PatternList({ domain }: { domain: string }) {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['patterns', domain],
+  const { data, isPending, isError, error } = useQuery({
+    queryKey: patternKeys.list(domain),
     queryFn: () => fetchPatterns(domain),
     staleTime: 5 * 60 * 1000, // treat as fresh for 5 minutes
   });
 
-  if (isLoading) return <LoadingShell />;
-  if (error)     return <ErrorBoundary error={error} />;
+  if (isPending) return <LoadingShell />;               // no data yet — not "a request is in flight"
+  if (isError)   return <ErrorState error={error} />;    // render the failure; error boundaries catch throws, not props
 
   return <ul>{data.map((p) => <PatternCard key={p.id} pattern={p} />)}</ul>;
 }
 ```
+
+Branch on `isPending`, not `isLoading`: in TanStack Query v5 `isLoading` is only true while the *first* fetch is running, so a disabled or not-yet-started query is neither loading nor holding data, and `data.map` throws. `staleTime` decides when a cached result is refetched; `gcTime` decides how long an unused one is kept. They are separate knobs, and the default `staleTime` of zero means every new subscriber triggers a background refetch.
+
+Define query keys in one place rather than as inline arrays, because invalidation matches on key prefixes and a typo in one call site silently invalidates nothing:
+
+```ts
+export const patternKeys = {
+  all:    ['patterns'] as const,
+  list:   (domain: string) => [...patternKeys.all, 'list', domain] as const,
+  detail: (id: string)     => [...patternKeys.all, 'detail', id] as const,
+};
+```
+
+### Store the minimum; derive the rest
+
+Most state bugs are two copies of the same fact drifting apart. If a value can be computed from props or other state during render, it is not state — compute it. A `useEffect` that copies one piece of state into another runs *after* the render that used the stale value, costs an extra render, and is the usual source of a list showing filtered results for the previous filter.
+
+```tsx
+// ❌ Duplicated state, synchronised by an effect: one render is always stale
+const [visible, setVisible] = useState<Pattern[]>([]);
+useEffect(() => {
+  setVisible(patterns.filter((p) => tags.every((t) => p.tags.includes(t))));
+}, [patterns, tags]);
+
+// ✅ Derived during render; memoise only when profiling shows it is expensive
+const visible = useMemo(
+  () => patterns.filter((p) => tags.every((t) => p.tags.includes(t))),
+  [patterns, tags],
+);
+```
+
+The same rule applies to selections: store the selected *id*, not a copy of the selected object, and look the object up from the current list. A copied object keeps showing the old title after the list refetches; an id either resolves to the current record or to nothing, and both are honest. When a component's local state must reset because its subject changed — an edit form moving to a different record — give it `key={record.id}` so React mounts a fresh instance, rather than resetting fields in an effect.
+
+### Put navigational state in the URL
+
+Filters, sort order, pagination, the active tab and the open detail panel are state the *user* owns: they expect the back button to undo them, a reload to keep them, and a pasted link to reproduce them. That makes the URL their source of truth. Read them from the search params and write them back; do not mirror them into a store, or the two will disagree after the first back-button press.
+
+```tsx
+function usePatternFilters() {
+  const [params, setParams] = useSearchParams();
+
+  const tags = params.getAll('tag');
+  const sort = params.get('sort') === 'desc' ? 'desc' : 'asc'; // parse; never trust the URL's shape
+
+  const toggleTag = (tag: string) =>
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      const current = next.getAll('tag');
+      next.delete('tag');
+      (current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag])
+        .forEach((t) => next.append('tag', t));
+      return next;
+    }, { replace: true }); // filter tweaks replace history; page changes may push
+
+  return { tags, sort, toggleTag };
+}
+```
+
+Because the parsed values feed straight into the query key — `patternKeys.list(domain)` extended with `tags` and `sort` — the URL, the cache entry and the rendered list cannot drift apart. Decide per parameter whether a change pushes a history entry or replaces the current one; pushing on every keystroke in a search box makes the back button useless.
+
+### Subscribe narrowly, and keep snapshots stable
+
+A store only prevents cascading re-renders if each component subscribes to the smallest slice it reads, and if the slice it gets back is referentially stable when nothing changed. Zustand v5 compares selector results with `Object.is`, so a selector that builds a new object or array on every call never compares equal: the component re-renders on every store update, and in v5 it can trigger React's "Maximum update depth exceeded" loop.
+
+```tsx
+// ❌ New object every call: re-renders on any store change
+const { tags, sort } = useFilterStore((s) => ({ tags: s.selectedTags, sort: s.sortOrder }));
+
+// ✅ One selector per primitive or existing reference…
+const sort = useFilterStore((s) => s.sortOrder);
+
+// ✅ …or compare the picked fields shallowly
+import { useShallow } from 'zustand/react/shallow';
+const { tags, sortOrder } = useFilterStore(
+  useShallow((s) => ({ tags: s.selectedTags, sortOrder: s.sortOrder })),
+);
+```
+
+If you write your own store — or wrap a non-React source such as a WebSocket feed or `matchMedia` — subscribe through `useSyncExternalStore`, not `useState` plus `useEffect`. The effect version subscribes *after* the first render, so an update in between is lost, and under concurrent rendering two components can read different versions of the store in the same commit ("tearing"). `useSyncExternalStore` closes both gaps, with one requirement: `getSnapshot` must return the same reference until the data actually changes, so keep the snapshot immutable and replace it on write rather than returning a fresh object per call.
+
+### Mutate server state through the cache, not around it
+
+Copying fetched data into a client store to edit it is the most common way these categories get mixed: the copy stops receiving refetches, and every later mutation has to update two places. Write through a mutation instead, and either invalidate the affected keys or update the cache optimistically with a rollback.
+
+```tsx
+const queryClient = useQueryClient();
+
+const rename = useMutation({
+  mutationFn: (input: { id: string; title: string }) => api.renamePattern(input),
+
+  onMutate: async ({ id, title }) => {
+    const key = patternKeys.detail(id);
+    await queryClient.cancelQueries({ queryKey: key });       // an in-flight refetch must not overwrite the optimistic value
+    const previous = queryClient.getQueryData<Pattern>(key);
+    queryClient.setQueryData<Pattern>(key, (old) => old && { ...old, title });
+    return { previous };
+  },
+  onError: (_err, { id }, ctx) => {
+    if (ctx?.previous) queryClient.setQueryData(patternKeys.detail(id), ctx.previous); // roll back
+  },
+  onSettled: () => queryClient.invalidateQueries({ queryKey: patternKeys.all }),  // reconcile with the server either way
+});
+```
+
+Use optimistic updates where the action almost always succeeds and latency is visible — toggles, renames, reordering. Use plain invalidation where the server decides the result (pricing, approval workflows) or where a wrong optimistic value would mislead. Either way, the server remains the source of truth and the cache is the only client copy of it.
 
 ### Unidirectional Data Flow
 
@@ -134,11 +274,15 @@ Store / Context
 - **Context**: auth session, theme, i18n locale — infrequently updated values consumed widely
 - **Lightweight store (Zustand/Jotai)**: UI filters, selections, cart contents — shared, frequently mutated client state
 - **Query cache (TanStack Query/SWR)**: all data fetched from an API
+- **URL search params**: filters, sort, pagination, active tab — anything a user would bookmark, share or expect the back button to undo
+- **Derived values**: totals, filtered lists, "is anything selected" — computed during render, never stored
 
 **Avoid when:**
 
 - Reaching for a global store as the default for all state; start local, lift only when you have a concrete sharing requirement
 - Putting server-fetched data in a Redux/Zustand store alongside client state — they have different invalidation models and mixing them creates complexity
+- Syncing one piece of state into another with `useEffect`; derive it instead
+- Passing an unmemoised object literal as a context `value`, or returning a new object from a store selector without a shallow comparison
 
 ## Trade-offs
 
@@ -148,17 +292,19 @@ Store / Context
 | Granular subscriptions limit re-render surface area | Multiple state libraries in one project can be confusing |
 | Server state is decoupled from client state, with automatic cache management | Query library setup and tuning (staleTime, gcTime) adds initial overhead |
 | Unidirectional flow makes debugging straightforward | Stores and query caches are harder to unit-test than pure local state |
+| URL-held state is shareable, reload-safe and back-button aware | URL params are untrusted strings that must be parsed and defaulted, and history push/replace has to be decided per parameter |
+| Optimistic cache updates make mutations feel instant | Every optimistic path needs a rollback and a reconciling refetch, or a failed write leaves the UI showing data the server rejected |
 
 ## Live Playground
 
-Experiment with the pattern below. The example demonstrates the trade-off: lifting state to a parent solves prop drilling but causes cascading re-renders. Fine-grained subscriptions (Zustand) prevent unnecessary re-renders by letting components subscribe only to the state they need. Edit the controls or uncomment different implementations to observe the re-render counts.
+The example below sets the two approaches side by side. Lifting state into a context solves prop drilling but re-renders every consumer on every change; a minimal external store read through `useSyncExternalStore` lets each component subscribe only to the slice it reads. Flip the `USE_STORE` constant and follow which render counters each interaction would advance.
 
 <SandpackPlayground
   client:only="react"
   title="Live example · State Management Trade-offs"
   entry="/app.tsx"
   files={{
-    "/app.tsx": `import React, { useState, createContext, useContext } from 'react';
+    "/app.tsx": `import React, { useState, createContext, useContext, useSyncExternalStore } from 'react';
 
 // ── Problem: Lifting State Causes Cascading Re-renders ──
 // When filters state lives in a parent, ALL children re-render
@@ -240,56 +386,38 @@ type Store = {
   setSortOrder: (order: 'asc' | 'desc') => void;
 };
 
-// Minimal Zustand-like store
+type FilterData = Pick<Store, 'selectedTags' | 'sortOrder'>;
+
+// Minimal Zustand-like store: immutable snapshots, replaced on every write
 class SimpleStore {
-  private state: Store['selectedTags' | 'sortOrder'] = {
-    selectedTags: [],
-    sortOrder: 'asc' as const,
-  };
-  private listeners = new Set<(key: string) => void>();
-  
-  subscribe(cb: (key: string) => void) {
+  private state: FilterData = { selectedTags: [], sortOrder: 'asc' };
+  private listeners = new Set<() => void>();
+
+  subscribe = (cb: () => void) => {
     this.listeners.add(cb);
-    return () => this.listeners.delete(cb);
-  }
-  
-  notify(key: string) {
-    this.listeners.forEach(cb => cb(key));
-  }
-  
-  getState(key: 'selectedTags' | 'sortOrder') {
-    return this.state[key];
-  }
-  
-  setState(key: string, value: any) {
-    (this.state as any)[key] = value;
-    this.notify(key);
+    return () => { this.listeners.delete(cb); };
+  };
+
+  getState = (): FilterData => this.state;
+
+  setState(patch: Partial<FilterData>) {
+    this.state = { ...this.state, ...patch }; // new snapshot; untouched slices keep their reference
+    this.listeners.forEach(cb => cb());
   }
 }
 
 const store = new SimpleStore();
 
-function useStoreSlice<T>(key: string, selector: () => T): T {
-  const [value, setValue] = React.useState(selector);
-  
-  React.useEffect(() => {
-    const unsubscribe = store.subscribe(changedKey => {
-      if (changedKey === key) {
-        setValue(selector());
-      }
-    });
-    return unsubscribe;
-  }, [key]);
-  
-  return value;
+// useSyncExternalStore subscribes before paint and never tears under concurrent
+// rendering. The component re-renders only when its selected slice changes
+// identity — which is why the store never mutates a slice in place.
+function useStoreSlice<K extends keyof FilterData>(key: K): FilterData[K] {
+  return useSyncExternalStore(store.subscribe, () => store.getState()[key]);
 }
 
 let CatalogHeaderStoreRenderCount = 0;
 function CatalogHeaderStore() {
-  const sortOrder = useStoreSlice(
-    'sortOrder',
-    () => store.getState('sortOrder') as any
-  );
+  const sortOrder = useStoreSlice('sortOrder');
   CatalogHeaderStoreRenderCount++;
   
   return (
@@ -298,10 +426,9 @@ function CatalogHeaderStore() {
         CatalogHeader (Store) · renders: {CatalogHeaderStoreRenderCount}
       </p>
       <button 
-        onClick={() => {
-          const current = store.getState('sortOrder') as any;
-          store.setState('sortOrder', current === 'asc' ? 'desc' : 'asc');
-        }}
+        onClick={() =>
+          store.setState({ sortOrder: sortOrder === 'asc' ? 'desc' : 'asc' })
+        }
         style={buttonStyle}
       >
         Sort: {sortOrder}
@@ -312,10 +439,7 @@ function CatalogHeaderStore() {
 
 let TagListStoreRenderCount = 0;
 function TagListStore() {
-  const selectedTags = useStoreSlice(
-    'selectedTags',
-    () => store.getState('selectedTags') as any
-  );
+  const selectedTags = useStoreSlice('selectedTags');
   TagListStoreRenderCount++;
   
   const allTags = ['React', 'Architecture', 'Performance'];
@@ -332,13 +456,12 @@ function TagListStore() {
         <button
           key={tag}
           onClick={() => {
-            const current = store.getState('selectedTags') as any;
-            store.setState(
-              'selectedTags',
-              current.includes(tag)
-                ? current.filter((t: string) => t !== tag)
-                : [...current, tag]
-            );
+            const current = store.getState().selectedTags;
+            store.setState({
+              selectedTags: current.includes(tag)
+                ? current.filter(t => t !== tag)
+                : [...current, tag],
+            });
           }}
           style={{
             ...buttonStyle,
