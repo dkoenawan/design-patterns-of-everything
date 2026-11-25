@@ -133,6 +133,17 @@ for (const slug of patternPages) {
     // The client:only Sandpack island mounts and shows its label
     await expect(page.getByText(/^Live example ·/)).toBeVisible({ timeout: 10000 });
 
+    // The output pane matches the example: React (.tsx) examples render in a
+    // preview, script (.ts) examples print to a console. Only the example
+    // files are tabs; the runner entry the playground generates stays hidden.
+    const tabs = await page.locator('.sp-tab-button').allInnerTexts();
+    expect(tabs.length).toBeGreaterThan(0);
+    expect(tabs).not.toContain('index.ts');
+    expect(tabs).not.toContain('index.tsx');
+    const isReact = tabs.every((t) => t.endsWith('.tsx'));
+    await expect(page.locator(isReact ? '.sp-preview' : '.sp-console')).toHaveCount(1);
+    await expect(page.locator(isReact ? '.sp-console' : '.sp-preview')).toHaveCount(0);
+
     expect(errors).toHaveLength(0);
   });
 }
