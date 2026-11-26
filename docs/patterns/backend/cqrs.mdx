@@ -177,146 +177,180 @@ ON CONFLICT (id) DO UPDATE
 
 ## Live Playground
 
-Experiment with the pattern below. The two tabs show a monolithic service (`before.ts`) where commands and queries are tangled, and the CQRS-refactored equivalent (`after.ts`) with separate command and query handlers.
+Experiment with the pattern below. In `before.ts` one service serves commands and queries from the same objects: the dashboard's list query recomputes every total on each read, and a display tweak on a returned order writes into the write model, so the next `confirmOrder` command fails. In `after.ts` commands return only an id and version and record events in an outbox in the same step. An idempotent projection turns those events into frozen summaries with the total precomputed. The output shows the read model one version behind until the relay runs, then a full redelivery that changes nothing. Edit the examples and the console re-runs them.
 
 <SandpackPlayground
   client:only="react"
   title="Live example · CQRS"
   entry="/after.ts"
   files={{
-    "/before.ts": `// ── Before: monolithic model ──────────────────────────────
-// OrderService handles both commands and queries with a single
-// schema. Write logic (invariants) leaks into read paths; scaling
-// reads and writes together creates inefficiency.
+    "/before.ts": `// ── Before: one model for commands and queries ────────────────
+// OrderService stores orders and serves the dashboard from the
+// same objects. Every list read recomputes totals from line items,
+// and the objects it hands out are the write model itself.
 
 interface Order {
   id: string;
-  status: string;
-  total: number;
+  status: 'pending' | 'confirmed';
   items: Array<{ name: string; qty: number; price: number }>;
-  createdAt: Date;
 }
 
 class OrderService {
   private orders = new Map<string, Order>();
+  private nextId = 1;
+  lineItemsRead = 0;
 
-  // Command: PlaceOrder — enforces business rules
-  placeOrder(items: string[]): string {
-    const id = \`ORD-\${Date.now()}\`;
-    const order: Order = {
-      id,
-      status: 'pending',
-      total: items.length * 10,
-      items: items.map(name => ({ name, qty: 1, price: 10 })),
-      createdAt: new Date(),
-    };
-    this.orders.set(id, order);
-    console.log(\`✓ Order \${id} placed\`);
-    return id;
+  placeOrder(items: Order['items']): Order {
+    const order: Order = { id: \`ORD-\${this.nextId++}\`, status: 'pending', items };
+    this.orders.set(order.id, order);
+    return order; // the caller now holds the live write model
   }
 
-  // Query: GetOrders — reads the full Order model
-  getOrders(userId: string): Order[] {
-    // Problem: must read the entire schema even though
-    // the UI only needs id, status, total
-    return Array.from(this.orders.values());
+  confirmOrder(id: string): void {
+    const order = this.orders.get(id)!;
+    if (order.status !== 'pending') {
+      throw new Error(\`cannot confirm \${id}: status is \${order.status}\`);
+    }
+    order.status = 'confirmed';
   }
 
-  // Query: GetOrderSummary — same schema, different projection
-  getOrderSummary(orderId: string): any {
-    const order = this.orders.get(orderId);
-    if (!order) return null;
-    // Denormalizing by hand here — tedious and error-prone
-    return {
-      id: order.id,
-      status: order.status,
-      total: order.total,
-      itemCount: order.items.length,
-    };
+  // The query reuses the write model and computes on every read.
+  listOrders() {
+    return [...this.orders.values()].map(order => {
+      this.lineItemsRead += order.items.length;
+      const total = order.items.reduce((sum, i) => sum + i.qty * i.price, 0);
+      return { order, total };
+    });
   }
 }
 
 const svc = new OrderService();
-svc.placeOrder(['Laptop', 'Mouse']);
-svc.placeOrder(['Keyboard']);
-console.log('Orders:', svc.getOrders('user-1'));
-console.log('Summary:', svc.getOrderSummary('ORD-1'));
+svc.placeOrder([{ name: 'Laptop', qty: 1, price: 900 }, { name: 'Mouse', qty: 2, price: 25 }]);
+svc.placeOrder([{ name: 'Keyboard', qty: 1, price: 80 }]);
+
+console.log('── dashboard renders the order list');
+for (const { order, total } of svc.listOrders()) {
+  // A display tweak on the shared object writes into the write model.
+  order.status = order.status.toUpperCase() as Order['status'];
+  console.log(\`  \${order.id}  \${order.status}  $\${total}\`);
+}
+svc.listOrders(); // a second render, same work again
+console.log(\`  two list reads summed \${svc.lineItemsRead} line items\`);
+
+console.log('\\n── confirm ORD-1');
+try {
+  svc.confirmOrder('ORD-1');
+  console.log('  confirmed');
+} catch (e) {
+  console.log(\`  \${(e as Error).message}\`);
+}
+
+console.log('\\na read path changed the write model, and the command now fails');
 `,
-    "/after.ts": `// ── After: CQRS (separate command and query models) ──────────
-// Commands enforce invariants on a normalized write store.
-// Queries read from a pre-projected read model optimized for
-// specific consumers. Each scales independently.
+    "/after.ts": `// ── After: CQRS with an outbox and an idempotent projection ──
+// Commands change the write model and record events in the same
+// step. A projector turns those events into read-only summaries
+// with the total already computed. Queries only read summaries.
 
-// ─── Write Model (Commands) ─────────────────────────────────
-interface OrderAggregate {
-  id: string;
-  status: string;
-  items: Array<{ name: string; qty: number; price: number }>;
-}
+type Item = { name: string; qty: number; price: number };
+type OrderEvent =
+  | { type: 'OrderPlaced'; orderId: string; version: number; items: Item[] }
+  | { type: 'OrderConfirmed'; orderId: string; version: number };
+type CommandResult = { id: string; version: number };
 
-class PlaceOrderCommand {
-  constructor(readonly items: string[]) {}
-}
+// ─── Write side ────────────────────────────────────────────
+class OrderWriteModel {
+  private orders = new Map<string, { status: string; version: number }>();
+  readonly outbox: OrderEvent[] = [];
+  private nextId = 1;
 
-class PlaceOrderHandler {
-  private writeStore = new Map<string, OrderAggregate>();
+  placeOrder(items: Item[]): CommandResult {
+    const id = \`ORD-\${this.nextId++}\`;
+    // Aggregate and event are stored together: one transaction.
+    this.orders.set(id, { status: 'pending', version: 1 });
+    this.outbox.push({ type: 'OrderPlaced', orderId: id, version: 1, items });
+    return { id, version: 1 }; // an acknowledgement, not a read DTO
+  }
 
-  handle(cmd: PlaceOrderCommand): string {
-    const id = \`ORD-\${Date.now()}\`;
-    const order: OrderAggregate = {
-      id,
-      status: 'pending',
-      items: cmd.items.map(name => ({ name, qty: 1, price: 10 })),
-    };
-    // Enforce invariants, emit domain events, persist to write DB
-    this.writeStore.set(id, order);
-    console.log(\`✓ Order \${id} placed (domain event emitted)\`);
-    return id;
+  confirmOrder(id: string): CommandResult {
+    const order = this.orders.get(id)!;
+    if (order.status !== 'pending') throw new Error(\`cannot confirm \${id}\`);
+    order.status = 'confirmed';
+    order.version += 1;
+    this.outbox.push({ type: 'OrderConfirmed', orderId: id, version: order.version });
+    return { id, version: order.version };
   }
 }
 
-// ─── Read Model (Queries) ──────────────────────────────────
-interface OrderSummaryDTO {
-  id: string;
-  status: string;
-  total: number;
-  itemCount: number;
+// ─── Read side ─────────────────────────────────────────────
+interface OrderSummary {
+  readonly id: string;
+  readonly status: string;
+  readonly total: number;
+  readonly itemCount: number;
+  readonly version: number;
 }
 
-class GetOrdersQuery {
-  // Pre-projected read store — only what the UI needs
-  private readStore: OrderSummaryDTO[] = [
-    { id: 'ORD-100', status: 'shipped', total: 50, itemCount: 5 },
-    { id: 'ORD-101', status: 'pending', total: 20, itemCount: 2 },
-  ];
+class OrderSummaryProjection {
+  private summaries = new Map<string, OrderSummary>();
 
-  execute(): OrderSummaryDTO[] {
-    // No domain logic, no schema joins — just return denormalized data
-    return this.readStore;
+  apply(event: OrderEvent): void {
+    const current = this.summaries.get(event.orderId);
+    // Idempotent: a redelivered or older event changes nothing.
+    if (current && current.version >= event.version) return;
+    const next: OrderSummary =
+      event.type === 'OrderPlaced'
+        ? {
+            id: event.orderId,
+            status: 'pending',
+            total: event.items.reduce((sum, i) => sum + i.qty * i.price, 0),
+            itemCount: event.items.length,
+            version: event.version,
+          }
+        : { ...current!, status: 'confirmed', version: event.version };
+    this.summaries.set(event.orderId, Object.freeze(next));
+  }
+
+  get(id: string): OrderSummary | undefined {
+    return this.summaries.get(id);
+  }
+
+  list(): readonly OrderSummary[] {
+    return [...this.summaries.values()];
   }
 }
 
-class GetOrderSummaryQuery {
-  private readStore: OrderSummaryDTO[] = [
-    { id: 'ORD-100', status: 'shipped', total: 50, itemCount: 5 },
-    { id: 'ORD-101', status: 'pending', total: 20, itemCount: 2 },
-  ];
-
-  execute(orderId: string): OrderSummaryDTO | null {
-    // Query directly from pre-projected read model
-    return this.readStore.find(o => o.id === orderId) || null;
-  }
+// The relay delivers outbox events at least once, from a position.
+function relay(write: OrderWriteModel, read: OrderSummaryProjection, from = 0): number {
+  write.outbox.slice(from).forEach(e => read.apply(e));
+  return write.outbox.length;
 }
 
-// Usage
-const cmdHandler = new PlaceOrderHandler();
-cmdHandler.handle(new PlaceOrderCommand(['Laptop', 'Mouse']));
+const write = new OrderWriteModel();
+const read = new OrderSummaryProjection();
 
-const queryOrders = new GetOrdersQuery();
-console.log('Orders (read model):', queryOrders.execute());
+write.placeOrder([{ name: 'Laptop', qty: 1, price: 900 }, { name: 'Mouse', qty: 2, price: 25 }]);
+write.placeOrder([{ name: 'Keyboard', qty: 1, price: 80 }]);
+let position = relay(write, read);
 
-const querySummary = new GetOrderSummaryQuery();
-console.log('Summary:', querySummary.execute('ORD-101'));
+console.log('── dashboard renders the order list');
+for (const s of read.list()) {
+  // Formatting builds new strings; the summaries are frozen.
+  console.log(\`  \${s.id}  \${s.status.toUpperCase()}  $\${s.total}\`);
+}
+
+console.log('\\n── confirm ORD-1');
+const ack = write.confirmOrder('ORD-1');
+console.log(\`  command acknowledged: \${ack.id} v\${ack.version}\`);
+console.log(\`  read model before relay: \${read.get('ORD-1')!.status} v\${read.get('ORD-1')!.version}\`);
+position = relay(write, read, position);
+console.log(\`  read model after relay:  \${read.get('ORD-1')!.status} v\${read.get('ORD-1')!.version}\`);
+
+console.log('\\n── relay restarts from 0 and redelivers every event');
+relay(write, read);
+for (const s of read.list()) console.log(\`  \${s.id}  \${s.status}  v\${s.version}  $\${s.total}\`);
+
+console.log('\\nreads never touch the write model, and redelivery changed nothing');
 `,
   }}
 />
