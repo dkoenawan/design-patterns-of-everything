@@ -9,7 +9,8 @@ const pageFiles = Object.keys(import.meta.glob('./**/*.astro'));
 const patternFiles = Object.keys(import.meta.glob('../../docs/patterns/**/*.mdx'));
 
 const staticPaths = pageFiles
-  .filter((file) => !file.includes('['))
+  // Dynamic routes are listed below; the 404 page is noindex and has no URL of its own
+  .filter((file) => !file.includes('[') && file !== './404.astro')
   .map((file) => file.replace(/^\.\//, '').replace(/\.astro$/, '').replace(/(^|\/)index$/, ''));
 
 const patternIds = new Set(

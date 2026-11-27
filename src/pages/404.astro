@@ -1,0 +1,239 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AtlasBackdrop from '../components/AtlasBackdrop';
+import Cartouche from '../components/Cartouche.astro';
+
+// GitHub Pages serves dist/404.html at any missing path under the site, so
+// every link here must be absolute (rooted at base), never relative.
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const constellations = [
+  { href: `${base}/frontend`, name: 'Frontalia',       subtitle: 'the Frontend Reach',       tint: 'var(--tint-frontend)' },
+  { href: `${base}/backend`,  name: 'Backendis Major', subtitle: 'the Backend Expanse',      tint: 'var(--tint-backend)' },
+  { href: `${base}/data`,     name: 'Pipea Vallis',    subtitle: 'the Data Confluence',      tint: 'var(--tint-data)' },
+  { href: `${base}/infra`,    name: 'Infrastructura',  subtitle: 'the Platform Frontier',    tint: 'var(--tint-infra)' },
+];
+
+const registers = [
+  { href: `${base}/patterns-catalog`, label: 'Patterns catalogue' },
+  { href: `${base}/case-studies`,     label: 'Case studies' },
+  { href: `${base}/anti-patterns`,    label: 'Anti-pattern register' },
+  { href: `${base}/about`,            label: 'About the cartographer' },
+];
+---
+
+<BaseLayout
+  title="Uncharted Region — Celestial Atlas"
+  description="The requested page is not on this chart. Return to the atlas or one of its four constellations."
+  noindex
+>
+  <AtlasBackdrop client:only="react" />
+
+  <main class="void-page">
+    <Cartouche label="✦  Plate unknown · no observation recorded  ✦">
+      <div class="void-inner">
+        <div class="void-mark" aria-hidden="true">◌</div>
+        <div>
+          <p class="void-code">Magnitude 404</p>
+          <h1 class="void-title">An uncharted region</h1>
+          <p class="void-lede">
+            No plate in this edition covers the coordinates you requested. The page may have
+            been renamed when the atlas was redrawn, or the address may be mistyped.
+          </p>
+          <p class="void-path" data-requested-row hidden>
+            <span class="void-path-label">Requested</span>
+            <code data-requested-path></code>
+          </p>
+        </div>
+      </div>
+    </Cartouche>
+
+    <Cartouche label="Charted constellations">
+      <ul class="constellations">
+        {constellations.map((c) => (
+          <li>
+            <a href={c.href} class="constellation-link">
+              <span class="constellation-star" style={`color: ${c.tint}`} aria-hidden="true">✦</span>
+              <span class="constellation-name">{c.name}</span>
+              <span class="constellation-subtitle">{c.subtitle}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </Cartouche>
+
+    <nav class="registers" aria-label="Atlas registers">
+      <a href={`${base}/`} class="register-link register-link--home">Return to the atlas</a>
+      {registers.map((r) => (
+        <a href={r.href} class="register-link">{r.label}</a>
+      ))}
+    </nav>
+  </main>
+</BaseLayout>
+
+<script>
+  // The page is static, so the missing address is only known in the browser.
+  const row = document.querySelector<HTMLElement>('[data-requested-row]');
+  const code = document.querySelector<HTMLElement>('[data-requested-path]');
+  if (row && code) {
+    const path = window.location.pathname;
+    try {
+      code.textContent = decodeURI(path);
+    } catch {
+      code.textContent = path; // malformed percent-encoding
+    }
+    row.hidden = false;
+  }
+</script>
+
+<style>
+  .void-page {
+    position: relative;
+    z-index: 1;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 96px 32px 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+  }
+
+  .void-inner {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+  }
+
+  .void-mark {
+    font-size: 52px;
+    line-height: 1;
+    color: var(--anti);
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  .void-code {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+
+  .void-title {
+    font-size: 52px;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+
+  .void-lede {
+    font-size: 19px;
+    line-height: 1.5;
+    color: var(--ink-dim);
+    max-width: 540px;
+    text-wrap: pretty;
+  }
+
+  .void-path {
+    margin-top: 20px;
+    display: flex;
+    gap: 14px;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+
+  .void-path[hidden] {
+    display: none;
+  }
+
+  .void-path-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .void-path code {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: var(--ink-dim);
+    overflow-wrap: anywhere;
+  }
+
+  .constellations {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .constellations li + li {
+    border-top: 0.5px solid var(--line-faint);
+  }
+
+  .constellation-link {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 14px 0;
+    text-decoration: none;
+  }
+
+  .constellation-star {
+    font-size: 14px;
+  }
+
+  .constellation-name {
+    font-size: 26px;
+    color: var(--ink);
+    transition: color 150ms;
+  }
+
+  .constellation-subtitle {
+    font-size: 15px;
+    color: var(--ink-dim);
+  }
+
+  .constellation-link:hover .constellation-name,
+  .constellation-link:focus-visible .constellation-name {
+    color: var(--gold-bright);
+  }
+
+  .registers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+  }
+
+  .register-link {
+    font-size: 16px;
+    color: var(--ink-dim);
+    text-decoration: none;
+    border-bottom: 0.5px solid var(--line);
+    padding-bottom: 2px;
+    transition: color 150ms, border-color 150ms;
+  }
+
+  .register-link--home {
+    color: var(--ink);
+  }
+
+  .register-link:hover,
+  .register-link:focus-visible {
+    color: var(--gold-bright);
+    border-color: var(--gold);
+  }
+
+  @media (max-width: 600px) {
+    .void-page { padding: 64px 20px 96px; }
+    .void-inner { flex-direction: column; gap: 14px; }
+    .void-mark { font-size: 38px; }
+    .void-title { font-size: 38px; }
+    .constellation-link { flex-wrap: wrap; gap: 4px 12px; }
+  }
+</style>
