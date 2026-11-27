@@ -173,6 +173,35 @@ test('sitemap lists every page under its canonical URL', async ({ page, request 
   expect(locs).toContain(canonical);
 });
 
+// A missing path gets the atlas's own 404 page: kept out of search indexes,
+// no canonical URL of its own, the requested path shown, and every way back
+// resolving (links are absolute, since GitHub Pages serves it at any depth).
+test('missing pages render the uncharted-region 404 page', async ({ page, request }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (err) => errors.push(err.message));
+
+  const missing = `${BASE}/patterns/backend/no-such-pattern`;
+  const response = await page.goto(missing);
+  expect(response?.status()).toBe(404);
+
+  await expect(page.locator('h1')).toHaveText(/uncharted region/i);
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
+  await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
+  await expect(page.locator('meta[property="og:url"]')).toHaveCount(0);
+  await expect(page.locator('[data-requested-path]')).toHaveText(missing);
+
+  const hrefs = await page.locator('main a').evaluateAll((links) =>
+    links.map((a) => a.getAttribute('href')!)
+  );
+  expect(hrefs.length).toBe(9);
+  for (const href of hrefs) {
+    expect(href.startsWith(`${BASE}/`), href).toBe(true);
+    expect((await request.get(href)).status(), href).toBe(200);
+  }
+
+  expect(errors).toHaveLength(0);
+});
+
 // The social share image named by og:image / twitter:image must actually be
 // served — a missing file leaves every shared link without a preview.
 test('share image referenced by og:image is served', async ({ page, request }) => {
